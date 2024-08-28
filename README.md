@@ -6,7 +6,7 @@ I has the ability to cast from remote CIFS/Windows file shares as well as local 
 This service will run as a Daemon, monitoring Chrome Cast devices, and slinger audio files 
 to devices from its pending audio queue.
 
-#Config Chrome Cast Slinger
+## Config Chrome Cast Slinger
 
 **vim config/daemon.cfg**
 ```
@@ -78,7 +78,7 @@ to point to your music files/folders
 Add/Change folder art files and types as required.
 
 
-#Make python virtual envs, tested on Python 3.11
+## Make python virtual envs, tested on Python 3.11
 
 **python3 -m venv ./python-slinger**
 
@@ -121,7 +121,7 @@ echo Access Program from $(ip a  | grep inet | grep global | awk -F'/' '{print $
 python3 runner.py &
 ```
 
-Boot program
+## Boot program
 **./go**
 ```
 21:47:13:INFO:HTTPInstances.init port:8008
@@ -130,10 +130,10 @@ Boot program
 21:47:13:INFO:HTTPInstances.run Starts - https://0.0.0.0:8009
 ```
 
-Access program
+## Access program
 **ip a  | grep inet | grep global | awk -F'/' '{print $1}' | awk '{print "http://"$2":8008"}'**
 
-Terminate program
+## Terminate program
 **ps**
 ```
     PID TTY          TIME CMD
