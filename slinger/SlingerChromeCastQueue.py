@@ -33,6 +33,9 @@ class SlingerChromeCastQueue:
         if playListName:
             self.loadPlaylist (httpObj=httpObj, playListName=playListName, mode = 'replace')
 
+        if self.cast:
+            self.processStatusEvent()
+
     def _prepNextQueueItem (self):
         if not self.shuffleActive or len(self.queue) <= 0:
             return
@@ -49,6 +52,9 @@ class SlingerChromeCastQueue:
     def processStatusEvent (self):
         if not self.cast:
             return
+
+        SGF.chromecastQueueProcWakeNow ()
+
         def _myStatusCallback(chromeCastStatus):
 
             self.chromeCastStatus = chromeCastStatus
@@ -141,6 +147,24 @@ class SlingerChromeCastQueue:
         del self.queue[index]
         self.queueChangeNo += 1
 
+    def isDeviceActive (self):
+        try:
+            # The extended media status information.
+            # It is used to broadcast additional player states
+            # beyond the four main ones, namely
+            # IDLE, PLAYING, PAUSED, and BUFFERING.
+            # Currently it is used only to signal the initial loading of a media item.
+            # In that case MediaStatus#playerState is IDLE,
+            # but ExtendedMediaStatus#playerState is LOADING.
+
+            if self.chromeCastStatus \
+               and self.chromeCastStatus['status'] \
+               and (self.chromeCastStatus['status'][0]['playerState'] in ('PLAYING', 'BUFFERING')):
+                return True
+        except:
+            pass
+        return False
+
     def prependQueueMediaItem (self,location, type, downloadURL, mimeType, metadata):
         self.queue.insert(0, SlingerQueueItem(location, type, downloadURL,mimeType,metadata))
         self.queueChangeNo += 1
@@ -154,6 +178,7 @@ class SlingerChromeCastQueue:
         self.cast.wait()
         self.cast.media_controller.stop()
         self.cast.wait()
+        self.processStatusEvent()
 
     def next(self):
         if (len(self.queue) > 0):
@@ -163,15 +188,21 @@ class SlingerChromeCastQueue:
     def seek(self, pos):
         self.cast.wait()
         self.cast.media_controller.seek(pos)
+        self.cast.wait()
+        self.processStatusEvent()
 
     def pause (self):
         self.cast.wait()
         self.cast.media_controller.pause()
+        self.cast.wait()
+        self.processStatusEvent()
 
     def play (self):
         self.cast.wait()
         self.playMode = 'auto'
         self.cast.media_controller.play()
+        self.cast.wait()
+        self.processStatusEvent()
 
     def volume(self, level):
         self.cast.wait()

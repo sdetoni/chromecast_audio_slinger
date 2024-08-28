@@ -495,12 +495,22 @@ def getMediaMetaDataFile (location, httpObj=None):
 
 
 # =============== Chromecast Queue Processor ===============
-exitQueueProcessing = False
-ChromeCastQueues    = {}
-def chromecastQueueProcessing ():
-    global ChromeCastQueues, exitQueueProcessing
 
+
+
+chromecastProcesSleepInt = 0
+exitQueueProcessing      = False
+ChromeCastQueues         = {}
+def chromecastQueueProcWakeNow ():
+    global chromecastProcesSleepInt
+    # logging.warning (f"chromecastQueueProcWakeNow @ {chromecastProcesSleepInt}")
+    chromecastProcesSleepInt = 0
+
+def chromecastQueueProcessing ():
+    global ChromeCastQueues, exitQueueProcessing, chromecastProcesSleepInt
+    activeLoopCount = 0
     while (not exitQueueProcessing):
+        devicesAreActive = False
         try:
             for cc in getCachedChromeCast():
                 if not cc or isinstance(cc, pychromecast.discovery.CastBrowser): continue
@@ -508,11 +518,30 @@ def chromecastQueueProcessing ():
                     ChromeCastQueues[cc[0].uuid] = SlingerChromeCastQueue.SlingerChromeCastQueue (cc[0])
 
                 ChromeCastQueues[cc[0].uuid].processStatusEvent()
+                if ChromeCastQueues[cc[0].uuid].isDeviceActive():
+                    devicesAreActive = True
+                    activeLoopCount  = (60 * 2) # wait 2 mins before going to low active mode
         except Exception as e:
             logging.error(f"chromecastQueueProcessing : {e}")
             logging.error(traceback.format_exc())
 
-        time.sleep(1)
+        # go into fast update mode if there are active devices, otherwise, slumber a bit
+        if devicesAreActive or activeLoopCount > 0:
+            chromecastProcesSleepInt = 1
+            activeLoopCount -= 1
+        else:
+            # delay some time, but keep awake for at least 30 seconds after coming out of sleep to allow chrome cast commands to complete.
+            chromecastProcesSleepInt = (60 * 15) # sleep 15 mins!
+            activeLoopCount = 30
+            logging.info (f"*** chromecastProcesSleepInt : sleep mode activated for {chromecastProcesSleepInt} secs, keep-alive after wake for {activeLoopCount} secs ***")
+
+
+        # Go into low CPU mode...
+        chromecastProcesSleepInt *= 2
+        while chromecastProcesSleepInt > 0:
+            time.sleep(0.5)
+            chromecastProcesSleepInt -= 1
+            # logging.warning (f'sleep left {chromecastProcesSleepInt} activeLoopCount {activeLoopCount}')
 
 def getChromecastQueueObj (ccast_uuid):
     castQueueObj = None

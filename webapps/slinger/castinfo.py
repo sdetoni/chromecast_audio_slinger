@@ -18,7 +18,7 @@ if not castQueueObj:
     logging.error(f"{postData['ccast_uuid']} cast object is not matched!")
     exit(0)
 
-if (datetime.datetime.now() - castQueueObj.lastUpated).seconds > 5:
+if castQueueObj.isDeviceActive() and (datetime.datetime.now() - castQueueObj.lastUpated).seconds > 5:
     logging.error(f"{postData['ccast_uuid']} cast object update is out of sync and not updated in the last 5 seconds")
 
 self.do_HEAD(mimetype='application/json', turnOffCache=False, statusCode=200, closeHeader=True)
