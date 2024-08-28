@@ -1,0 +1,36 @@
+# structure of the mapping file:
+#  regexp,          <regexp HTTP command>, <regexp matching relative path>, <web server template/python file in current directory to run>
+#  regexp-opt,      <regexp HTTP command>, <regexp matching relative path>, <web server template/python file in current directory to run>, <python regexp options>
+#  pymatch,         <regexp HTTP command>, <python code matching on variables: basepath, querytomatch>, <web server template/python file in current directory to run>
+#
+#  regexp-redirect,     <regexp HTTP command>, <regexp matching relative path>, <url to redirect, uses regex substitutions>
+#  regexp-redirect-opt, <regexp HTTP command>, <regexp matching relative path>, <url to redirect, uses regex substitutions>, <python regexp options>
+#  pymatch-redirect,    <regexp HTTP command>, <python code matching on variables: basepath, querytomatch>, <url to redirect, uses regex substitutions>
+# regex redirect substitutions:
+# url: https://host.name.com/myapp/mypage.py?param=123
+#     {%HOSTNAME_NAME%}   : host.name.com
+#     {%PORT_NUMBER%}     : 443, 80, ...
+#     {%PROTOCOL%}        : https, http
+#     {%COMMAND%}         : GET, POST, DELETE ...
+#     {%PATH%}            : '/myapp/mypage.py?param=123'
+#     {%QUERYSTRING%}     : 'param=123'
+#     {%BASEPATH%}        : '/myapp/'
+#     {%QUERYBASEPATH%}   : '/myapp'
+#     {%QUERYNAME%}       : 'mypage.py'
+#
+# to escape the comma char, place 2 commas next to each other.
+#
+#  REST examples:
+#      regexp, .*,   .*, index.ty
+#      regexp, POST, .*, index.py
+#
+#  CGI examples:
+#      regexp, .*,  index, index.py
+#      regexp, .*, hello, index.py
+#
+#      regexp,     .*, override.py, new_override.py
+#      regexp-opt, .*, override.py, new_override.py, re.IGNORECASE
+#      pymatch,    .*, (override.py, new_override.py, re.IGNORECASE
+#
+debug, off
+regexp-redirect, .*, ^/$|^$, slinger\

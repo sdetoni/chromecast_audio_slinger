@@ -1,0 +1,481 @@
+
+/* latin-ext */
+@font-face {
+  font-family: 'Audiowide';
+  font-style: normal;
+  font-weight: 400;
+  src: url('Audiowide-Regular.woff2') format("woff2");
+}
+
+/* latin */
+@font-face {
+  font-family: 'Orbitron';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('Orbitron.woff2') format('woff2');
+}
+*  {
+    font-family: 'Orbitron';
+}
+
+html, body {
+	margin:0;
+	padding:0;
+	width:100%;
+	height:100%;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+a {
+	color:#0095dd;
+	text-decoration:none;
+}
+a:hover, a:focus {
+	color:#2255aa;
+	text-decoration:underline;
+}
+
+.showHelpText {
+}
+
+.controlEnabled {
+    color:#72a1dd !important;
+}
+
+#showHelpTextInfo {
+  padding-left: 10px;
+}
+
+.rcorners1 {
+  border-radius: 3px;
+  border: 2px solid #7c7d7d;
+  padding: 5px;
+}
+/* ----- JQUERY UI Interface changes ------- */
+
+
+.ui-button {
+  padding: 5px 5px;
+}
+.ui-tabs .ui-tabs-nav .ui-tabs-anchor {
+  padding: 5px 5px;
+}
+
+.ui-tabs .ui-tabs-panel {
+    padding: 5px 5px;
+}
+.ui-tabs .ui-tabs-nav {
+    margin: 0;
+    padding: 0px 0px 0px;
+}
+
+/* jquery ui, no title bar */
+.custom-no-titlebar .ui-dialog-titlebar {
+    display: none !important;
+}
+
+
+
+/* --------------------------------------------- */
+
+.player-table {
+    width:100%;
+}
+.player-title {
+    font-size:large;
+    width:100%;
+}
+.selectItemHand {
+    cursor: pointer;
+    background-color: #0001;
+}
+
+.selectItemHand:hover {
+    background-color: #0004;
+}
+
+.fileNavigatorMain {
+    vertical-align:top;
+}
+
+/* --------------------------------------------- */
+
+#playerView {
+    background:#000;
+    color:white;
+}
+
+.playerTxt {
+    color: white;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+/* --------------------------------------------- */
+.overlay-containerSml {
+    height: 32px;
+    width: 100%;
+    position: relative;
+}
+
+.overlay-containerSml tr {
+    height: 32px;
+}
+
+.overlay-containerBig {
+    height: 200px;
+    width: 100%;
+    position: relative;
+}
+
+.overlay-playinfo
+{
+    width: 100%;
+    position:sticky;
+    top: 0;
+    left: 0;
+    z-index: 10;
+}
+
+#playingInfo td {
+    text-wrap: nowrap;
+    text-align: left;
+}
+
+.song-title {
+    padding-left: 20px;
+}
+
+.overlay-albumArt {
+    width: 100%;
+    position:absolute;
+    top: 0;
+    left: 0;
+    z-index: 9;
+}
+#albumArtURL  {
+    position:sticky;
+    left: 100%;
+    border-radius: 15px;
+}
+#albumArtURLSml  {
+    position:sticky;
+    left: 100%;
+    border-radius: 5px;
+}
+.albumArtURLSml
+{
+    border-radius: 5px;
+}
+/* --------------------------------------------- */
+
+.controlsIconFont {
+    font-size:10px;
+    font-family: ui-rounded;
+    display: table;
+}
+
+.playerControls {
+    cursor: pointer;
+    color:#aaa;
+    vertical-align: middle;
+}
+
+.playerControls:hover, .playerControls:focus
+{
+   filter: brightness(150%);
+   -webkit-animation: glow1 1s ease-in-out infinite alternate;
+   -moz-animation: glow1 1s ease-in-out infinite alternate;
+   animation: glow1 1s ease-in-out infinite alternate;
+}
+
+@-webkit-keyframes glow1 {
+  from {
+    text-shadow: 0 0 20px #aaaaaa7f;
+  }
+  to {
+    text-shadow: 0 0 20px #ffffffff;
+  }
+}
+/* --------------------------------------------- */
+
+#volLevel {
+    cursor: pointer;
+    width:100%;
+}
+
+/* --------------------------------------------- */
+
+#songRangeHeader {
+    font-size:10px;
+    text-wrap: nowrap;
+    text-align: left;
+}
+
+#songRangePosition {
+    cursor: pointer;
+    width:100%;
+}
+
+#songRangeFooter {
+    font-size:10px;
+    text-wrap: nowrap;
+    text-align: left;
+}
+
+/* --------------------------------------------- */
+
+#currentBrowserPath {
+    font-size: smaller;
+    font-weight: 700;
+    color: #0000ffff;
+}
+
+#browserArt {
+    padding: 0px;
+}
+
+#browserArt img {
+    width:64px;
+    height:64px;
+    border-radius: 5px;
+}
+
+#fileBrowser {
+    overflow: auto;
+}
+
+#fileListParent{
+    /* background: #72a1dd; */
+    font-size: xx-large;
+    border-width: 1px;
+    border-radius: 4px;
+    border-color: #4f4f4f;
+    border-style: solid;
+}
+
+#fileList {
+    font-size: small;
+    font-weight: bold;
+    display: inline-block;
+    overflow-y: auto;
+}
+
+/* set table title to allow stay at the top when scrolling down */
+#fileList thead {
+    position: sticky;
+    top: 0px;
+    background: #c7c7c7;
+}
+
+#fileList td {
+    padding:5px;
+}
+
+/* ------------------------------------------------------- */
+#searchList {
+    display: inline-flex;
+}
+
+
+#searchList_tab {
+    font-size: small;
+    font-weight: bold;
+    display: inline-block;
+    overflow-y: auto;
+}
+
+#searchList_tab th {
+    white-space:nowrap;
+}
+/* set table title to allow stay at the top when scrolling down */
+#searchList_tab thead {
+    position: sticky;
+    top: 0px;
+    background: #c7c7c7;
+}
+
+#searchBut {
+    font-size: 22px;
+    background: #eeeeee;
+    border-width: 1px;
+    border-radius: 4px;
+    border-color: #4f4f4f;
+    border-style: solid;
+}
+
+/* ------------------------------------------------------- */
+
+#tabsLeftShrinkGrow {
+    position: absolute;
+    top: 10px;
+    right: 5px;
+}
+
+#tabsRightShrinkGrow {
+    position: absolute;
+    top: 10px;
+    right: 5px;
+}
+
+/* menu header */
+.contextMenu-title:before {
+    content: "Add to Play List";
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    background: #DDD;
+    padding: 2px;
+
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 11px;
+    font-weight: bold;
+}
+.contextMenu-title :first-child {
+    margin-top: 20px;
+}
+
+/* --------------------------------------------- */
+
+#queueBrowserControls {
+    background:#000;
+    color:white;
+    width:100%;
+}
+#queueBrowserControls td {
+    background:#000;
+    color:white;
+    padding:0px;
+}
+#queueBrowser {
+    display: inline-block;
+    /* height: 400px; */
+    overflow-y: auto;
+    width: 100%;
+}
+/* --------------------------------------------- */
+
+#playlistBrowserControls {
+    background:#000;
+    color:white;
+}
+#playlistBrowserControls td {
+    background:#000;
+    color:white;
+    padding:0px;
+}
+
+.fileListQueueControls td {
+    text-align: center;
+    padding:0px !important;
+    width:100%;
+}
+.fileListQueueControlsTxt {
+    font-size:9px;
+}
+
+/* --------------------------------------------- */
+
+.inlinePlaylistBrowserControls {
+    background:#fff;
+    color:black;
+    border-radius: 5px;
+    border: 1px solid #7c7d7d;
+    padding: 0px;
+    border-collapse: separate !important;
+}
+.inlinePlayListControls {
+    cursor: pointer;
+    color:#111;
+}
+.ui-selectmenu-text  {
+  font-size: 15px !important;
+}
+.ui-menu-item {
+  font-size: 15px !important;
+}
+.inlinePlayListControls:hover, .inlinePlayerControls:focus {
+    color:#007fff;
+    -webkit-animation: glow3 1s ease-in-out infinite alternate;
+    -moz-animation: glow3 1s ease-in-out infinite alternate;
+    animation: glow3 1s ease-in-out infinite alternate;
+}
+
+@-webkit-keyframes glow3 {
+  from {
+    text-shadow: 0 0 20px #007fff1f;
+  }
+  to {
+    text-shadow: 0 0 10px #007fff6f;
+  }
+}
+
+/* --------------------------------------------- */
+
+#playlistBrowser {
+    display: inline-block;
+    /* height: 400px; */
+    overflow-y: auto;
+    width: 100%;
+}
+
+#playlistBrowserControls {
+    background:#000;
+    color:white;
+}
+#playlistBrowserControls td {
+    background:#000;
+    color:white;
+    padding:0px;
+}
+
+.SongListFormat {
+    font-size: small;
+    font-weight: bold;
+}
+.SongListFormat th {
+        text-decoration: underline;
+        text-align:left;
+}
+/* --------------------------------------------- */
+
+.ui-accordion .ui-accordion-content {
+    padding: 0;
+    border-top: 0;
+    overflow: auto;
+}
+
+/* --------------------------------------------- */
+
+.TableSelection .selected {
+    background: #bdf;
+}
+
+.TableSelection td,th {
+
+    padding: 3px;
+/*    border: 2px solid #aaa; */
+
+}
+
+.TableSelection td {
+    cursor: pointer;
+}
+
+.TableSelection table {
+    border-collapse: collapse;
+}
+
+
+
+
+
+
+
+
+

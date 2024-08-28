@@ -1,0 +1,3 @@
+pychromecast==13.1.0
+pymediainfo
+pysmb

@@ -1,0 +1,13 @@
+*.pyc
+/logs/httpdaemon.log
+/logs/httpdaemon.log.1
+/logs/httpdaemon.log.10
+/logs/httpdaemon.log.2
+/logs/httpdaemon.log.3
+/logs/httpdaemon.log.4
+/logs/httpdaemon.log.5
+/logs/httpdaemon.log.6
+/logs/httpdaemon.log.7
+/logs/httpdaemon.log.8
+/logs/httpdaemon.log.9
+/config/slinger.db
