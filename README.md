@@ -82,6 +82,7 @@ Add/Change folder art files and types as required.
 **python3 -m venv ./python-slinger**
 
 **ls -al**
+```
 total 64
 drwxr-xr-x 8 root   root     4096 Aug 24 21:42 .
 drwxr-xr-x 9 root   root     4096 Aug 24 21:31 ..
@@ -95,43 +96,54 @@ drwxrwxrwx 2 nobody nogroup  4096 Aug 24 21:30 logs
 -rwxrwxrwx 1 nobody nogroup  3328 Aug 24 21:33 runner.py
 drwxrwxrwx 3 nobody nogroup  4096 Aug 24 21:30 slinger
 drwxrwxrwx 3 nobody nogroup  4096 Aug 24 21:30 webapps
-
+```
 
 **export PATH=/opt/_slinger_test/python-slinger/bin:$PATH**
 **which  pip3**
+```
 /opt/_slinger_test/python-slinger/bin/pip3
+```
 
 **pip3 install -r requirements.txt**
+```
 Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
 Collecting pychromecast
 ...
 Installing collected packages: ifaddr, zeroconf, urllib3, tqdm, pymediainfo, pyasn1, protobuf, idna, charset-normalizer, certifi, requests, pysmb, casttube, pychromecast
 Successfully installed casttube-0.2.1 certifi-2024.7.4 charset-normalizer-3.3.2 idna-3.8 ifaddr-0.2.0 protobuf-5.27.3 pyasn1-0.6.0 pychromecast-14.0.1 pymediainfo-6.1.0 pysmb-1.2.9.1 requests-2.32.3 tqdm-4.66.5 urllib3-2.2.2 zeroconf-0.132.2
+```
 
 **cat go**
+```
 export PATH=/opt/_slinger_test/python-slinger/bin:$PATH
 echo Access Program from $(ip a  | grep inet | grep global | awk -F'/' '{print $1}' | awk '{print "http://"$2":8008"}')
 python3 runner.py &
+```
 
 Boot program
 **./go**
+```
 21:47:13:INFO:HTTPInstances.init port:8008
 21:47:13:INFO:HTTPInstances.run Starts - http://0.0.0.0:8008
 21:47:13:INFO:HTTPInstances.init port:8009
 21:47:13:INFO:HTTPInstances.run Starts - https://0.0.0.0:8009
+```
 
 Access program
 **ip a  | grep inet | grep global | awk -F'/' '{print $1}' | awk '{print "http://"$2":8008"}'**
 
 Terminate program
 **ps**
+```
     PID TTY          TIME CMD
  766371 pts/0    00:00:00 bash
  766962 pts/0    00:00:00 python3
  766965 pts/0    00:00:00 ps
+```
 
 **pkill python3**
 
+**TODO: SystemD Install Script**
 
 Version 0.01 Work in progress:
  * Its a good first release, lots of functionality.
