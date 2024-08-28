@@ -79,6 +79,7 @@ Add/Change folder art files and types as required.
 
 
 #Make python virtual envs, tested on Python 3.11
+
 **python3 -m venv ./python-slinger**
 
 **ls -al**
