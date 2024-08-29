@@ -508,7 +508,12 @@ def chromecastQueueProcWakeNow ():
 
 def chromecastQueueProcessing ():
     global ChromeCastQueues, exitQueueProcessing, chromecastProcesSleepInt
-    activeLoopCount = 0
+
+    qpbfl = GF.Config.getSettingValue('slinger/QUEUE_PROCESS_ACTIVE_BEFORE_SLEEP')
+    qpaaw = GF.Config.getSettingValue('slinger/QUEUE_PROCESS_ACTIVE_AFTER_WAKE')
+    qpsbw = GF.Config.getSettingValue('slinger/QUEUE_PROCESS_SLEEP_BEFORE_WAKE')
+
+    activeLoopCount = qpaaw
     while (not exitQueueProcessing):
         devicesAreActive = False
         try:
@@ -520,7 +525,7 @@ def chromecastQueueProcessing ():
                 ChromeCastQueues[cc[0].uuid].processStatusEvent()
                 if ChromeCastQueues[cc[0].uuid].isDeviceActive():
                     devicesAreActive = True
-                    activeLoopCount  = (60 * 2) # wait 2 mins before going to low active mode
+                    activeLoopCount  = qpbfl # wait before going to low active mode
         except Exception as e:
             logging.error(f"chromecastQueueProcessing : {e}")
             logging.error(traceback.format_exc())
@@ -528,13 +533,12 @@ def chromecastQueueProcessing ():
         # go into fast update mode if there are active devices, otherwise, slumber a bit
         if devicesAreActive or activeLoopCount > 0:
             chromecastProcesSleepInt = 1
-            activeLoopCount -= 1
+            activeLoopCount          -= 1
         else:
             # delay some time, but keep awake for at least 30 seconds after coming out of sleep to allow chrome cast commands to complete.
-            chromecastProcesSleepInt = (60 * 15) # sleep 15 mins!
-            activeLoopCount = 30
+            chromecastProcesSleepInt = qpsbw # sleep for a time or until awoken!
+            activeLoopCount          = qpaaw
             logging.info (f"*** chromecastProcesSleepInt : sleep mode activated for {chromecastProcesSleepInt} secs, keep-alive after wake for {activeLoopCount} secs ***")
-
 
         # Go into low CPU mode...
         chromecastProcesSleepInt *= 2

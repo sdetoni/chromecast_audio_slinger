@@ -22,7 +22,6 @@ GF.DaemonRunningState = GF.DAEMON_RUNMODE_RUN
 while GF.DaemonRunningState == GF.DAEMON_RUNMODE_RUN:
     # init Config, DB, and Logging
     GF.initGlobalFuncs("./config/daemon.cfg")
-    import slinger.SlingerGlobalFuncs
 
     httpPortList  = sorted([int(item) for item in set(GF.Config.getSetting('HTTP_PORT', '').split(',')) if item.strip()])
     httpsPortList = sorted([int(item) for item in set(GF.Config.getSetting('HTTPS_PORT', '').split(',')) if item.strip()])
