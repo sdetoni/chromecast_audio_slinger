@@ -33,6 +33,8 @@ class SlingerChromeCastQueue:
         if playListName:
             self.loadPlaylist (httpObj=httpObj, playListName=playListName, mode = 'replace')
 
+        self.haltProcEvents = False
+
         if self.cast:
             self.processStatusEvent()
 
@@ -51,6 +53,9 @@ class SlingerChromeCastQueue:
 
     def processStatusEvent (self):
         if not self.cast:
+            return
+
+        if self.haltProcEvents:
             return
 
         SGF.chromecastQueueProcWakeNow ()
@@ -168,10 +173,11 @@ class SlingerChromeCastQueue:
     def prependQueueMediaItem (self,location, type, downloadURL, mimeType, metadata):
         self.queue.insert(0, SlingerQueueItem(location, type, downloadURL,mimeType,metadata))
         self.queueChangeNo += 1
-
+        SGF.chromecastQueueProcWakeNow()
     def appendQueueMediaItem (self,location, type, downloadURL, mimeType, metadata):
         self.queue.append(SlingerQueueItem(location, type, downloadURL,mimeType,metadata))
         self.queueChangeNo += 1
+        SGF.chromecastQueueProcWakeNow()
 
     def stop(self):
         self.playMode = 'stopped'
@@ -246,17 +252,19 @@ class SlingerChromeCastQueue:
         try:
             logging.info(f'Queuing item {location}')
         except:
-            i = 1
             pass
 
         if forcePlay:
-            self.prependQueueMediaItem(location=location, type=type, downloadURL=downloadURL, mimeType=SGF.getCastMimeType(location), metadata=metadata)
-            self.stop()
-            shuffleSave = self.shuffleActive
-            self.shuffleActive = False
-            self.next()
+            self.haltProcEvents = True
+            obj = SlingerQueueItem(location=location, type=type, downloadURL=downloadURL, mimeType=SGF.getCastMimeType(location), metadata=metadata)
+            self.playing_uuid = obj.metadata['slinger_uuid']
+            self.thisQueueItem = obj
+            self.cast.wait()
+            self.cast.media_controller.play_media(self.thisQueueItem.downloadURL, self.thisQueueItem.mimeType, metadata=self.thisQueueItem.metadata, enqueue=False)
+            self.playMode = 'auto'
+            self.queueChangeNo += 1
+            self.haltProcEvents = False
             self.processStatusEvent()
-            self.shuffleActive = shuffleSave
         else:
             self.appendQueueMediaItem(location=location, type=type, downloadURL=downloadURL, mimeType=SGF.getCastMimeType(location), metadata=metadata)
 

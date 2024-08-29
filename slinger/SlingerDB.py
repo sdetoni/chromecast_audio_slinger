@@ -159,8 +159,15 @@ class SlingerDB (DBIO.DBIO):
         return False
 
     def AddPlayListSong (self, playListName, location, type ):
-        self.sqlNoResults('insert into playlist_songs (name, location, type) values (?, ? ,?)', (playListName, location, type))
-        self.commit()
+        try:
+            self.TransactionLock()
+            self.sqlNoResults('insert into playlist_songs (name, location, type) values (?, ? ,?)', (playListName, location, type))
+            self.commit()
+        finally:
+            try:
+                self.TransactionRelease()
+            except:
+                pass
 
     def GetPlayListSongs (self, playListName=None):
         try:
@@ -196,7 +203,7 @@ class SlingerDB (DBIO.DBIO):
                 self.sqlNoResults('delete from playlist_songs where name = ? and seq == ? ', (playListName, int(rowid)))
             self.commit()
         except Exception as ex:
-            logging.error('DBIO.GetPlayListSongs failure ' + str(ex))
+            logging.error('DBIO.DeletePlayListSongs failure ' + str(ex))
         return
 
 DB = SlingerDB(dbFilename=GF.Config.getSettingStr('slinger/DB_FILENAME', DBIO.DB_NAME),

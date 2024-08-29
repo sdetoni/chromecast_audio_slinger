@@ -70,9 +70,9 @@ var G_OS_FileSeparator = "\\{os.sep}";
                 <table>
                 <tr>
                     <td class="playerTxt">
-                        <span style="width:30px;display:inline-block;">
+                        <span style="display:inline-block;">
                             <i id="playerControlsSmallBig" class="playerControls fa-solid fa-angles-up" onclick="changeViewSmallBig(! G_SmallBigViewMode)"></i>
-                        </span><u style="white-space:nowrap">Chrome Cast Device</u>
+                        </span><u style="white-space:nowrap;padding-left: 10px;">Chrome Cast Device</u>
                     </td>
                 </tr>
                     <tr><td>
@@ -80,7 +80,7 @@ var G_OS_FileSeparator = "\\{os.sep}";
                         </select>                    
                     </td>
                     <td style="text-align:center">
-                        <i class="playerControls fa-solid fa-rotate-left" style="font-size: large;" onclick="GetChromeCastDevices(true);" title="Forced rescan of Chrome Cast Devices"><br><font style="display:none;white-space:nowrap" class="showHelpText controlsIconFont">Rescan</font></i>
+                        <i class="playerControls fa-solid fa-rotate-left" style="font-size: x-large;" onclick="GetChromeCastDevices(true);" title="Forced rescan of Chrome Cast Devices"><br><font style="display:none;white-space:nowrap" class="showHelpText controlsIconFont">Rescan</font></i>
                     </td>
                 </tr>
                 </table>            
@@ -151,7 +151,7 @@ output (f"""
 <td id="tabsLeftSize" style="width:50%;vertical-align:top">
     <div id="tabsLeft">
         <ul>
-            <li><a href="#tabFileBrowser">File Browser</a></li>
+            <li><a id="tabFileBrowserSelect" href="#tabFileBrowser">File Browser</a></li>
             <li><a href="#tabSearchBrowser">Search Browser</a></li>
             <li><a href="#tabMetaData">Meta Data</a></li>
         </ul>
@@ -160,9 +160,6 @@ output (f"""
             <div>
                 <table style="width:100%" border=0>
                 <tr>
-                    <td>
-                        <span id="browserArt"><img src="img/folder.png"></span>
-                    </td>
                     <td style="width:100%">       
                         <label for="shareLocs">File Locations</label>
                         <select name="shareLocs" id="share_locs"  onchange="OnChange_FileLocation(this)">
@@ -179,6 +176,9 @@ output (f"""
                             </td>   
                         </tr></table>                          
                     </td>
+                    <td>
+                        <span id="browserArt"><img src="img/folder.png"></span>
+                    </td>                    
                 </tr>
                 </table>
             </div>
