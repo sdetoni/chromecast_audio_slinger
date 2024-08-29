@@ -61,7 +61,6 @@ class SlingerChromeCastQueue:
         SGF.chromecastQueueProcWakeNow ()
 
         def _myStatusCallback(chromeCastStatus):
-
             self.chromeCastStatus = chromeCastStatus
 
             # if no current playing file, then start one up....
@@ -272,16 +271,25 @@ class SlingerChromeCastQueue:
     def loadPlaylist (self, httpObj, playListName, mode):
         if not httpObj or not playListName:
             return
+        try:
+            self.haltProcEvents = True
+            if mode == 'replace':
+                self.stop()
+                self.cast.wait()
+                self.cast.wait()
+                self.cast.wait()
+                self.clear()
 
-        if mode == 'replace':
-            self.stop()
-            self.clear()
+            for row in SGF.DB.GetPlayListSongs(playListName):
+                self.loadLocation(httpObj=httpObj, location=row['location'], type=row['type'], forcePlay=False)
 
-        for row in SGF.DB.GetPlayListSongs(playListName):
+            if mode == 'replace':
+                self.next()
+
             self.cast.wait()
-            self.loadLocation(httpObj=httpObj, location=row['location'], type=row['type'], forcePlay=False)
-
-        if mode == 'replace':
-            self.next()
-
-        self.processStatusEvent()
+            self.cast.wait()
+            self.cast.wait()
+            self.haltProcEvents = False
+            self.processStatusEvent()
+        finally:
+            self.haltProcEvents = False
