@@ -84,7 +84,7 @@ class SlingerChromeCastQueue:
                 self.playing_uuid = self.queue[0].metadata['slinger_uuid']
                 self.thisQueueItem = self.queue[0]
                 self.cast.wait()
-                self.cast.media_controller.play_media(self.thisQueueItem.downloadURL, self.thisQueueItem.mimeType, metadata=self.thisQueueItem.metadata, enqueue=True)
+                self.cast.media_controller.play_media(self.thisQueueItem.downloadURL, self.thisQueueItem.mimeType, metadata=self.thisQueueItem.metadata, enqueue=False)
                 self.delQueuedMediaItem(0)
 
                 logging.info(f"SlingerChromeCastQueue:: playing first queued item {SGF.toASCII(str(self.thisQueueItem.metadata))}")
