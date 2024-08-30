@@ -284,11 +284,9 @@ class SlingerChromeCastQueue:
                 self.loadLocation(httpObj=httpObj, location=row['location'], type=row['type'], forcePlay=False)
 
             if mode == 'replace':
+                time.sleep(1)
                 self.next()
 
-            self.cast.wait()
-            self.cast.wait()
-            self.cast.wait()
             self.haltProcEvents = False
             self.processStatusEvent()
         finally:

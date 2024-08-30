@@ -16,10 +16,13 @@ if postData['action'] == 'start' and postData["scope"] == 'db_metadata':
     exit(0)
 if postData['action'] == 'start' and postData["scope"] == 'directories':
     results = SGF.searchDirectoriesProcess(regex=postData["query"], maxResultsLen=int(postData["result_limit"]))
+    if not results:
+        exit(-1)
+
     output(json.dumps(results, indent=4))
     exit(0)
 if postData['action'] == 'stop':
-    SGF.searchDirectoriesProcesState['active'] = False
+    SGF.AbortSearchDirectories()
     SGF.DB.AbortSearch()
     output ("ok")
     exit(0)

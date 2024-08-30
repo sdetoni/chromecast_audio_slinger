@@ -46,8 +46,14 @@ a:hover, a:focus {
     color:#72a1dd !important;
 }
 
-#showHelpTextInfo {
-  padding-left: 10px;
+#showHelpTextInfo  {
+    padding-left: 10px;
+    padding-bottom: 5px;
+}
+
+#showAbout {
+    padding-top: 5px;
+    padding-left: 10px;
 }
 
 .rcorners1 {
@@ -196,14 +202,6 @@ a:hover, a:focus {
    animation: glow1 1s ease-in-out infinite alternate;
 }
 
-@-webkit-keyframes glow1 {
-  from {
-    text-shadow: 0 0 20px #aaaaaa7f;
-  }
-  to {
-    text-shadow: 0 0 20px #ffffffff;
-  }
-}
 /* --------------------------------------------- */
 
 #volLevel {
@@ -309,6 +307,12 @@ a:hover, a:focus {
     border-radius: 4px;
     border-color: #4f4f4f;
     border-style: solid;
+}
+
+#searchResultsInfo {
+    width:100%;
+    text-align:left;
+    font-size:10px;
 }
 
 /* ------------------------------------------------------- */

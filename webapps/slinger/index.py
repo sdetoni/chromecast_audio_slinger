@@ -117,7 +117,16 @@ var G_OS_FileSeparator = "\\{os.sep}";
                     </td>                
                     <td class="playerControls"><i id="volOnMute" class="fa-solid fa-volume-high" onclick="chromeCastMute($('#ccast_uuid').val())" title="Mute"></i></td>
                     <td class="playerTxt" style="width:100%;min-width:100px"><input type="range" min="1" max="100" value="50" id="volLevel" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'volume', ($(this).val()/100.0))"></td>
-                    <td><i id="showHelpTextInfo" onclick="showHideIconInfo(! G_ShowHideIconInfo)" class="playerControls fa-solid fa-circle-info" style="font-size: larger;" title="Icon Info On/Off" onclick=""></td>                                                                  
+                    <td>                        
+                        <table border=0>
+                            <tr><td>
+                                <i id="showHelpTextInfo" onclick="showHideIconInfo(! G_ShowHideIconInfo)" class="playerControls fa-solid fa-circle-info" style="font-size: larger;" title="Icon Info On/Off"></i>
+                            </td></tr>
+                            <tr><td>                            
+                                <i id="showAbout"        onclick="About()"                                class="playerControls fa-solid fa-at"          style="font-size: larger;"></i>
+                            </td></tr>
+                        </table>
+                    </td>                                                                  
                 </table>
             </td>            
         </tr>
@@ -196,13 +205,13 @@ output (f"""
                                   <td style="width:100%">
                                       <input class="" type="input" id="searchQuery"  placeholder="Enter regex queries" style="width:100%" >                                                                            
                                   </td>                                                            
-                                  <td style="padding-left: 5px;text-align: center;">
+                                  <td style="padding-left: 5px;text-align: center;">                                       
                                       <i id="searchBut" class="fa-solid fa-angles-right inlinePlayListControls" onclick="runSearchQuery();"></i>
                                       <br><font style="display:none; white-space:nowrap" class="showHelpText controlsIconFont">Run Query</font>
                                   </td>
                               </tr>
                               <tr>                              
-                                  <td style="width:100%">
+                                  <td style="width:100%" colspan="100%">
                                       <table border=0 style="white-space:nowrap"><tr>
                                       <td>
                                           <label class="inlinePlayListControls" for="searchDBMetaData">DB MetaData</label>
@@ -210,14 +219,9 @@ output (f"""
                                           <label class="inlinePlayListControls" for="searchFileLocations">File Locations</label>
                                           <input class="inlinePlayListControls" type="radio" name="searchScope" value="directories" id="searchFileLocations">
                                       </td>
-                                      <td style="width:100%;text-align:right">                                      
-                                          <span style="width:100%;text-align:right" id="searchResultsInfo"></span>
-                                      </td>                                  
+                                      <td id="searchResultsInfo"></td>                                  
                                       </tr></table>
-                                  </td>
-                                  <td>
-                                      <span class="loader-container search-running" style="display:none"><div class="gear"><img src="img/gear.png"/></div></span>                                  
-                                  </td>                                     
+                                  </td>                                  
                               </tr>
                               </table>
                           </fieldset>                    

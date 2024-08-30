@@ -737,7 +737,7 @@ def searchDirectoriesSMB (location, regex, maxDepth=100, maxResultsLen=1000, res
                 searchDirectoriesProcesState['file_path'] = rtnNoPasswordSMBPath(location)
 
                 # determine if this a somewhat supported file, and add to queue
-                if getCastMimeType(file.filename, testForKnownExt=True) and re.search(regex, file.filename, re.IGNORECASE):
+                if (getCastMimeType(file.filename, testForKnownExt=True) and re.search(regex, full_path, re.IGNORECASE)):
                     searchDirectoriesProcesState['processing_filename'] = file.filename
                     searchDirectoriesProcesState['matched'] += 1
                     resultsList.append({'location': full_path, 'type' : 'smb', 'metadata' : getMediaMetaDataSMB(location=full_path) })
@@ -754,6 +754,8 @@ def searchDirectoriesSMB (location, regex, maxDepth=100, maxResultsLen=1000, res
         except:
             pass
     return resultsList
+
+SearchSem = threading.Semaphore()
 
 def searchDirectoriesFile (location, regex, maxDepth=100, maxResultsLen=1000, resultsList=None):
     global searchDirectoriesProcesState
@@ -797,7 +799,7 @@ def searchDirectoriesFile (location, regex, maxDepth=100, maxResultsLen=1000, re
             searchDirectoriesProcesState['file_path'] = location
 
             # determine if this a somewhat supported file, and add to queue
-            if getCastMimeType(f, testForKnownExt=True) and re.search(regex, f, re.IGNORECASE) :
+            if getCastMimeType(f, testForKnownExt=True) and re.search(regex, full_path, re.IGNORECASE) :
                 searchDirectoriesProcesState['processing_filename'] = f
                 searchDirectoriesProcesState['matched'] += 1
                 resultsList.append({'location': full_path, 'type': 'file', 'metadata': getMediaMetaDataFile(location=full_path)})
@@ -814,13 +816,26 @@ searchDirectoriesProcesState = {
     'file_path' : '',
     'processing_filename' : ''
 }
+def AbortSearchDirectories ():
+    global  searchDirectoriesProcesState
+    searchDirectoriesProcesState['active'] = False
+    logging.error("********** ABORT SEARCH *************")
+
 def searchDirectoriesProcess (regex, maxResultsLen=1000):
-    global searchDirectoriesProcesState
+    global searchDirectoriesProcesState, SearchSem
     results = []
-    if searchDirectoriesProcesState['active']:
-        logging.info("searchDirectoriesProcess:: directory search is already running, exiting!")
-        return results
+
+    if not SearchSem.acquire(blocking=False):
+        logging.warning(f"********** SEARCH FAILED BLOCKING! *************")
+        return None
+
     try:
+        logging.warning(f"********** STARTING SEARCH : {regex} *************")
+
+        if searchDirectoriesProcesState['active']:
+            logging.info("searchDirectoriesProcess:: directory search is already running, exiting!")
+            return None
+
         searchDirectoriesProcesState['active'] = True
         searchDirectoriesProcesState['matched'] = 0
         for fileInfo in GF.Config.getSettingList('slinger/FILE_MUSIC_PATH'):
@@ -833,9 +848,9 @@ def searchDirectoriesProcess (regex, maxResultsLen=1000):
     except Exception as e:
         logging.error(f"searchDirectoriesProcess : {str(e)}")
     finally:
+        SearchSem.release()
         searchDirectoriesProcesState['active'] = False
         searchDirectoriesProcesState['file_path'] = searchDirectoriesProcesState['processing_filename'] = ''
-
     return results
 
 

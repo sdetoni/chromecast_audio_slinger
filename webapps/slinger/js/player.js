@@ -472,7 +472,7 @@ function loadPlayList (thisObj, name)
             </select>
         </span>
         <span>
-            <i class="inlinePlayListControls fa-solid fa-circle-play" style="padding-left: 10px;font-size: x-large;text-align:center;vertical-align: middle;" title="Playlist to Queue" onclick="chromeCastBasicAction($('#ccast_uuid').val(), $('#playlistBrowser .ui-accordion-content-active select').val(), $('#playlistBrowser .ui-accordion-header-active').attr('name'))"><br><font style="display:none" class="controlsIconFont showHelpText">Playlist to Queue</font></i>
+            <i class="inlinePlayListControls fa-solid fa-circle-play" style="padding-left: 10px;font-size: x-large;text-align:center;vertical-align: middle;" title="Playlist to Queue" onclick="$('#tabQueueBrowserSelect').click(); chromeCastBasicAction($('#ccast_uuid').val(), $('#playlistBrowser .ui-accordion-content-active select').val(), $('#playlistBrowser .ui-accordion-header-active').attr('name')); "><br><font style="display:none" class="controlsIconFont showHelpText">Playlist to Queue</font></i>
         </span>
     </td>
 
@@ -781,9 +781,7 @@ function CreateSearchListPlayList(name, thisObj=null)
 
                  if (thisObj)
                  {
-                    let idx            = $(thisObj).attr('idx');
-                    let queueDirectory = $(thisObj).attr('isDirectory');
-                    AddLocationToPlayList (name, G_CurrentSearchList[idx].location, G_CurrentSearchList[idx].type, queueDirectory)
+                    SearchListAddToPlayList (thisObj, name)
                  }
              }
            });
@@ -1353,7 +1351,28 @@ function OnClick_SearchList (idx, forcePlay=false)
     chromeCastPlay(G_CurrentSearchList[idx].location, $('#ccast_uuid').val(), G_CurrentSearchList[idx].type, false, forcePlay);
 }
 
+function SearchNowActive ()
+{
+     // console.log(results);
+     $('#searchQuery').removeClass('ui-state-disabled');
+     $('#searchBut').removeClass ('fa-circle-stop');
+     $('#searchBut').addClass ('fa-angles-right');
+     $('#searchBut').css('color', '');
+     $('.search-running').css('display', 'none');
+}
 
+function SearchNowInActive ()
+{
+     $('#searchBut').removeClass ('fa-angles-right');
+     $('#searchBut').addClass ('fa-circle-stop');
+     $('#searchBut').addClass ('pulse');
+
+     $('#searchBut').css('color', 'red');
+     $('.search-running').css('display', '')
+}
+
+var G_SearchTimeoutID = null;
+var G_SearchCnt = 0;
 function SearchQueryInfo ()
 {
     ccast_uuid = $('#ccast_uuid').val();
@@ -1364,46 +1383,33 @@ function SearchQueryInfo ()
              success: function(data)
              {
                  // console.log (data);
-/**************
-                 let fpath = data['file_path'];
-                 if (data['processing_filename'] != '')
-                    fpath += data['processing_filename'];
-
-                 var tabStatus = `
-<table style="width:100%" border=0>
-<tr>
-    <td style="white-space:nowrap">Active:</td>
-    <td style="white-space:nowrap">${data['active']}</td>
-</tr>
-<tr>
-    <td style="white-space:nowrap">Meta Data File Num Loaded:</td>
-    <td style="white-space:nowrap">${data['metadata_num']}</td>
-</tr>
-<tr>
-    <td style="white-space:nowrap">Processing Path:</td>
-</tr>
-<tr>
-    <td colspan="100%">${fpath}</td>
-</tr>
-<tr><td colspan="100%">&nbsp;</td></tr>
-<tr>
-    <td style="white-space:nowrap">Next Scraping Event:</td>
-    <td style="white-space:nowrap">${data['next_process_event']}</td>
-</tr>
-</table>
-`
-                 $('#metadataScrapeStatus').html(tabStatus);
-************/
+                 G_SearchCnt++;
                  if (data['active'])
-                    setTimeout(SearchQueryInfo, 1000);
+                 {
+                    $('#searchResultsInfo').html("running")
+                    let d = data.file_path.substring(0, 40)
+                    if ((G_SearchCnt % 2) == 0)
+                        d += '...';
+
+                    $('#searchResultsInfo').html(d);
+
+                    if ($('#searchBut').hasClass('fa-angles-right'))
+                        SearchNowInActive ();
+                    G_SearchTimeoutID = setTimeout(SearchQueryInfo, 1000);
+                 }
                  else
-                    setTimeout(SearchQueryInfo, 10000);
+                 {
+                     $('#searchResultsInfo').html("")
+                     if ($('#searchBut').hasClass('fa-circle-stop'))
+                        SearchNowActive ();
+                     G_SearchTimeoutID = setTimeout(SearchQueryInfo, 10000);
+                 }
              },
              error: function(jqXHR, textStatus, errorThrown)
              {
                  // On error, log the error to console
                  console.error("Error:", textStatus, errorThrown);
-                 setTimeout(SearchQueryInfo, 10000);
+                 G_SearchTimeoutID = setTimeout(SearchQueryInfo, 10000);
              }
            });
 }
@@ -1421,13 +1427,13 @@ function runSearchQuery ()
      {
          // abort the search ....
          $.ajax ({url: `executequery.py?action=stop`, type: "GET" });
+         return;
      }
-     else
-     {
-        $('#searchBut').removeClass ('fa-angles-right');
-        $('#searchBut').addClass ('fa-circle-stop');
-        $('.search-running').css('display', '')
-     }
+
+     SearchNowInActive ()
+     if (G_SearchTimeoutID)
+        clearTimeout (G_SearchTimeoutID);
+     G_SearchTimeoutID = setTimeout(SearchQueryInfo, 1000);
 
      $.toast({
          heading: 'info',
@@ -1447,10 +1453,7 @@ function runSearchQuery ()
              {
                  G_CurrentSearchList = results
                  // console.log(results);
-                 $('#searchQuery').removeClass('ui-state-disabled');
-                 $('#searchBut').removeClass ('fa-circle-stop');
-                 $('#searchBut').addClass ('fa-angles-right');
-                 $('.search-running').css('display', 'none');
+                 SearchNowActive ();
 
                  $.toast({
                      heading: 'success',
@@ -1566,11 +1569,7 @@ function runSearchQuery ()
              },
              error: function(jqXHR, textStatus, errorThrown)
              {
-                 $('#searchQuery').removeClass('ui-state-disabled');
-                 $('#searchBut').removeClass ('fa-circle-stop');
-                 $('#searchBut').addClass ('fa-angles-right');
-                 $('.search-running').css('display', 'none');
-
+                 SearchNowActive ();
                  $.toast({
                      heading: 'error',
                      text: `Search query error: '${textStatus}'`,
@@ -1644,6 +1643,16 @@ $( document ).ready(function()
         resizeFilePanels();
     });
 });
+
+function About ()
+{
+    $.toast({
+         heading: 'Info',
+         text: `<u><h2>Chrome Cast Audio Slinger</h2></u><b>Written by Steven De Toni<br>Aug 2024`,
+         icon: 'info',
+         hideAfter: 10000
+     });
+}
 
 var G_ShowHideIconInfo = true;
 function showHideIconInfo (mode=G_ShowHideIconInfo)
