@@ -164,7 +164,7 @@ a:hover, a:focus {
     position:absolute;
     top: 0;
     left: 0;
-    z-index: 9;
+    z-index: 20;
 }
 #albumArtURL  {
     position:sticky;
@@ -207,6 +207,21 @@ a:hover, a:focus {
 #volLevel {
     cursor: pointer;
     width:100%;
+}
+
+/* --------------------------------------------- */
+
+.iconStyle24 {
+    /* background: transparent; */
+
+    background: #4b4b4b3d;
+    height:100%;
+    padding: 2px;
+    background: 0000007f;
+    border-style:none;
+    width: 32px;
+    border-radius: 2px;
+    height: 28px;
 }
 
 /* --------------------------------------------- */

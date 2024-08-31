@@ -502,7 +502,7 @@ function loadPlayList (thisObj, name)
 </table>`;
 
                      qbTable += `
-<table id="${refID}_tab" border=0 class="TableSelection SongListFormat">
+<table id="${refID}_tab" style="width:100%" border=0 class="TableSelection SongListFormat">
 <thead>
     <tr><th></th><th>Song Title(s) : ${queue.length}</th><th>Album Name</th><th>Artist</th></tr>
 </thead>`;
@@ -922,10 +922,14 @@ function loadFileList (filelocation, type, basePath)
             <input type="text" size=20 id="filenameFilter">
          </span>
         <span style="padding-left:20px;text-decoration: none !important;">
-            <i onclick="$('#fileList tbody tr:visible .addToQueueList').click()" idx="-1" class="fa-solid fa-list selectItemHand" title="Add to Play Queue"></i>
+            <button onclick="$('#fileList tbody tr:visible .addToQueueList').click()" idx="-1" class="iconStyle24 selectItemHand" title="Add to Play Queue">
+                <i class="fa-solid fa-list"></i>
+            </button>
         </span>
         <span style="padding-left:20px;text-decoration: none !important;">
-            <i class="fa-solid fa-table-list selectItemHand hasContextMenu" title="Add to Play List" isdirectory="false" idx="-1"></i>
+            <button class="iconStyle24 selectItemHand hasContextMenu" title="Add to Play List" isdirectory="false" idx="-1">
+                <i class="fa-solid fa-table-list"></i>
+            </button>
         </span>
     </th>
     <th>File Size</th>
@@ -950,16 +954,15 @@ function loadFileList (filelocation, type, basePath)
     <td style="white-space:nowrap">
         <table class="fileListQueueControls" border=0>
         <tr>
-            <td>
-                <i onclick="OnClick_FileList(this, ${data[idx].isDirectory}, false)" idx="${idx}" class="fa-solid fa-list addToQueueList selectItemHand" Title="Add to Play Queue"></i>
+            <td style="width:50%; padding: 0px !important;text-align: center;" class="iconStyle24 selectItemHand" onclick="OnClick_FileList(this, ${data[idx].isDirectory}, false)" idx="${idx}" Title="Add to Play Queue">
+                <i class="fa-solid fa-list"></i>
+                <span  style="display:none" class=" fileListQueueControlsTxt showHelpText">+Queue&nbsp;</span>
             </td>
-            <td>
-                <i class="fa-solid fa-table-list addToPlayList selectItemHand hasContextMenu" Title="Add to Play List" isDirectory="${data[idx].isDirectory}" idx="${idx}"></i>
+            <td style="width:5px"></td>
+            <td style="width:50%; padding: 0px !important;text-align: center;" class="iconStyle24 addToPlayList selectItemHand hasContextMenu" Title="Add to Play List" isDirectory="${data[idx].isDirectory}" idx="${idx}">
+                <i class="fa-solid fa-table-list"></i>
+                <span  style="display:none" class=" fileListQueueControlsTxt showHelpText">+Playlist&nbsp;</span>
             </td>
-        </tr>
-        <tr>
-            <td style="display:none" class="showHelpText fileListQueueControlsTxt selectItemHand" onclick="OnClick_FileList(this, ${data[idx].isDirectory}, false)" idx="${idx}">+Queue&nbsp;</td>
-            <td style="display:none" class="showHelpText fileListQueueControlsTxt selectItemHand hasContextMenu" isDirectory="${data[idx].isDirectory}" idx="${idx}">+Playlist</td>
         </tr>
         </table>
     </td>
@@ -1457,28 +1460,31 @@ function runSearchQuery ()
 
                  $.toast({
                      heading: 'success',
-                     text: `Search Results Returned`,
+                     text: `Search Results Returned<br>${results.length} rows matched`,
                      icon: 'success'
                  });
-                 $('#searchResultsInfo').html(`${results.length} rows matched`)
 
                  let srTable = `
 <table id="searchList_tab" border=0 class="TableSelection SongListFormat" style="width:100%">
 <thead>
     <tr>
         <th style="width:100%">
-            <span>Filter Title</span>
+            <span>Filter Title(s) : ${results.length}</span>
             <span style="padding-left:10px"><input type="text" size=20 id="searchFilter"></span>
             <span style="padding-left:15px;text-decoration: none !important;">
-                <i onclick="$('#searchList_tab tbody tr:visible .addToQueueList').click()" idx="-1" class="fa-solid fa-list selectItemHand" title="Add to Play Queue"></i>
+                <button onclick="$('#searchList_tab tbody tr:visible .addToQueueList').click()" idx="-1" class="iconStyle24 selectItemHand" title="Add to Play Queue">
+                    <i class="fa-solid fa-list"></i>
+                </button>
             </span>
             <span style="padding-left:15px;text-decoration: none !important;">
-                <i class="fa-solid fa-table-list selectItemHand hasContextMenu" title="Add to Play List" isdirectory="false" idx="-1"></i>
+                <button class="iconStyle24 selectItemHand hasContextMenu" title="Add to Play List" isdirectory="false" idx="-1">
+                    <i class="fa-solid fa-table-list"></i>
+                </button>
             </span>
         </th>
         <th>Album Name</th>
         <th>Artist</th>
-        <th>Queue Item</th>
+        <th>Queue Item&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
     </tr>
 </thead>`;
                  // console.log(key, value);
@@ -1513,20 +1519,20 @@ function runSearchQuery ()
     <td style="white-space:nowrap">
         <table class="fileListQueueControls" border=0>
         <tr>
-            <td style="padding-right: 20px;text-align: center;">
-                <i onclick="SearchGotoFolder (${idx});" idx="${idx}" class="fa-solid fa-folder-open selectItemHand" Title="Goto Folder"></i>
+            <td style="width:33% ;text-align:center;" class="iconStyle24 selectItemHand" onclick="SearchGotoFolder (${idx});" idx="${idx}" Title="Goto Folder">
+                <i class="fa-solid fa-folder-open selectItemHand" ></i>
+                <span style="display:none" class=" fileListQueueControlsTxt showHelpText">Goto Folder</span>
             </td>
-            <td>
-                <i onclick="OnClick_SearchList(${idx})" idx="${idx}" class="fa-solid fa-list addToQueueList selectItemHand" Title="Add to Play Queue"></i>
+            <td style="width:5px"></td>
+            <td style="width:33%; text-align:center;" class="iconStyle24 selectItemHand addToQueueList" onclick="OnClick_SearchList(${idx})" idx="${idx}" Title="Add to Play Queue">
+                <i class="fa-solid fa-list " ></i>
+                <span style="display:none" class=" fileListQueueControlsTxt showHelpText">+Queue&nbsp;</span>
             </td>
-            <td style="width: 100% !important;padding-left: 20px;">
-                <i  class="fa-solid fa-table-list addToPlayList selectItemHand hasContextMenu" Title="Add to Play List" isDirectory="false" idx="${idx}"></i>
+            <td style="width:5px"></td>
+            <td style="width:33%; !important;text-align: center;" class="iconStyle24 selectItemHand addToPlayList hasContextMenu" isDirectory="false" idx="${idx}" Title="Add to Play List">
+                <i class="fa-solid fa-table-list"></i>
+                <span style="display:none" class=" fileListQueueControlsTxt showHelpText">+Playlist</span>
             </td>
-        </tr>
-        <tr>
-            <td style="display:none" class="showHelpText fileListQueueControlsTxt selectItemHand" onclick="SearchGotoFolder (${idx});" idx="${idx}">Goto Folder</td>
-            <td style="display:none" class="showHelpText fileListQueueControlsTxt selectItemHand" onclick="OnClick_SearchList(${idx})" idx="${idx}">+Queue&nbsp;</td>
-            <td style="display:none" class="showHelpText fileListQueueControlsTxt selectItemHand hasContextMenu" isDirectory="false" idx="${idx}">+Playlist</td>
         </tr>
         </table>
     </td>
