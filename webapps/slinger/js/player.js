@@ -345,9 +345,20 @@ function chromeCastInfo ()
 
                          // --------------------------------------------
 
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.current_time != data.current_time) || (G_LastChromeCastInfo.duration != data.duration) )
+                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.current_time != data.current_time) )
                          {
-                             if (data.duration)
+                             // some tracks do not have the full duration encoded in the mp3 files, in these cases, only show current time.
+                             if ((data.current_time > 0) && (! data.duration))
+                             {
+                                 let ct  = zeroPad(parseInt(data.current_time/60), 2) + ':' + zeroPad ((parseInt(data.current_time)%60), 2);
+
+                                 $('#songRangePosition').prop('min', 0);
+                                 $('#songRangePosition').prop('max', data.current_time);
+                                 $('#songRangePosition').val(data.current_time);
+                                 $('#songRangeHeader').html(ct);
+                                 $('#songRangeFooter').html('&infin;');
+                             }
+                             else if (data.duration)
                              {
                                  let ct  = zeroPad(parseInt(data.current_time/60), 2) + ':' + zeroPad ((parseInt(data.current_time)%60), 2);
                                  let tt  = zeroPad(parseInt(data.duration/60), 2) + ':' + zeroPad ((parseInt(data.duration)%60), 2);
@@ -363,7 +374,7 @@ function chromeCastInfo ()
                              {
                                  $('#songPosition').html('');
                                  $('#songRangePosition').prop('min', 0);
-                                 $('#songRangePosition').prop('max', 100);
+                                 $('#songRangePosition').prop('max', 0);
                                  $('#songRangePosition').val(0);
                                  $('#songRangeHeader').html('00:00');
                                  $('#songRangeFooter').html('00:00');
@@ -414,9 +425,9 @@ function chromeCastInfo ()
                                                   qbTable += `
 <tr class="dataRow selectItemHand" rowid="${idx}">
     <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml" src="${queue[idx].metadata["album_art_url"] ? queue[idx].metadata["album_art_url"] : G_DefaultCoverArt }" style="height: 32px;"></td>
-    <td>${queue[idx].metadata["title"]}</td>
-    <td>${queue[idx].metadata["albumName"]}</td>
-    <td>${queue[idx].metadata["artist"]}</td>
+    <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["title"]}</td>
+    <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["albumName"]}</td>
+    <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["artist"]}</td>
 </tr>`;
                                               }
                                           }
@@ -954,7 +965,7 @@ function loadFileList (filelocation, type, basePath)
     <td style="white-space:nowrap">
         <table class="fileListQueueControls" border=0>
         <tr>
-            <td style="width:50%; padding: 0px !important;text-align: center;" class="iconStyle24 selectItemHand" onclick="OnClick_FileList(this, ${data[idx].isDirectory}, false)" idx="${idx}" Title="Add to Play Queue">
+            <td style="width:50%; padding: 0px !important;text-align: center;" class="iconStyle24 selectItemHand addToQueueList" onclick="OnClick_FileList(this, ${data[idx].isDirectory}, false)" idx="${idx}" Title="Add to Play Queue">
                 <i class="fa-solid fa-list"></i>
                 <span  style="display:none" class=" fileListQueueControlsTxt showHelpText">+Queue&nbsp;</span>
             </td>

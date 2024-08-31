@@ -38,18 +38,21 @@ class SlingerChromeCastQueue:
         if self.cast:
             self.processStatusEvent()
 
+    def _moveToTopQueueItem (self, idx):
+        if idx >= len(self.queue):
+            return False
+
+        saveIdx = self.queue[idx]
+        del self.queue[idx]
+        self.queue.insert(0,saveIdx )
+        return True
+
     def _prepNextQueueItem (self):
         if not self.shuffleActive or len(self.queue) <= 0:
             return
 
         # shuffle the next item with queue to queue item 0
-        idx = random.randint(0, len(self.queue)-1)
-        if idx <= 0:
-            return
-
-        save0 = self.queue[0]
-        self.queue[0] = self.queue[idx]
-        self.queue[idx] = save0
+        self._moveToTopQueueItem(random.randint(0, len(self.queue) - 1))
 
     def processStatusEvent (self):
         if not self.cast:
@@ -230,12 +233,17 @@ class SlingerChromeCastQueue:
         self.shuffleActive = active
         self.processStatusEvent()
 
+    def playQueueItemAt (self, idx):
+        self._moveToTopQueueItem(idx)
+        self.next()
+
     def saveToPlayList (self, playListName):
         playListName = playListName.strip()
         SGF.DB.DeletePlayList(playListName)
         SGF.DB.CreatePlayList(playListName)
         for q in self.queue:
             SGF.DB.AddPlayListSong(playListName, q.location, q.type)
+
 
     def loadLocation (self, httpObj, location, type, forcePlay):
         downloadURL = SGF.makeDownloadURL(httpObj=httpObj, type=type, location=location)
