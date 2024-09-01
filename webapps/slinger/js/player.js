@@ -557,7 +557,7 @@ function chromeCastPlay (file, ccast_uuid, type, queueDirectory=false, forcePlay
         chromeCastBasicAction (ccast_uuid, 'pause');
         return;
     }
-    else if (G_LastChromeCastInfo && (G_LastChromeCastInfo.playback_state.toLowerCase() == 'paused') && (file == ''))
+    else if (G_LastChromeCastInfo && (file == ''))
     {
         chromeCastBasicAction (ccast_uuid, 'play');
         return;

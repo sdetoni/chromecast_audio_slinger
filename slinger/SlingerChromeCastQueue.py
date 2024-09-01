@@ -54,6 +54,15 @@ class SlingerChromeCastQueue:
         # shuffle the next item with queue to queue item 0
         self._moveToTopQueueItem(random.randint(0, len(self.queue) - 1))
 
+    def _playQueueItem (self, queueItem):
+        if not queueItem:
+            return;
+
+        self.playing_uuid =  queueItem.metadata['slinger_uuid']
+        self.thisQueueItem = queueItem
+        self.cast.wait()
+        self.cast.media_controller.play_media(self.thisQueueItem.downloadURL, self.thisQueueItem.mimeType, metadata=self.thisQueueItem.metadata, enqueue=False)
+
     def processStatusEvent (self):
         if not self.cast:
             return
@@ -69,10 +78,7 @@ class SlingerChromeCastQueue:
             # if no current playing file, then start one up....
             if (not self.chromeCastStatus['status']) and (self.playMode in ('auto')) and (len(self.queue) > 0):
                 self._prepNextQueueItem()
-                self.thisQueueItem = self.queue[0]
-                self.playing_uuid = self.thisQueueItem.metadata["slinger_uuid"]
-                self.cast.wait()
-                self.cast.media_controller.play_media(self.thisQueueItem.downloadURL, self.thisQueueItem.mimeType, metadata=self.thisQueueItem.metadata, enqueue=False)
+                self._playQueueItem (self.queue[0])
                 self.delQueuedMediaItem(0)
                 logging.info (f"SlingerChromeCastQueue:: starting queued item {SGF.toASCII(str(self.thisQueueItem.metadata))}")
             # if there are more than one queued item in the list, then add the next one to the queue
@@ -81,12 +87,8 @@ class SlingerChromeCastQueue:
                   (self.playMode in ('auto')) and
                   (len(self.queue) > 0) and
                   self.queue[0].metadata['slinger_uuid'] != self.cast.media_controller.status.media_metadata['slinger_uuid']):
-
                 self._prepNextQueueItem()
-                self.playing_uuid = self.queue[0].metadata['slinger_uuid']
-                self.thisQueueItem = self.queue[0]
-                self.cast.wait()
-                self.cast.media_controller.play_media(self.thisQueueItem.downloadURL, self.thisQueueItem.mimeType, metadata=self.thisQueueItem.metadata, enqueue=False)
+                self._playQueueItem (self.queue[0])
                 self.delQueuedMediaItem(0)
 
                 logging.info(f"SlingerChromeCastQueue:: playing first queued item {SGF.toASCII(str(self.thisQueueItem.metadata))}")
@@ -206,11 +208,19 @@ class SlingerChromeCastQueue:
         self.processStatusEvent()
 
     def play (self):
-        self.cast.wait()
-        self.playMode = 'auto'
-        self.cast.media_controller.play()
-        self.cast.wait()
-        self.processStatusEvent()
+        try:
+            slinger_uuid = self.chromeCastStatus['status'][0]['media']['metadata']['slinger_uuid']
+        except:
+            slinger_uuid = ''
+
+        if slinger_uuid:
+            self.cast.wait()
+            self.cast.media_controller.play()
+            self.cast.wait()
+            SGF.chromecastQueueProcWakeNow ()
+            self.playMode = 'auto'
+        else:
+            self.next()
 
     def volume(self, level):
         self.cast.wait()
@@ -263,13 +273,9 @@ class SlingerChromeCastQueue:
 
         if forcePlay:
             self.haltProcEvents = True
-            obj = SlingerQueueItem(location=location, type=type, downloadURL=downloadURL, mimeType=SGF.getCastMimeType(location), metadata=metadata)
-            self.playing_uuid = obj.metadata['slinger_uuid']
-            self.thisQueueItem = obj
-            self.cast.wait()
-            self.cast.media_controller.play_media(self.thisQueueItem.downloadURL, self.thisQueueItem.mimeType, metadata=self.thisQueueItem.metadata, enqueue=False)
             self.playMode = 'auto'
             self.queueChangeNo += 1
+            self._playQueueItem(SlingerQueueItem(location=location, type=type, downloadURL=downloadURL, mimeType=SGF.getCastMimeType(location), metadata=metadata))
             self.haltProcEvents = False
             self.processStatusEvent()
         else:
