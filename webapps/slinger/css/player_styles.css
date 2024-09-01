@@ -279,6 +279,8 @@ a:hover, a:focus {
     font-weight: bold;
     display: inline-block;
     overflow-y: auto;
+	min-height: 200px;
+
 }
 
 /* set table title to allow stay at the top when scrolling down */
@@ -303,6 +305,8 @@ a:hover, a:focus {
     font-weight: bold;
     display: inline-block;
     overflow-y: auto;
+	min-height: 200px;
+	
 }
 
 #searchList_tab th {
@@ -380,6 +384,7 @@ a:hover, a:focus {
     /* height: 400px; */
     overflow-y: auto;
     width: 100%;
+	min-height: 265px;
 }
 /* --------------------------------------------- */
 
@@ -445,6 +450,7 @@ a:hover, a:focus {
     /* height: 400px; */
     overflow-y: auto;
     width: 100%;
+	min-height: 265px;	
 }
 
 #playlistBrowserControls {
