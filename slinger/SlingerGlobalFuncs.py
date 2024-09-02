@@ -100,6 +100,18 @@ def getCachedChromeCast (force=False):
 
     return ChromeCastCache
 
+
+def getBaseLocationPath (location, type):
+    if type == 'smb':
+        if location.endswith('\\'):
+            return location
+        return location.rsplit('\\', 1)[0] + '\\'
+    elif type == 'file':
+        if location.endswith(os.sep):
+            return location
+        return location.rsplit(os.sep, 1)[0] + os.sep
+
+    return ''
 def decode_percent_u(encoded_str):
     # Decode the standard percent-encoded parts
     decoded_str = urllib.parse.unquote(encoded_str)
@@ -176,7 +188,18 @@ def getCastMimeType (fileName, testForKnownExt=False):
         return None
     return "audio"
 
-def loadDirectoryQueueSMB (location, maxDepth=100, maxQueueLen=1000, queueFileList=None, smbConn=None):
+def matchArtTypes (fileName, testForKnownExt=False):
+    ext = fileName.split ('.')[-1].lower()
+    for regexp in GF.Config.getSettingList('slinger/MATCH_ART_IMAGE_REGEXP'):
+        if re.match(regexp, fileName, re.IGNORECASE):
+            return f"image/{ext}"
+
+    if testForKnownExt:
+        return None
+
+    return "unknown"
+
+def loadDirectoryQueueSMB (location, maxDepth=100, maxQueueLen=1000, queueFileList=None, smbConn=None, matchFunc=getCastMimeType):
     if not queueFileList:
         queueFileList = []
 
@@ -206,7 +229,7 @@ def loadDirectoryQueueSMB (location, maxDepth=100, maxQueueLen=1000, queueFileLi
                     full_path += '\\'
 
                     if maxDepth and maxDepth > 0:
-                        queueFileList = loadDirectoryQueueSMB(location=full_path, maxDepth=maxDepth-1, maxQueueLen=maxQueueLen, queueFileList=queueFileList, smbConn=conn)
+                        queueFileList = loadDirectoryQueueSMB(location=full_path, maxDepth=maxDepth-1, maxQueueLen=maxQueueLen, queueFileList=queueFileList, smbConn=conn, matchFunc=matchFunc)
                         continue
                     else:
                         continue
@@ -216,7 +239,7 @@ def loadDirectoryQueueSMB (location, maxDepth=100, maxQueueLen=1000, queueFileLi
                      "full_path": full_path, "type":"smb"}
 
                 # determine if this a somewhat supported file, and add to queue
-                if getCastMimeType(file.filename, testForKnownExt=True):
+                if matchFunc(file.filename, testForKnownExt=True):
                     if len(queueFileList) < maxQueueLen:
                         queueFileList.append(f)
                     else:
@@ -233,7 +256,7 @@ def loadDirectoryQueueSMB (location, maxDepth=100, maxQueueLen=1000, queueFileLi
 
     return queueFileList
 
-def loadDirectoryQueueFile (location, maxDepth=100, maxQueueLen=1000, queueFileList = None):
+def loadDirectoryQueueFile (location, maxDepth=100, maxQueueLen=1000, queueFileList = None, matchFunc=getCastMimeType):
     if not queueFileList:
         queueFileList = []
 
@@ -248,7 +271,7 @@ def loadDirectoryQueueFile (location, maxDepth=100, maxQueueLen=1000, queueFileL
         for d in dList:
             full_path = location.rstrip(os.sep) + os.sep + d
             if maxDepth > 0:
-                queueFileList = loadDirectoryQueueFile(location=full_path, maxDepth=maxDepth - 1, maxQueueLen=maxQueueLen, queueFileList=queueFileList)
+                queueFileList = loadDirectoryQueueFile(location=full_path, maxDepth=maxDepth - 1, maxQueueLen=maxQueueLen, queueFileList=queueFileList, matchFunc=matchFunc)
                 continue
             else:
                 continue
@@ -264,7 +287,7 @@ def loadDirectoryQueueFile (location, maxDepth=100, maxQueueLen=1000, queueFileL
                  "full_path": full_path, "type":"file"}
 
             # determine if this a somewhat supported file, and add to queue
-            if getCastMimeType(f, testForKnownExt=True):
+            if matchFunc(f, testForKnownExt=True):
                 if maxQueueLen and len(queueFileList) < maxQueueLen:
                     queueFileList.append(qf)
                 else:
@@ -307,7 +330,7 @@ def getFolderArtSMB (location, trimLeaf = False, smbConn=None):
             pass
     return albumArtFilename
 
-def makeDownloadURL (httpObj,type, location):
+def makeDownloadURL (httpObj, type, location):
     httpPort = GF.Config.getSetting('HTTP_PORT', '')
     if not httpPort:
         httpPort = httpObj.port_number

@@ -25,7 +25,10 @@ output ("""
     
     <script type="text/javascript" src="jquery-toast/jquery.toast.js"></script>
     <link rel="stylesheet" href="jquery-toast/jquery.toast.css">
-    
+
+    <link rel="stylesheet" href="slider/slider.css">    
+    <script type="text/javascript" src="slider/slider.js"></script>
+
     <script src='js/sha256.js'></script>
 
 	<link rel="stylesheet" href="fontawesome/css/all.css" />

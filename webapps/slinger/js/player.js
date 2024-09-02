@@ -102,10 +102,10 @@ function humanFileSize(bytes, si=false, dp=1) {
   return bytes.toFixed(dp) + ' ' + units[u];
 }
 
-function ViewLargeArt (imgObj)
+function ModalWindowLargeArt (picHTML)
 {
     $('#ViewLargeArt').remove();
-    $('<div id="ViewLargeArt" />').html(`<img onclick="\$(this).parent().dialog('close');" style="width:100%" src=${$(imgObj).attr('src')}>`).dialog
+    $('<div id="ViewLargeArt" />').html(picHTML).dialog
     ({
         height:'auto',
         width:'50%',
@@ -125,10 +125,94 @@ function ViewLargeArt (imgObj)
         open: function (event, ui) {
             $(this).css('overflow', 'hidden');
             $(this).parent().addClass ("custom-no-titlebar");
+
+             $('.ui-widget-overlay').bind('click', function()
+             {
+                 $("#ViewLargeArt").dialog('close');
+             });
         },
         close:function (event, ui) {
         }
-    })
+    });
+}
+
+function FolderLockLargeArt (location, type)
+{
+  if (location != "" && type != "")
+  {
+        $.ajax ({url: `artwork.py`,
+                 type:     "POST",
+                 data:     {"location" : location,
+                            "type"     : type},
+                 dataType: "json",
+                 success: function(data)
+                 {
+                    // console.log(data);
+
+                    picHTML = `
+<div class="slider-container">
+`;
+                    for (idx = 0; idx < data.length; idx++)
+                    {
+                        picHTML += `
+<div class="AlbumArtWork slider-fade">
+  <div class="slider-numbertext playerTxt">${idx+1} / ${data.length}</div>
+  <img onclick="\$(this).parent().parent().parent().dialog('close');" src="${data[idx]['src']}" style="width:100%">
+  <div class="text">${data[idx]['filename']}</div>
+</div>
+`;
+                    }
+
+                    picHTML += `
+<a class="slider-prev playerTxt" onclick="G_ArtWorkSlider.incDecSlide(-1)">❮</a>
+<a class="slider-next playerTxt" onclick="G_ArtWorkSlider.incDecSlide(1)">❯</a>
+</div>
+<div style="text-align:center">
+`;
+                    for (idx = 0; idx < data.length; idx++)
+                    {
+                        picHTML += `<span class="slider-dot" onclick="G_ArtWorkSlider.thisSlide(${idx+1})"></span>`;
+                    }
+
+                    picHTML += `
+</div>
+<script>
+    var G_ArtWorkSlider = new Slider ('AlbumArtWork', 1)
+    G_ArtWorkSlider.show(1);
+</script>
+`;
+                     ModalWindowLargeArt (picHTML);
+                 }
+                });
+    }
+}
+
+function ViewLargeArt (imgObj)
+{
+    console.log ($(imgObj).attr('src'));
+
+    let picHTML = `<img onclick="\$(this).parent().dialog('close');" style="width:100%" src=${$(imgObj).attr('src')}>`;
+
+    let loc = type = ""
+    try
+    {
+        let u = new URL ($(imgObj).attr('src'));
+        loc  = u.searchParams.get('location');
+        type = u.searchParams.get('type');
+    }
+    catch
+    {
+        loc = type = ""
+    }
+
+    if (loc != "" && type != "")
+    {
+        FolderLockLargeArt (loc, type)
+    }
+    else
+    {
+        ModalWindowLargeArt (picHTML);
+    }
 }
 
 function resizeFilePanels ()

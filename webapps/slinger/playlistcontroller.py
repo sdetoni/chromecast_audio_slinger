@@ -3,7 +3,7 @@ import json
 
 self = eval('self'); output = self.output
 postData = self.getCGIParametersFormData ()
-if not "action"            in postData: postData["type"]              = ''
+if not "action"            in postData: postData["action"]            = ''
 if not "name"              in postData: postData["name"]              = ''
 if not "newname"           in postData: postData["newname"]           = ''
 if not "rowid"             in postData: postData["rowid"]             = ''
