@@ -120,7 +120,7 @@ function ModalWindowLargeArt (picHTML)
         },
         position: {
             my: "top",
-            at: "top+150"
+            at: "top+10"
         },
         open: function (event, ui) {
             $(this).css('overflow', 'hidden');
@@ -136,7 +136,7 @@ function ModalWindowLargeArt (picHTML)
     });
 }
 
-function FolderLockLargeArt (location, type)
+function FolderLoadLargeArt (location, type)
 {
   if (location != "" && type != "")
   {
@@ -207,7 +207,7 @@ function ViewLargeArt (imgObj)
 
     if (loc != "" && type != "")
     {
-        FolderLockLargeArt (loc, type)
+        FolderLoadLargeArt (loc, type)
     }
     else
     {
@@ -978,6 +978,60 @@ function OnChange_FileLocation(thisObj)
     loadFileList ($('#share_locs').val(), $('#share_locs').find('option:selected').attr('type'), $('#share_locs').val());
 }
 
+function LoadFolderArtAsImage (filelocation, type, htmlID, custClass="", custStyle="")
+{
+     $.ajax ({url: `queryfileloc.py`,
+              type: "POST",
+              data: {
+                'type' :  type,
+                'location': filelocation,
+                'get_folder_art' : 'y'
+              },
+              dataType: "json",
+              success: function(data)
+              {
+                  //console.log('art = ' + data["art_url"]);
+                  //debugger;
+                  $(htmlID).html(`<img class="selectItemHand ${custClass}" style="${custStyle}" onclick="ViewLargeArt(this);event.stopPropagation();" src="${data['art_url'] ? data['art_url'] : G_DefaultCoverArt }">`)
+              },
+              error: function(jqXHR, textStatus, errorThrown)
+              {
+                  // On error, log the error to console
+                  console.error("Error:", textStatus, errorThrown);
+              }
+           });
+}
+
+function LoadFileListFolderArtAsImage (filelocation, type, htmlID)
+{
+     $.ajax ({url: `queryfileloc.py`,
+              type: "POST",
+              data: {
+                'type' :  type,
+                'location': filelocation,
+                'get_folder_art' : 'y'
+              },
+              dataType: "json",
+              success: function(data)
+              {
+                  //console.log('art = ' + data["art_url"]);
+                  //debugger;
+                  // Validate if this is a full url, if not, go with the default folder image/icon
+                  try
+                  {
+                      let u = new URL (data['art_url']);
+                      $(htmlID).html(`<img class="selectItemHand albumArtURLSml" style="height: 24px;" onclick="ViewLargeArt(this);event.stopPropagation();" src="${data['art_url'] ? data['art_url'] : G_DefaultCoverArt }">`)
+                  } catch {}
+              },
+              error: function(jqXHR, textStatus, errorThrown)
+              {
+                  // On error, log the error to console
+                  console.error("Error:", textStatus, errorThrown);
+              }
+           });
+}
+
+
 var G_CurrentFileList = null;
 function loadFileList (filelocation, type, basePath)
 {
@@ -1041,8 +1095,8 @@ function loadFileList (filelocation, type, basePath)
                  for (idx = 0; idx < data.length; idx++)
                  {
                      flTable += `
-<tr class="selectItemHand filenameListRow">
-    <td onclick="OnClick_FileList(this, false, !${data[idx].isDirectory})" idx="${idx}">${data[idx].isDirectory ? dirImg : audioImg } <span class="filenameData">${data[idx].filename}</span></td>
+<tr class="selectItemHand FileList-DataRow">
+    <td onclick="OnClick_FileList(this, false, !${data[idx].isDirectory})" idx="${idx}" isDirectory="${data[idx].isDirectory}" class="FileList-Row"><span class="FileList-FileType" idx="${idx}">${data[idx].isDirectory ? dirImg : audioImg}</span>&nbsp;<span class="FileList-FileName" isDirectory="${data[idx].isDirectory}">${data[idx].filename}</span></td>
     <td onclick="OnClick_FileList(this, false, !${data[idx].isDirectory})" idx="${idx}">${humanFileSize(data[idx].file_size)}</td>
 
     <!-- Queue / Playlist controls -->
@@ -1070,7 +1124,7 @@ function loadFileList (filelocation, type, basePath)
                  showHideIconInfo();
                  $("#filenameFilter").keyup(function ()
                  {
-                     var rows = $("#fileList tbody").find(".filenameListRow").hide();
+                     var rows = $("#fileList tbody").find(".FileList-DataRow").hide();
                      if (this.value.length)
                      {
                          var data = this.value.split(" ");
@@ -1078,7 +1132,7 @@ function loadFileList (filelocation, type, basePath)
                          {
                              for (idx = 0; idx < rows.length; idx++)
                              {
-                                matchData = $(rows[idx]).find('.filenameData');
+                                matchData = $(rows[idx]).find('.FileList-FileName');
                                 for (midx = 0; midx < matchData.length; midx++)
                                 {
                                     if ($(matchData[midx]).text().toLowerCase().indexOf(v) > -1)
@@ -1097,20 +1151,16 @@ function loadFileList (filelocation, type, basePath)
                  Build_PlaylistContextMenu ();
 
                  // Load current folder art if it exists...
-                 $.ajax ({url: `queryfileloc.py?type=${type}&location=${escape(filelocation)}&get_folder_art=y`,
-                          type: "GET",
-                          dataType: "json",
-                          success: function(data)
-                          {
-                               // console.log('art = ' + data["art_url"]);
-                               $('#browserArt').html(`<img class="selectItemHand" onclick="ViewLargeArt(this);" src="${data['art_url'] ? data['art_url'] : G_DefaultCoverArt }">`)
-                          },
-                          error: function(jqXHR, textStatus, errorThrown)
-                          {
-                              // On error, log the error to console
-                              console.error("Error:", textStatus, errorThrown);
-                          }
-                       });
+                 LoadFolderArtAsImage (filelocation, type, '#browserArt');
+
+                 // load sub-dir folder art if it exists....
+                 $('#fileList tbody .FileList-Row[isDirectory="true"]').each (function () {
+                    let idx = $(this).attr('idx');
+                    LoadFileListFolderArtAsImage (G_CurrentFileList[idx].full_path,
+                                                  $('#share_locs').find('option:selected').attr('type'),
+                                                  `#fileList tbody .FileList-FileType[idx="${idx}"]`);
+                 });
+
              }
             });
     return false;

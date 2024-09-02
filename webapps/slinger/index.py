@@ -181,7 +181,7 @@ output (f"""
                     <td>
                         <table id="tabsLeftShrinkGrow" style="display:block !important"><tr>
                             <td style="padding-right:10px">
-                                <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
+                                <i class="fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
                             </td>                            
                             <td>
                                 <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
