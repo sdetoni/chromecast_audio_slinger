@@ -122,6 +122,7 @@ class SlingerChromeCastQueue:
                 'media_metadata': self.cast.media_controller.status.media_metadata,
                 'images': self.cast.media_controller.status.images,
 
+
                 'slinger_queue_changeno': self.queueChangeNo,
                 'slinger_shuffle':        self.shuffleActive,
                 'slinger_current_media': { 'location' : '', 'type' : ''}

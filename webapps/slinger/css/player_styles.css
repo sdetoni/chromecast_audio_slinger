@@ -36,7 +36,7 @@ a {
 }
 a:hover, a:focus {
 	color:#2255aa;
-	text-decoration:underline;
+	text-decoration:none;
 }
 
 .showHelpText {
@@ -291,9 +291,13 @@ a:hover, a:focus {
 }
 
 #fileList td {
-    padding:5px;
+    padding:2px;
 }
 
+.FileList-FileType {
+    vertical-align: middle;
+    font-size:large;
+}
 /* ------------------------------------------------------- */
 #searchList {
     display: inline-flex;

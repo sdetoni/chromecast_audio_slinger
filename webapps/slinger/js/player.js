@@ -406,7 +406,7 @@ function chromeCastInfo ()
                              $('#songFilename').html(data.filename);
 
                          if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.content_type != data.content_type))
-                             $('#songFileType').html(data.content_type);
+                             $('#songFileType').html(`${data.content_type} ${ data.media_metadata.bitrate ? ':: ' + data.media_metadata.bitrate : ''}`);
 
                          if (($('.playingInfo').css('display') == 'none') && (data.playback_state.toLowerCase() != 'unknown'))
                              $('.playingInfo').css('display', '');
@@ -1002,8 +1002,22 @@ function LoadFolderArtAsImage (filelocation, type, htmlID, custClass="", custSty
            });
 }
 
-function LoadFileListFolderArtAsImage (filelocation, type, htmlID)
+var rateLimitLoadOp = 0
+function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
 {
+     // check if user has navigated away from current directory listing...
+     try {
+        if (filelocation != G_CurrentFileList[idx].full_path)
+            return;
+     } catch { return; }
+
+     if (rateLimitLoadOp > 10)
+     {
+        // delay random time and retry request, recursively so to speak.
+        setTimeout(LoadFileListFolderArtAsImage, Math.floor(Math.random() * 900 + 100), filelocation, type, idx, htmlID)
+        return;
+     }
+     rateLimitLoadOp++;
      $.ajax ({url: `queryfileloc.py`,
               type: "POST",
               data: {
@@ -1014,6 +1028,7 @@ function LoadFileListFolderArtAsImage (filelocation, type, htmlID)
               dataType: "json",
               success: function(data)
               {
+                  rateLimitLoadOp--;
                   //console.log('art = ' + data["art_url"]);
                   //debugger;
                   // Validate if this is a full url, if not, go with the default folder image/icon
@@ -1025,15 +1040,17 @@ function LoadFileListFolderArtAsImage (filelocation, type, htmlID)
               },
               error: function(jqXHR, textStatus, errorThrown)
               {
+                  rateLimitLoadOp--;
                   // On error, log the error to console
                   console.error("Error:", textStatus, errorThrown);
+                  if (RateLimitLoadFileListFolderArt > 0)
+                    RateLimitLoadFileListFolderArt--;
               }
            });
 }
 
-
 var G_CurrentFileList = null;
-function loadFileList (filelocation, type, basePath)
+async function loadFileList (filelocation, type, basePath)
 {
     $.ajax ({url: `queryfileloc.py`,
              type: "post",
@@ -1154,13 +1171,22 @@ function loadFileList (filelocation, type, basePath)
                  LoadFolderArtAsImage (filelocation, type, '#browserArt');
 
                  // load sub-dir folder art if it exists....
-                 $('#fileList tbody .FileList-Row[isDirectory="true"]').each (function () {
-                    let idx = $(this).attr('idx');
-                    LoadFileListFolderArtAsImage (G_CurrentFileList[idx].full_path,
-                                                  $('#share_locs').find('option:selected').attr('type'),
-                                                  `#fileList tbody .FileList-FileType[idx="${idx}"]`);
-                 });
+                 if (G_LoadFileFolderArt)
+                 {
 
+                     $('#fileList tbody .FileList-Row[isDirectory="true"]').each (function ()
+                     {
+                        (async () =>
+                        {
+                            let idx = $(this).attr('idx');
+
+                            LoadFileListFolderArtAsImage (G_CurrentFileList[idx].full_path,
+                                                          $('#share_locs').find('option:selected').attr('type'),
+                                                          idx, `#fileList tbody .FileList-FileType[idx="${idx}"]`);
+                        })();
+                     });
+
+                 }
              }
             });
     return false;
@@ -1627,7 +1653,7 @@ function runSearchQuery ()
                 </button>
             </span>
         </th>
-        <th>Album Name</th>
+        <th style="min-width:200px">Album Name</th>
         <th>Artist</th>
         <th>Queue Item&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</th>
     </tr>
@@ -1655,8 +1681,8 @@ function runSearchQuery ()
                      srTable += `
 <tr class="dataRow songListRow selectItemHand" idx="{$idx}">
     <td style="width:100%;display:flex">
-                <img onclick="ViewLargeArt(this);" class="albumArtURLSml" src="${art_url}" style="height: 32px;padding-right:10px">
-                <span onclick="OnClick_SearchList(${idx}, true)" class="songData">${metadata["title"]}</span>
+                <img onclick="ViewLargeArt(this);" class="albumArtURLSml" src="${art_url}" style="height: 32px">
+                <span style="padding-left:5px" onclick="OnClick_SearchList(${idx}, true)" class="songData">${metadata["title"]}</span>
     </td>
     <td onclick="OnClick_SearchList(${idx}, true)" class="songData">${metadata["albumName"]}</td>
     <td onclick="OnClick_SearchList(${idx}, true)" class="songData">${metadata["artist"]}</td>

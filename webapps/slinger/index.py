@@ -40,6 +40,7 @@ output ("""
 output (f"""
 <script>
 var G_OS_FileSeparator = "\\{os.sep}";
+var G_LoadFileFolderArt = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_FOLDER_ART_ICONS', 'true')).lower()};
 </script> 
 
 <div id="playerView" class="rcorners1">
@@ -83,7 +84,7 @@ var G_OS_FileSeparator = "\\{os.sep}";
                         </select>                    
                     </td>
                     <td style="text-align:center">
-                        <i class="playerControls fa-solid fa-rotate-left" style="font-size: x-large;" onclick="GetChromeCastDevices(true);" title="Forced rescan of Chrome Cast Devices"><br><font style="display:none;white-space:nowrap" class="showHelpText controlsIconFont">Rescan</font></i>
+                        <i class="playerControls fa-solid fa-rotate-left" style="font-size: x-large;padding-left:5px" onclick="GetChromeCastDevices(true);" title="Forced rescan of Chrome Cast Devices"><br><font style="display:none;white-space:nowrap" class="showHelpText controlsIconFont">Rescan</font></i>
                     </td>
                 </tr>
                 </table>            
@@ -201,7 +202,7 @@ output (f"""
             <table class="SongListFormat" style="width:100%"><tr>
                 <td>                             
                     <div>
-                          <fieldset style="padding:2px">
+                          <fieldset style="padding:2px;width:100%">
                               <legend>Search Query: </legend>
                               <table border=0>
                               <tr style="vertical-align:top">

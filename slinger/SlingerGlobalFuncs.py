@@ -353,7 +353,7 @@ def getMediaMetaDataSMB (location, httpObj=None, smbConn=None):
         metadata["title"]     = filePath.rsplit('\\', 1)[1]
         metadata["albumName"] = metadata["album_name"] = (filePath.rsplit('\\', 1)[0]).rsplit('\\', 1)[-1]
         metadata["artist"]    = metadata["albumArtist"] = metadata["album_artist"] = 'unknown'
-        metadata["album_art_location"] = metadata["album_art_location_type"] = metadata["album_art_url"] = ''
+        metadata['bitrate']   = metadata["album_art_location"] = metadata["album_art_location_type"] = metadata["album_art_url"] = ''
         metadata["slinger_uuid"] = str(uuid.uuid1())
         metadata["metadataType"] = "MusicTrackMediaMetadata"
 
@@ -384,6 +384,9 @@ def getMediaMetaDataSMB (location, httpObj=None, smbConn=None):
 
         if "title" in mi:
             metadata["title"] = mi["title"]
+
+        if 'other_overall_bit_rate' in mi:
+            metadata["bitrate"] = mi['other_overall_bit_rate'][0]
 
         if "album" in mi:
             metadata["album_name"] = mi["album"]
