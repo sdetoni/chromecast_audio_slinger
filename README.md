@@ -6,7 +6,13 @@ I has the ability to cast from remote CIFS/Windows file shares as well as local 
 This service will run as a Daemon, monitoring Chrome Cast devices, and slinger audio files 
 to devices from its pending audio queue.
 
-#Config Chrome Cast Slinger
+## Version 0.02 Work in progress:
+ * Work in progress
+   
+## Config Chrome Cast Slinger
+
+You may need to set the IP address manually depending on how your systems is configured.
+For Linux, it a safe to set this to 0.0.0.0 to listen on all available network devices.
 
 **vim config/daemon.cfg**
 ```
@@ -78,10 +84,12 @@ to point to your music files/folders
 Add/Change folder art files and types as required.
 
 
-#Make python virtual envs
+## Make python virtual envs
+
 **python3 -m venv ./python-slinger**
 
 **ls -al**
+```
 total 64
 drwxr-xr-x 8 root   root     4096 Aug 24 21:42 .
 drwxr-xr-x 9 root   root     4096 Aug 24 21:31 ..
@@ -95,44 +103,54 @@ drwxrwxrwx 2 nobody nogroup  4096 Aug 24 21:30 logs
 -rwxrwxrwx 1 nobody nogroup  3328 Aug 24 21:33 runner.py
 drwxrwxrwx 3 nobody nogroup  4096 Aug 24 21:30 slinger
 drwxrwxrwx 3 nobody nogroup  4096 Aug 24 21:30 webapps
+```
 
+**export PATH=/opt/cc_audio_slinger/python-slinger/bin:$PATH**
 
-**export PATH=/opt/_slinger_test/python-slinger/bin:$PATH**
 **which  pip3**
-/opt/_slinger_test/python-slinger/bin/pip3
+
+```/opt/cc_audio_slinger/python-slinger/bin/pip3```
 
 **pip3 install -r requirements.txt**
+
+```
 Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
 Collecting pychromecast
 ...
 Installing collected packages: ifaddr, zeroconf, urllib3, tqdm, pymediainfo, pyasn1, protobuf, idna, charset-normalizer, certifi, requests, pysmb, casttube, pychromecast
 Successfully installed casttube-0.2.1 certifi-2024.7.4 charset-normalizer-3.3.2 idna-3.8 ifaddr-0.2.0 protobuf-5.27.3 pyasn1-0.6.0 pychromecast-14.0.1 pymediainfo-6.1.0 pysmb-1.2.9.1 requests-2.32.3 tqdm-4.66.5 urllib3-2.2.2 zeroconf-0.132.2
+```
 
 **cat go**
-export PATH=/opt/_slinger_test/python-slinger/bin:$PATH
+
+```
+export PATH=/opt/cc_audio_slinger/python-slinger/bin:$PATH
 echo Access Program from $(ip a  | grep inet | grep global | awk -F'/' '{print $1}' | awk '{print "http://"$2":8008"}')
 python3 runner.py &
+```
 
-Boot program
+### Boot program
 **./go**
 21:47:13:INFO:HTTPInstances.init port:8008
 21:47:13:INFO:HTTPInstances.run Starts - http://0.0.0.0:8008
 21:47:13:INFO:HTTPInstances.init port:8009
 21:47:13:INFO:HTTPInstances.run Starts - https://0.0.0.0:8009
 
-Access program
+### Access program
 **echo Access Program from $(ip a  | grep inet | grep global | awk -F'/' '{print $1}' | awk '{print "http://"$2":8008"}')**
 
-Terminate program
+### Terminate program
 **ps**
+```
     PID TTY          TIME CMD
  766371 pts/0    00:00:00 bash
  766962 pts/0    00:00:00 python3
  766965 pts/0    00:00:00 ps
+```
 
 **pkill python3**
 
-#Install Service
+## Install as a Systemd Service
 
 **cat cc_audio_slinger.service**
 ```
@@ -175,13 +193,15 @@ Sep 04 19:52:19 detoni-services python3[2187]: 19:52:19:INFO:HTTPInstances.init 
 Sep 04 19:52:19 detoni-services python3[2187]: 19:52:19:INFO:HTTPInstances.run Starts - https://0.0.0.0:8009
 ```
 
-Enable startup on system reboot
+## Enable startup on system reboot
 **sudo systemctl enable cc_audio_slinger.service**
 ```Created symlink /etc/systemd/system/multi-user.target.wants/cc_audio_slinger.service → /etc/systemd/system/cc_audio_slinger.service.```
 
+## Screen Shots
+![Screenshot](screenshots/screen1.png)
 
-Version 0.02 Work in progress:
- * Its a good first release, lots of functionality.
+![Screenshot](screenshots/screen2.png)
+
  
  
  
