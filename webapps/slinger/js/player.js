@@ -1029,8 +1029,10 @@ function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
               success: function(data)
               {
                   G_RateLimitFileListFolderArtOp--;
-                  if (filelocation != G_CurrentFileList[idx].full_path)
-                      return;
+                  try {
+                     if (filelocation != G_CurrentFileList[idx].full_path)
+                         return;
+                  } catch { return; }
 
                   //console.log('art = ' + data["art_url"]);
                   //debugger;

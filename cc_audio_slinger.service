@@ -1,0 +1,15 @@
+[Unit]
+Description=Chrome Cast Audio Slinger
+After=network.target
+
+[Service]
+User=pi
+Group=pi
+WorkingDirectory=/opt/cc_audio_slinger
+Environment="PATH=/opt/cc_audio_slinger/python-slinger/bin:$PATH"
+ExecStart=python3 runner.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
