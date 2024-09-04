@@ -180,7 +180,7 @@ output (f"""
                         </select>
                     </td>
                     <td>
-                        <table id="tabsLeftShrinkGrow" style="display:block !important"><tr>
+                        <table id="tabsLeftShrinkGrow"><tr>
                             <td style="padding-right:10px">
                                 <i class="fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
                             </td>                            
@@ -232,7 +232,7 @@ output (f"""
                     </div>                    
                 </td>
                 <td>
-                    <table id="tabsLeftShrinkGrow" style="display:block !important"><tr>
+                    <table id="tabsLeftShrinkGrow"><tr>
                         <td style="padding-right:10px">
                             <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
                         </td>                            
@@ -256,12 +256,12 @@ output (f"""
                 <tr><td id="metadataScrapeStatus" colspan="100%"></td></tr>
                 <tr>
                     <td>
-                        <table id="tabsLeftShrinkGrow" style="display:block !important"><tr>
+                        <table id="tabsLeftShrinkGrow"><tr>
                             <td style="padding-right:10px">
-                                <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('grow');"></i>
+                                <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
                             </td>                            
                             <td>
-                                <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
+                                <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
                             </td>   
                         </tr></table>                          
                     </td>
@@ -297,7 +297,7 @@ output (f"""
                 </table>
             </div>         
             <div>
-                <table id="tabsRightShrinkGrow" style="display:block !important"><tr>
+                <table id="tabsRightShrinkGrow"><tr>
                     <td style="padding-right:10px">
                         <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
                     </td>                            
@@ -320,7 +320,7 @@ output (f"""
                 </tr></table>
             </div>           
             <div>
-                <table id="tabsRightShrinkGrow" style="display:block !important"><tr>
+                <table id="tabsRightShrinkGrow"><tr>
                     <td style="padding-right:10px">
                         <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
                     </td>                            

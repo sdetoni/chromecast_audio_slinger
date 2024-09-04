@@ -990,7 +990,7 @@ function LoadFolderArtAsImage (filelocation, type, htmlID, custClass="", custSty
               dataType: "json",
               success: function(data)
               {
-                  //console.log('art = ' + data["art_url"]);
+                  // console.log('art = ' + data["art_url"]);
                   //debugger;
                   $(htmlID).html(`<img class="selectItemHand ${custClass}" style="${custStyle}" onclick="ViewLargeArt(this);event.stopPropagation();" src="${data['art_url'] ? data['art_url'] : G_DefaultCoverArt }">`)
               },
@@ -1034,7 +1034,7 @@ function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
                          return;
                   } catch { return; }
 
-                  //console.log('art = ' + data["art_url"]);
+                  console.log('art = ' + data["art_url"]);
                   //debugger;
                   // Validate if this is a full url, if not, go with the default folder image/icon
                   try

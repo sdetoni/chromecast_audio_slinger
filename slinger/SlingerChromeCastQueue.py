@@ -245,8 +245,14 @@ class SlingerChromeCastQueue:
         self.processStatusEvent()
 
     def playQueueItemAt (self, idx):
-        self._moveToTopQueueItem(idx)
-        self.next()
+        self.haltProcEvents = True
+        self.playMode = 'auto'
+        qi = self.queue[idx]
+        del self.queue[idx]
+        self.queueChangeNo += 1
+        self._playQueueItem(qi)
+        self.haltProcEvents = False
+        self.processStatusEvent()
 
     def saveToPlayList (self, playListName):
         playListName = playListName.strip()
@@ -254,7 +260,6 @@ class SlingerChromeCastQueue:
         SGF.DB.CreatePlayList(playListName)
         for q in self.queue:
             SGF.DB.AddPlayListSong(playListName, q.location, q.type)
-
 
     def loadLocation (self, httpObj, location, type, forcePlay):
         downloadURL = SGF.makeDownloadURL(httpObj=httpObj, type=type, location=location)
@@ -268,7 +273,7 @@ class SlingerChromeCastQueue:
             logging.error(f'loadLocation: Failed to get metadata for {downloadURL}, likely bad file access!')
             return False
         try:
-            logging.info(f'Queuing item {location}')
+            logging.info(f'Queuing item {SGF.toASCII(location)}')
         except:
             pass
 

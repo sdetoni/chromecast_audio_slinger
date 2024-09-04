@@ -1,5 +1,6 @@
 import logging
 import io
+import os
 import daemon.GlobalFuncs         as GF
 import slinger.SlingerGlobalFuncs as SGF
 from smb.SMBConnection import SMBConnection
@@ -70,11 +71,10 @@ if postData["type"].lower() == 'smb' and postData["location"] != '':
             file_obj.seek(fileStartPos)
             if fileEndPos > 0:
                 readLen = fileEndPos - fileStartPos
-            f = SGF.toASCII(file_attr.filename)
 
             self.do_HEAD(mimetype=self.isMimeType(postData["location"]), turnOffCache=False, statusCode=scode,
                          closeHeader=True,
-                         otherHeaderDict={'Content-Disposition': f'attachment; filename="{f}"',
+                         otherHeaderDict={'Content-Disposition': f'attachment; filename="{file_attr.filename.encode("utf-8")}"',
                                           'Content-Range' : f'bytes {fileStartPos}-{readLen}/{fileSize}',
                                           'Content-Length' : str(readLen)})
 
@@ -114,7 +114,7 @@ elif postData["type"].lower() == 'file' and postData["location"] != '':
             pass
 
         self.do_HEAD(mimetype=self.isMimeType (postData["location"]), turnOffCache=False, statusCode=scode, closeHeader=True,
-                     otherHeaderDict= {'Content-Disposition' : f'attachment; filename="{fObj.name}"',
+                     otherHeaderDict= {'Content-Disposition' : f'attachment; filename="{os.path.basename(fObj.name).encode("utf-8")}"',
                                        'Content-Range' : f'bytes {fileStartPos}-{readLen}/{fileSize}',
                                        'Content-Length' : str(readLen)})
         self.outputRaw(fObj.read(readLen))

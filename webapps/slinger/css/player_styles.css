@@ -346,6 +346,8 @@ a:hover, a:focus {
     right: 5px;
     font-size: x-large;
     border-radius:2px;
+    display:block !important;
+    white-space:nowrap;
 }
 #tabsLeftShrinkGrow i {
     border-radius:2px;
@@ -356,6 +358,8 @@ a:hover, a:focus {
     top: 5px;
     right: 5px;
     font-size: x-large;
+    display:block !important;
+    white-space:nowrap;
 }
 #tabsRightShrinkGrow i {
     border-radius:2px;
