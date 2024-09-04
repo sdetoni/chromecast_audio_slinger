@@ -22,6 +22,7 @@ import slinger.crontab as crontab
 import socket
 
 DB = slinger.SlingerDB.DB
+SearchArtSem = threading.Semaphore()
 
 def get_host_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -99,7 +100,6 @@ def getCachedChromeCast (force=False):
             ChromeCastCacheTimeOut =  datetime.now() + timedelta(seconds=GF.Config.getSettingValue ('slinger/CHROMECAST_CACHE_TIMEOUT'))
 
     return ChromeCastCache
-
 
 def getBaseLocationPath (location, type):
     if type == 'smb':
@@ -199,6 +199,7 @@ def matchArtTypes (fileName, testForKnownExt=False):
 
     return "unknown"
 
+
 def loadDirectoryQueueSMB (location, maxDepth=100, maxQueueLen=1000, queueFileList=None, smbConn=None, matchFunc=getCastMimeType):
     if not queueFileList:
         queueFileList = []
@@ -224,7 +225,7 @@ def loadDirectoryQueueSMB (location, maxDepth=100, maxQueueLen=1000, queueFileLi
                     continue
 
                 full_path = location.rstrip('\\') + '\\' + file.filename
-                logging.info (f"Processing : {toASCII(full_path)}" )
+                #logging.info (f"Processing : {toASCII(full_path)}" )
                 if file.isDirectory:
                     full_path += '\\'
 
