@@ -1002,7 +1002,7 @@ function LoadFolderArtAsImage (filelocation, type, htmlID, custClass="", custSty
            });
 }
 
-var rateLimitLoadOp = 0
+var G_RateLimitFileListFolderArtOp = 0;
 function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
 {
      // check if user has navigated away from current directory listing...
@@ -1011,13 +1011,13 @@ function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
             return;
      } catch { return; }
 
-     if (rateLimitLoadOp > 10)
+     if (G_RateLimitFileListFolderArtOp > 10)
      {
         // delay random time and retry request, recursively so to speak.
         setTimeout(LoadFileListFolderArtAsImage, Math.floor(Math.random() * 900 + 100), filelocation, type, idx, htmlID)
         return;
      }
-     rateLimitLoadOp++;
+     G_RateLimitFileListFolderArtOp++;
      $.ajax ({url: `queryfileloc.py`,
               type: "POST",
               data: {
@@ -1028,7 +1028,10 @@ function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
               dataType: "json",
               success: function(data)
               {
-                  rateLimitLoadOp--;
+                  G_RateLimitFileListFolderArtOp--;
+                  if (filelocation != G_CurrentFileList[idx].full_path)
+                      return;
+
                   //console.log('art = ' + data["art_url"]);
                   //debugger;
                   // Validate if this is a full url, if not, go with the default folder image/icon
@@ -1040,7 +1043,7 @@ function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
               },
               error: function(jqXHR, textStatus, errorThrown)
               {
-                  rateLimitLoadOp--;
+                  G_RateLimitFileListFolderArtOp--;
                   // On error, log the error to console
                   console.error("Error:", textStatus, errorThrown);
                   if (RateLimitLoadFileListFolderArt > 0)
@@ -1173,17 +1176,17 @@ async function loadFileList (filelocation, type, basePath)
                  // load sub-dir folder art if it exists....
                  if (G_LoadFileFolderArt)
                  {
-
+                     G_RateLimitFileListFolderArtOp = 0;
                      $('#fileList tbody .FileList-Row[isDirectory="true"]').each (function ()
                      {
-                        (async () =>
-                        {
+                         (async () =>
+                         {
                             let idx = $(this).attr('idx');
 
                             LoadFileListFolderArtAsImage (G_CurrentFileList[idx].full_path,
                                                           $('#share_locs').find('option:selected').attr('type'),
                                                           idx, `#fileList tbody .FileList-FileType[idx="${idx}"]`);
-                        })();
+                         })();
                      });
 
                  }
