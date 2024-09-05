@@ -122,7 +122,6 @@ class SlingerChromeCastQueue:
                 'media_metadata': self.cast.media_controller.status.media_metadata,
                 'images': self.cast.media_controller.status.images,
 
-
                 'slinger_queue_changeno': self.queueChangeNo,
                 'slinger_shuffle':        self.shuffleActive,
                 'slinger_current_media': { 'location' : '', 'type' : ''}
@@ -140,7 +139,7 @@ class SlingerChromeCastQueue:
         # call get chromecast get status, it runs via a separate thread
         self.cast.wait()
         try:
-            self.cast.media_controller.update_status(_myStatusCallback)
+            self.cast.media_controller.update_status(callback_function_param=_myStatusCallback)
         except Exception as e:
             logging.error(f'Failed chromecast status : {str(e)}')
 

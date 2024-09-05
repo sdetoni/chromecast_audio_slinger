@@ -86,6 +86,17 @@ var G_LoadFileFolderArt = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_
                     <td style="text-align:center">
                         <i class="playerControls fa-solid fa-rotate-left" style="font-size: x-large;padding-left:5px" onclick="GetChromeCastDevices(true);" title="Forced rescan of Chrome Cast Devices"><br><font style="display:none;white-space:nowrap" class="showHelpText controlsIconFont">Rescan</font></i>
                     </td>
+                    <td style="text-align:center">
+                        <table id="ChromeCastAwakeMonitorTab" border=0 class="playerControls" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'awaken_monitoring');">
+                            <tr style="color:#eb9a43 !important">
+                                <td><i class="playerControls fa-solid fa-bed" style="font-size: medium;padding-left:5px;padding-right:5px;color:#eb9a43 !important" title="Awake Monitoring"></i></td>
+                                <td><font id="ChromeCastSleepMonitoringTill" style=";white-space:nowrap" class="controlsIconFont"></font></td>
+                            </tr>
+                            <tr><td colspan="100%">
+                                <font style="display:none;white-space:nowrap" class="showHelpText controlsIconFont">Awake Monitoring</font>
+                            </td></tr>
+                        </table>
+                    </td>                    
                 </tr>
                 </table>            
             </td>

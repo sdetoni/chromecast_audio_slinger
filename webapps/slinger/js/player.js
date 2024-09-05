@@ -487,6 +487,25 @@ function chromeCastInfo ()
                          }
 
                          // --------------------------------------------
+
+                         // Display if queue/player monitoring is in sleep mode...
+                         if ((data.slinger_sleeping_sec > 4) && ($('#ChromeCastAwakeMonitorTab').css('display') == 'none'))
+                         {
+                             $('#ChromeCastAwakeMonitorTab').css('display', 'table');
+                         }
+                         else if ((data.slinger_sleeping_sec < 4) && ($('#ChromeCastAwakeMonitorTab').css('display') != 'None'))
+                         {
+                            $('#ChromeCastAwakeMonitorTab').css('display', 'none');
+                         }
+
+                         if ($('#ChromeCastAwakeMonitorTab').css('display') == 'table')
+                         {
+                             $('#ChromeCastSleepMonitoringTill').html(`-${data.slinger_sleeping_sec}`)
+                         }
+
+                         console.log (data.slinger_sleeping_sec + ' ' + $('#ChromeCastAwakeMonitorTab').css('display'));
+
+                         // --------------------------------------------
                          if (G_LastChromeCastQueueChangeNo != data.slinger_queue_changeno)
                          {
                              G_LastChromeCastQueueChangeNo = data.slinger_queue_changeno;
@@ -855,7 +874,6 @@ function SearchGotoFolder(idx)
     loadFileList (fldrLocation, type, base);
     return false;
 }
-
 
 function CreateSearchListPlayList(name, thisObj=null)
 {

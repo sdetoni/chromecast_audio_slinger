@@ -880,7 +880,6 @@ def searchDirectoriesProcess (regex, maxResultsLen=1000):
         searchDirectoriesProcesState['file_path'] = searchDirectoriesProcesState['processing_filename'] = ''
     return results
 
-
 def cronScraperProcessing ():
     global exitQueueProcessing, scrapeProcesState
     while (not exitQueueProcessing):
@@ -912,7 +911,6 @@ def cronScraperProcessing ():
             break
 
 # ====================================================================
-
 
 threading.Thread(target=chromecastQueueProcessing).start()
 threading.Thread(target=cronScraperProcessing).start()
