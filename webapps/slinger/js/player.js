@@ -498,12 +498,7 @@ function chromeCastInfo ()
                             $('#ChromeCastAwakeMonitorTab').css('display', 'none');
                          }
 
-                         if ($('#ChromeCastAwakeMonitorTab').css('display') == 'table')
-                         {
-                             $('#ChromeCastSleepMonitoringTill').html(`-${data.slinger_sleeping_sec}`)
-                         }
-
-                         console.log (data.slinger_sleeping_sec + ' ' + $('#ChromeCastAwakeMonitorTab').css('display'));
+                         // console.log (data.slinger_sleeping_sec + ' ' + $('#ChromeCastAwakeMonitorTab').css('display'));
 
                          // --------------------------------------------
                          if (G_LastChromeCastQueueChangeNo != data.slinger_queue_changeno)

@@ -35,5 +35,4 @@ elif postData["type"] == "chromecast_status":
 elif postData["type"] == "player_status":
     info = castQueueObj.playerStatus
 
-info['slinger_sleeping_sec'] = SGF.chromecastProcesSleepInt
 output(json.dumps(info, default=lambda o: o.__dict__, indent=4))

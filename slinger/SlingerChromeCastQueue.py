@@ -1,5 +1,5 @@
 import time
-import threading
+import daemon.GlobalFuncs as GF
 import slinger.SlingerGlobalFuncs as SGF
 import logging
 import urllib
@@ -33,10 +33,16 @@ class SlingerChromeCastQueue:
         if playListName:
             self.loadPlaylist (httpObj=httpObj, playListName=playListName, mode = 'replace')
 
+        self.processStatusEventInt           = 0
+        self.processStatusEventIntKeepActive = 0
+
+        self.activeBeforeSeleep = GF.Config.getSettingValue('slinger/QUEUE_PROCESS_ACTIVE_BEFORE_SLEEP')
+        self.sleepBeforeWake    = GF.Config.getSettingValue('slinger/QUEUE_PROCESS_SLEEP_BEFORE_WAKE')
+
         self.haltProcEvents = False
 
         if self.cast:
-            self.processStatusEvent()
+            self.processStatusEvent(wakeNow=True)
 
     def _moveToTopQueueItem (self, idx):
         if idx >= len(self.queue):
@@ -63,14 +69,29 @@ class SlingerChromeCastQueue:
         self.cast.wait()
         self.cast.media_controller.play_media(self.thisQueueItem.downloadURL, self.thisQueueItem.mimeType, metadata=self.thisQueueItem.metadata, enqueue=False)
 
-    def processStatusEvent (self):
+    def wakeNow (self):
+        self.processStatusEventInt           = 0
+        self.processStatusEventIntKeepActive = self.activeBeforeSeleep
+
+    def processStatusEvent (self, wakeNow=False):
         if not self.cast:
             return
 
         if self.haltProcEvents:
             return
 
-        SGF.chromecastQueueProcWakeNow ()
+        if wakeNow:
+            self.wakeNow()
+
+        self.processStatusEventInt           -= 1
+        self.processStatusEventIntKeepActive -= 1
+
+        # logging.info (f"processStatusEventInt:{self.processStatusEventInt}  self.processStatusEventIntKeepActive:{self.processStatusEventIntKeepActive}")
+        if (self.processStatusEventInt >= 0) and (self.processStatusEventIntKeepActive < 0) and self.playerStatus:
+            self.playerStatus['slinger_sleeping_sec']     = self.processStatusEventInt
+            self.chromeCastStatus['slinger_sleeping_sec'] = self.processStatusEventInt
+            self.completeStatus['slinger_sleeping_sec']   = self.processStatusEventInt
+            return
 
         def _myStatusCallback(chromeCastStatus):
             self.chromeCastStatus = chromeCastStatus
@@ -134,6 +155,11 @@ class SlingerChromeCastQueue:
             self.completeStatus['chrome_status']            = chromeCastStatus
             self.completeStatus['slinger_chromecast_queue'] = self.queue
 
+            # set current sleep info
+            self.playerStatus['slinger_sleeping_sec']     = self.processStatusEventInt
+            self.chromeCastStatus['slinger_sleeping_sec'] = self.processStatusEventInt
+            self.completeStatus['slinger_sleeping_sec']   = self.processStatusEventInt
+
         # ===================================================================
 
         # call get chromecast get status, it runs via a separate thread
@@ -146,9 +172,14 @@ class SlingerChromeCastQueue:
             # update the chromecast cache, it a device may have gone offline!
             castList = SGF.getCachedChromeCast(force=True)
 
-
-
         self.lastUpated = datetime.datetime.now()
+
+        if self.isDeviceActive():
+            self.processStatusEventInt = 1
+            self.processStatusEventIntKeepActive = self.activeBeforeSeleep
+        elif self.processStatusEventIntKeepActive < 0: # go into select mode ...
+            self.processStatusEventInt = self.sleepBeforeWake
+            logging.warn(f"*** processStatusEvent : hibernate mode activated for {self.processStatusEventInt} secs ***")
 
     def delQueuedMediaItem(self, index = 0):
         if index >= len(self.queue):
@@ -177,18 +208,18 @@ class SlingerChromeCastQueue:
     def prependQueueMediaItem (self,location, type, downloadURL, mimeType, metadata):
         self.queue.insert(0, SlingerQueueItem(location, type, downloadURL,mimeType,metadata))
         self.queueChangeNo += 1
-        SGF.chromecastQueueProcWakeNow()
+        self.wakeNow()
     def appendQueueMediaItem (self,location, type, downloadURL, mimeType, metadata):
         self.queue.append(SlingerQueueItem(location, type, downloadURL,mimeType,metadata))
         self.queueChangeNo += 1
-        SGF.chromecastQueueProcWakeNow()
+        self.wakeNow()
 
     def stop(self):
         self.playMode = 'stopped'
         self.cast.wait()
         self.cast.media_controller.stop()
         self.cast.wait()
-        self.processStatusEvent()
+        self.processStatusEvent(wakeNow=True)
 
     def next(self):
         if (len(self.queue) > 0):
@@ -199,13 +230,13 @@ class SlingerChromeCastQueue:
         self.cast.wait()
         self.cast.media_controller.seek(pos)
         self.cast.wait()
-        self.processStatusEvent()
+        self.processStatusEvent(wakeNow=True)
 
     def pause (self):
         self.cast.wait()
         self.cast.media_controller.pause()
         self.cast.wait()
-        self.processStatusEvent()
+        self.processStatusEvent(wakeNow=True)
 
     def play (self):
         try:
@@ -217,8 +248,15 @@ class SlingerChromeCastQueue:
             self.cast.wait()
             self.cast.media_controller.play()
             self.cast.wait()
-            SGF.chromecastQueueProcWakeNow ()
+            self.wakeNow()
             self.playMode = 'auto'
+        elif self.thisQueueItem:
+            self.haltProcEvents = True
+            self.playMode       = 'auto'
+            self.queueChangeNo += 1
+            self._playQueueItem(self.thisQueueItem)
+            self.haltProcEvents = False
+            self.processStatusEvent(wakeNow=True)
         else:
             self.next()
 
@@ -226,22 +264,22 @@ class SlingerChromeCastQueue:
         self.cast.wait()
         self.cast.set_volume(level)
         self.cast.wait()
-        self.processStatusEvent()
+        self.processStatusEvent(wakeNow=True)
 
     def mute(self, muted):
         self.cast.wait()
         self.cast.set_volume_muted(muted)
         self.cast.wait()
-        self.processStatusEvent()
+        self.processStatusEvent(wakeNow=True)
 
     def clear (self):
         self.queue = []
         self.queueChangeNo += 1
-        self.processStatusEvent()
+        self.processStatusEvent(wakeNow=True)
 
     def shuffle (self, active):
         self.shuffleActive = active
-        self.processStatusEvent()
+        self.processStatusEvent(wakeNow=True)
 
     def playQueueItemAt (self, idx):
         self.haltProcEvents = True
@@ -251,7 +289,7 @@ class SlingerChromeCastQueue:
         self.queueChangeNo += 1
         self._playQueueItem(qi)
         self.haltProcEvents = False
-        self.processStatusEvent()
+        self.processStatusEvent(wakeNow=True)
 
     def saveToPlayList (self, playListName):
         playListName = playListName.strip()
@@ -282,7 +320,7 @@ class SlingerChromeCastQueue:
             self.queueChangeNo += 1
             self._playQueueItem(SlingerQueueItem(location=location, type=type, downloadURL=downloadURL, mimeType=SGF.getCastMimeType(location), metadata=metadata))
             self.haltProcEvents = False
-            self.processStatusEvent()
+            self.processStatusEvent(wakeNow=True)
         else:
             self.appendQueueMediaItem(location=location, type=type, downloadURL=downloadURL, mimeType=SGF.getCastMimeType(location), metadata=metadata)
 
@@ -307,6 +345,6 @@ class SlingerChromeCastQueue:
                 self.next()
 
             self.haltProcEvents = False
-            self.processStatusEvent()
+            self.processStatusEvent(wakeNow=True)
         finally:
             self.haltProcEvents = False

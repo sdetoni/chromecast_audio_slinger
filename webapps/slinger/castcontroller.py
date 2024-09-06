@@ -81,7 +81,7 @@ elif (postData["action"] == 'start_metadata_scraper'):
     SGF.scrapeProcesState['metadata_num'] = SGF.DB.CountMetadataCache()
     output(json.dumps(SGF.scrapeProcesState, default=lambda o: o.__dict__, indent=4))
 elif (postData["action"] == 'awaken_monitoring'):
-    SGF.chromecastQueueProcWakeNow()
+    castQueueObj.wakeNow()
     output('ok')
 
 #requested_volume = float(sys.argv[1]) if len(sys.argv) > 1 else None
