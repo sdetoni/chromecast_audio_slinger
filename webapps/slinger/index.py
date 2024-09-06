@@ -57,11 +57,11 @@ var G_LoadFileFolderArt = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_
         </div>
         <div style="display:none" class="playingInfo overlay-playinfo playerTxt" >
             <table border=0>
-                <tr><td class="playerTxt">Song Title</td><td class="song-title playerTxt" id="songTitle"></td></tr>
-                <tr><td class="playerTxt">Album Name</td><td class="song-title playerTxt" id="songAlbumName"></td></tr>
-                <tr><td class="playerTxt">Artist</td>    <td class="song-title playerTxt" id="songArtist"></td></tr>
-                <tr><td class="playerTxt">Filename</td>  <td class="song-title playerTxt" id="songFilename"></td></tr>
-                <tr><td class="playerTxt">File Type</td> <td class="song-title playerTxt" id="songFileType"></td></tr>
+                <tr><td class="playerTxt" style="white-space:nowrap">Song Title</td><td class="song-title playerTxt" id="songTitle"></td></tr>
+                <tr><td class="playerTxt" style="white-space:nowrap">Album Name</td><td class="song-title playerTxt" id="songAlbumName"></td></tr>
+                <tr><td class="playerTxt" style="white-space:nowrap">Artist</td>    <td class="song-title playerTxt" id="songArtist"></td></tr>
+                <tr><td class="playerTxt" style="white-space:nowrap">File Name</td> <td class="song-title playerTxt" id="songFilename"></td></tr>
+                <tr><td class="playerTxt" style="white-space:nowrap">File Type</td> <td class="song-title playerTxt" id="songFileType"></td></tr>
             </table>
         </div>
     </div>
