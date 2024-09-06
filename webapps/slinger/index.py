@@ -131,7 +131,7 @@ var G_LoadFileFolderArt = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_
                         <i id="plyrCntrlAddToPlayList" class="playerControls fa-solid fa-table-list hasContextMenu" style="font-size:large;" title="Add to Play List"><font style="display:none;" class="showHelpText controlsIconFont">Add to Play List</font></i>
                     </td>                
                     <td class="playerControls"><i id="volOnMute" class="fa-solid fa-volume-high" onclick="chromeCastMute($('#ccast_uuid').val())" title="Mute"></i></td>
-                    <td class="playerTxt" style="width:100%;min-width:100px"><input type="range" min="1" max="100" value="50" id="volLevel" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'volume', ($(this).val()/100.0))"></td>
+                    <td class="playerTxt" style="width:100%;min-width:100px"><input type="range" min="1" max="100" value="50" id="volLevel" oninput="chromeCastBasicAction($('#ccast_uuid').val(), 'volume', ($(this).val()/100.0))"></td>
                     <td>                        
                         <table border=0>
                             <tr><td>
@@ -149,7 +149,7 @@ var G_LoadFileFolderArt = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_
             <td colspan="100%">
                 <table style="width:100%" border=0><tr>
                     <td class="playerTxt" id="songRangeHeader"></td>
-                    <td class="playerTxt" style="width:100%"><input type="range" min="1" max="100" value="50" id="songRangePosition" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'seek', $(this).val())"></td>
+                    <td class="playerTxt" style="width:100%"><input type="range" min="1" max="100" value="50" id="songRangePosition" onchange="chromeCastBasicAction($('#ccast_uuid').val(), 'seek', $(this).val())"></td>
                     <td class="playerTxt" id="songRangeFooter"></td>
                 </tr></table>
             </td>

@@ -1116,7 +1116,6 @@ async function loadFileList (filelocation, type, basePath)
             </button>
         </span>
     </th>
-    <th>File Size</th>
     <th>Queue Item</th>
 </tr>
 </thead>
@@ -1132,7 +1131,6 @@ async function loadFileList (filelocation, type, basePath)
                      flTable += `
 <tr class="selectItemHand FileList-DataRow">
     <td onclick="OnClick_FileList(this, false, !${data[idx].isDirectory})" idx="${idx}" isDirectory="${data[idx].isDirectory}" class="FileList-Row"><span class="FileList-FileType" idx="${idx}">${data[idx].isDirectory ? dirImg : audioImg}</span>&nbsp;<span class="FileList-FileName" isDirectory="${data[idx].isDirectory}">${data[idx].filename}</span></td>
-    <td onclick="OnClick_FileList(this, false, !${data[idx].isDirectory})" idx="${idx}">${humanFileSize(data[idx].file_size)}</td>
 
     <!-- Queue / Playlist controls -->
     <td style="white-space:nowrap">
@@ -1165,12 +1163,13 @@ async function loadFileList (filelocation, type, basePath)
                          var data = this.value.split(" ");
                          $.each(data, function (i, v)
                          {
+                             let vl = v.toLowerCase();
                              for (idx = 0; idx < rows.length; idx++)
                              {
                                 matchData = $(rows[idx]).find('.FileList-FileName');
                                 for (midx = 0; midx < matchData.length; midx++)
                                 {
-                                    if ($(matchData[midx]).text().toLowerCase().indexOf(v) > -1)
+                                    if ($(matchData[midx]).text().toLowerCase().indexOf(vl) > -1)
                                     {
                                         $(rows[idx]).show();
                                         break;
@@ -1740,12 +1739,13 @@ function runSearchQuery ()
                          var data = this.value.split(" ");
                          $.each(data, function (i, v)
                          {
+                             let vl = v.toLowerCase();
                              for (idx = 0; idx < rows.length; idx++)
                              {
                                 matchData = $(rows[idx]).find('.songData');
                                 for (midx = 0; midx < matchData.length; midx++)
                                 {
-                                    if ($(matchData[midx]).text().toLowerCase().indexOf(v) > -1)
+                                    if ($(matchData[midx]).text().toLowerCase().indexOf(vl) > -1)
                                     {
                                         $(rows[idx]).show();
                                         break;
