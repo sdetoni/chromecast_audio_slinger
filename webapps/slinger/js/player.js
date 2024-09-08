@@ -351,6 +351,7 @@ function chromeCastInfo ()
                              $('.playingInfo').css('display', 'none');
 
                              $('#plyrCntrlPlay').css('color', '');
+                             $('#plyrCntrlAddToFavs').removeClass ('SongIsFavourite');
                          }
 
                          // --------------------------------------------
@@ -400,6 +401,9 @@ function chromeCastInfo ()
                          {
                              $('#songTitle').html(data.title);
                              $('#songTitleSml').html(data.title);
+
+                             // determine if this in Favourites
+                             ShowIsFavourite(data);
                          }
 
                          if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.filename != data.filename))
@@ -846,6 +850,78 @@ function SearchListAddToPlayList (thisObj, playlistName)
             AddLocationToPlayList (playlistName, G_CurrentSearchList[idx].location, G_CurrentSearchList[idx].type, queueDirectory)
         });
     }
+}
+
+var G_FavouritesName = 'Favourites';
+function FavouriteAddRemove (ccinfo=null)
+{
+    if ((! ccinfo) && G_LastChromeCastInfo)
+        ccinfo = G_LastChromeCastInfo;
+
+    if (! ccinfo)
+        return;
+
+    // test if favourite playlist has been created?
+    if (! (G_FavouritesName in G_PlayListRefs))
+    {
+        CreatePlayList(G_FavouritesName);
+        setTimeout(FavouriteAddRemove, 1000);
+        return;
+    }
+
+    $.ajax ({url: `playlistcontroller.py`,
+             type: "POST",
+             dataType: 'json',
+             data: {
+                'action'   : 'exists_playlist_item',
+                'name'     : G_FavouritesName,
+                'location' : ccinfo.slinger_current_media.location,
+                'type'     : ccinfo.slinger_current_media.type
+             },
+             success: function(result)
+             {
+                 if (result.exists)
+                 {
+                     DeletePlayListRowIDs (G_FavouritesName, [result.rowid])
+                 }
+                 else
+                 {
+                     AddLocationToPlayList (G_FavouritesName, ccinfo.slinger_current_media.location, ccinfo.slinger_current_media.type, false);
+                 }
+                 setTimeout(ShowIsFavourite, 1000, ccinfo);
+             }
+           });
+}
+
+function ShowIsFavourite (ccinfo=null)
+{
+    if ((! ccinfo) && G_LastChromeCastInfo)
+        ccinfo = G_LastChromeCastInfo;
+
+    if (! ccinfo)
+        return;
+
+    $.ajax ({url: `playlistcontroller.py`,
+             type: "POST",
+             dataType: 'json',
+             data: {
+                'action'   : 'exists_playlist_item',
+                'name'     : G_FavouritesName,
+                'location' : ccinfo.slinger_current_media.location,
+                'type'     : ccinfo.slinger_current_media.type
+             },
+             success: function(result)
+             {
+                 if (result.exists)
+                 {
+                     $('#plyrCntrlAddToFavs').addClass ('SongIsFavourite');
+                 }
+                 else
+                 {
+                    $('#plyrCntrlAddToFavs').removeClass ('SongIsFavourite');
+                 }
+             }
+           });
 }
 
 function SearchGotoFolder(idx)
@@ -1315,16 +1391,8 @@ function InvertPlayListSelection ()
     }
 }
 
-function DeletePlayListItems()
+function DeletePlayListRowIDs (name, rowIDS)
 {
-    let name  = $('#playlistBrowser .ui-accordion-header-active').attr('name')
-    let refID = G_PlayListRefs[name];
-    let items = $(`#${refID}_tab .selected`);
-
-    let rowIDS=[];
-    for (let idx = 0; idx < items.length; idx++)
-        rowIDS.push($(items[idx]).attr('rowid'));
-
     $.ajax ({url: `playlistcontroller.py?action=delete_playlist_items&name=${name}`,
              type: "POST",
              data: {
@@ -1343,6 +1411,19 @@ function DeletePlayListItems()
                  console.error("Error:", textStatus, errorThrown);
              }
            });
+}
+
+function DeletePlayListItems()
+{
+    let name  = $('#playlistBrowser .ui-accordion-header-active').attr('name')
+    let refID = G_PlayListRefs[name];
+    let items = $(`#${refID}_tab .selected`);
+
+    let rowIDS=[];
+    for (let idx = 0; idx < items.length; idx++)
+        rowIDS.push($(items[idx]).attr('rowid'));
+
+    DeletePlayListRowIDs (name, rowIDS);
 }
 
 function LoadPlaylistNames ()

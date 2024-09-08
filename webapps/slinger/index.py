@@ -41,6 +41,7 @@ output (f"""
 <script>
 var G_OS_FileSeparator = "\\{os.sep}";
 var G_LoadFileFolderArt = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_FOLDER_ART_ICONS', 'true')).lower()};
+var G_DisableSongSeek   = {str(GF.Config.getSettingBool('slinger/DISABLE_SONG_SEEK', 'true')).lower()};
 </script> 
 
 <div id="playerView" class="rcorners1">
@@ -128,6 +129,9 @@ var G_LoadFileFolderArt = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_
             <td style="">
                 <table style="min-width:50px;max-width:40px;float:right" border=0><tr>
                     <td style="padding-right:10px;white-space:nowrap;text-align:center">
+                        <i id="plyrCntrlAddToFavs" onclick="FavouriteAddRemove()" class="playerControls fa-solid fa-star" style="font-size:large;" title="Add/Remove Favourite"><font style="display:none;" class="showHelpText controlsIconFont">Add/Remove Favourite</font></i>
+                    </td>                    
+                    <td style="padding-right:10px;white-space:nowrap;text-align:center">
                         <i id="plyrCntrlAddToPlayList" class="playerControls fa-solid fa-table-list hasContextMenu" style="font-size:large;" title="Add to Play List"><font style="display:none;" class="showHelpText controlsIconFont">Add to Play List</font></i>
                     </td>                
                     <td class="playerControls"><i id="volOnMute" class="fa-solid fa-volume-high" onclick="chromeCastMute($('#ccast_uuid').val())" title="Mute"></i></td>
@@ -149,7 +153,7 @@ var G_LoadFileFolderArt = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_
             <td colspan="100%">
                 <table style="width:100%" border=0><tr>
                     <td class="playerTxt" id="songRangeHeader"></td>
-                    <td class="playerTxt" style="width:100%"><input type="range" min="1" max="100" value="50" id="songRangePosition" onchange="chromeCastBasicAction($('#ccast_uuid').val(), 'seek', $(this).val())"></td>
+                    <td class="playerTxt" style="width:100%"><input type="range" min="1" max="100" value="50" id="songRangePosition" onchange="((! G_DisableSongSeek) && chromeCastBasicAction($('#ccast_uuid').val(), 'seek', $(this).val()))"></td>
                     <td class="playerTxt" id="songRangeFooter"></td>
                 </tr></table>
             </td>

@@ -426,6 +426,12 @@ a:hover, a:focus {
 
 /* --------------------------------------------- */
 
+.SongIsFavourite {
+    color: #3b7dfc;
+}
+
+/* --------------------------------------------- */
+
 .inlinePlaylistBrowserControls {
     background:#fff;
     color:black;

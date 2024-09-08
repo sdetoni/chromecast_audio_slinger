@@ -158,6 +158,13 @@ class SlingerDB (DBIO.DBIO):
             return True
         return False
 
+    def PlayListSongExists (self, name, location, type ):
+        try:
+            return self.sqlRtnResults('select * from playlist_songs where name = ? and location = ? and type = ?', (name,location,type))[0]
+        except:
+            pass
+        return None
+
     def AddPlayListSong (self, playListName, location, type ):
         try:
             self.TransactionLock()
