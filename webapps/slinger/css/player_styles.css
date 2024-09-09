@@ -340,28 +340,37 @@ a:hover, a:focus {
 
 /* ------------------------------------------------------- */
 
-#tabsLeftShrinkGrow {
+.tabsLeftShrinkGrow {
     position: absolute;
     top: 5px;
     right: 5px;
     font-size: x-large;
     border-radius:2px;
-    display:block !important;
+    display:inline-block;
     white-space:nowrap;
 }
-#tabsLeftShrinkGrow i {
+.tabsLeftShrinkGrow i {
     border-radius:2px;
 }
 
-#tabsRightShrinkGrow  {
+.shrinkgrow_pos {
+    font-size: x-small;
+}
+
+.shrinkgrow_posidx {
+    font-weight: 1000;
+    color: #000000;
+}
+
+.tabsRightShrinkGrow  {
     position: absolute;
     top: 5px;
     right: 5px;
     font-size: x-large;
-    display:block !important;
+    display:inline-block;
     white-space:nowrap;
 }
-#tabsRightShrinkGrow i {
+.tabsRightShrinkGrow i {
     border-radius:2px;
 }
 

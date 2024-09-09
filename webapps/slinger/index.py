@@ -195,10 +195,11 @@ output (f"""
                         </select>
                     </td>
                     <td>
-                        <table id="tabsLeftShrinkGrow"><tr>
-                            <td style="padding-right:10px">
+                        <table class="tabsLeftShrinkGrowHideShow tabsLeftShrinkGrow"><tr>
+                            <td>
                                 <i class="fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
-                            </td>                            
+                            </td>     
+                            <td class="shrinkgrow_pos"></td>                       
                             <td>
                                 <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
                             </td>   
@@ -247,10 +248,11 @@ output (f"""
                     </div>                    
                 </td>
                 <td>
-                    <table id="tabsLeftShrinkGrow"><tr>
-                        <td style="padding-right:10px">
+                    <table class="tabsLeftShrinkGrowHideShow tabsLeftShrinkGrow"><tr>
+                        <td>
                             <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
-                        </td>                            
+                        </td>                    
+                        <td class="shrinkgrow_pos"></td>         
                         <td>
                             <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
                         </td>   
@@ -271,10 +273,11 @@ output (f"""
                 <tr><td id="metadataScrapeStatus" colspan="100%"></td></tr>
                 <tr>
                     <td>
-                        <table id="tabsLeftShrinkGrow"><tr>
-                            <td style="padding-right:10px">
+                        <table class="tabsLeftShrinkGrowHideShow tabsLeftShrinkGrow"><tr>
+                            <td>
                                 <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
-                            </td>                            
+                            </td>
+                            <td class="shrinkgrow_pos"></td>                             
                             <td>
                                 <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
                             </td>   
@@ -312,10 +315,11 @@ output (f"""
                 </table>
             </div>         
             <div>
-                <table id="tabsRightShrinkGrow"><tr>
-                    <td style="padding-right:10px">
+                <table class="tabsRightShrinkGrowHideShow tabsRightShrinkGrow"><tr>
+                    <td>
                         <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
-                    </td>                            
+                    </td>
+                    <td class="shrinkgrow_pos"></td>                             
                     <td>
                         <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
                     </td>   
@@ -335,10 +339,11 @@ output (f"""
                 </tr></table>
             </div>           
             <div>
-                <table id="tabsRightShrinkGrow"><tr>
-                    <td style="padding-right:10px">
+                <table class="tabsRightShrinkGrowHideShow tabsRightShrinkGrow"><tr>
+                    <td>
                         <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
-                    </td>                            
+                    </td>
+                    <td class="shrinkgrow_pos"></td>                             
                     <td>
                         <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
                     </td>   

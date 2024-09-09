@@ -228,37 +228,79 @@ function resizeFilePanels ()
     // console.log (`{$(window).innerHeight()}  playlistBrowser:${$('#playlistBrowser').offset().top}`)
 }
 
+var TabPos  = 3;
 function tabShrinkGrow (action)
 {
     if (action == 'grow')
     {
-        let pct = $("#tabsRightSize").width() / $('#tabsRightSize').parent().width() * 100;
-        if (pct > 60)        // [*|---]  -> [**|--]
-        {
-            $('#tabsLeftSize').css('width', '50%')
-            $('#tabsRightSize').css('width', '50%')
-        }
-        else if (pct >= 45 && pct <= 60) // [**|--]  -> [***|-]
-        {
-            $('#tabsLeftSize').css('width', '50%')
-            $('#tabsRightSize').css('width', '10%')
-        }
+        TabPos++;
+        if (TabPos >= 5)
+            TabPos = 5;
     }
     else if (action == 'shrink')
     {
-        let pct = $("#tabsLeftSize").width() / $('#tabsLeftSize').parent().width() * 100;
-        if (pct > 60) // [***|-]  -> [**|--]
-        {
-            $('#tabsLeftSize').css('width', '50%')
-            $('#tabsRightSize').css('width', '50%')
-        }
-        else if (pct >= 45 && pct <= 60) // [**|--]  -> [*|---]
-        {
-            $('#tabsLeftSize').css('width', '10%')
-            $('#tabsRightSize').css('width', '50%')
-        }
+        TabPos--;
+        if (TabPos <= 1)
+            TabPos = 1;
+    }
+
+    switch (TabPos)
+    {
+        case 3: // [--|--]
+            $('#tabsLeftSize').css('display', '');
+            $('#tabsLeftSize').css('width', '50%');
+            $('#tabsRightSize').css('display', '');
+            $('#tabsRightSize').css('width', '50%');
+            $('.tabsLeftShrinkGrowHideShow').css('display', '');
+            $('.tabsRightShrinkGrowHideShow').css('display', 'none');
+            $('.shrinkgrow_pos').html('[--<b class="shrinkgrow_posidx">|</b>--]');
+            break;
+
+        case 2: // [-|---]
+            $('#tabsLeftSize').css('display', '');
+            $('#tabsLeftSize').css('width', '25%');
+            $('#tabsRightSize').css('display', '');
+            $('#tabsRightSize').css('width', '75%');
+            $('.tabsLeftShrinkGrowHideShow').css('display', '');
+            $('.tabsRightShrinkGrowHideShow').css('display', 'none');
+            $('.shrinkgrow_pos').html('[-<b class="shrinkgrow_posidx">|</b>---]');
+            break;
+
+        case 1: // [|----]
+            $('#tabsLeftSize').css('display', 'None');
+            $('#tabsLeftSize').css('width', '0%');
+            $('#tabsRightSize').css('display', '');
+            $('#tabsRightSize').css('width', '100%');
+            $('.tabsLeftShrinkGrowHideShow').css('display', 'none');
+            $('.tabsRightShrinkGrowHideShow').css('display', '');
+            $('.shrinkgrow_pos').html('[<b class="shrinkgrow_posidx">|</b>----]');
+            break;
+
+        case 4: // [---|-]
+            $('#tabsLeftSize').css('display', '');
+            $('#tabsLeftSize').css('width', '75%');
+            $('#tabsRightSize').css('display', '');
+            $('#tabsRightSize').css('width', '25%');
+            $('.tabsLeftShrinkGrowHideShow').css('display', '');
+            $('.tabsRightShrinkGrowHideShow').css('display', 'none');
+            $('.shrinkgrow_pos').html('[---<b class="shrinkgrow_posidx">|</b>-]');
+            break;
+
+        case 5: // [----|]
+            $('#tabsLeftSize').css('display', '');
+            $('#tabsLeftSize').css('width', '100%');
+            $('#tabsRightSize').css('display', 'None');
+            $('#tabsRightSize').css('width', '0%');
+            $('.tabsLeftShrinkGrowHideShow').css('display', '');
+            $('.tabsRightShrinkGrowHideShow').css('display', 'none');
+            $('.shrinkgrow_pos').html('[----<b class="shrinkgrow_posidx">|</b>]');
+            break;
     }
 }
+$( document ).ready(function()
+{
+    tabShrinkGrow ('init');
+});
 
 var G_LastChromeCastInfo          = null;
 var G_LastChromeCastQueueChangeNo = -1;
@@ -2059,3 +2101,4 @@ $( document ).ready(function()
 
     GetChromeCastDevices ();
 });
+
