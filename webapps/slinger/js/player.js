@@ -874,7 +874,6 @@ function FileListAddToPlayList (thisObj, playlistName)
         });
     }
 }
-
 function SearchListAddToPlayList (thisObj, playlistName)
 {
     let idx            = $(thisObj).attr('idx');
@@ -1046,6 +1045,8 @@ function OnClick_FileList (thisObj, queueDirectory=false, forcePlay=false)
 
     if ((queueDirectory == false) && (G_CurrentFileList[idx].isDirectory))
     {
+        G_LastNavigatedPath.push($(thisObj).attr('filenameHash'));
+        // console.log (`G_LastNavigatedPath Encoding on directory : ${G_CurrentFileList[idx].full_path} as ${$(thisObj).attr('filenameHash')}`)
         loadFileList (G_CurrentFileList[idx].full_path, $('#share_locs').find('option:selected').attr('type'), $('#share_locs').val());
     }
     else
@@ -1106,6 +1107,8 @@ function OnClick_FileListParent (thisObj)
 
 function OnChange_FileLocation(thisObj)
 {
+    // console.log ('G_LastNavigatedPath cleared')
+    G_LastNavigatedPath.clear();
     loadFileList ($('#share_locs').val(), $('#share_locs').find('option:selected').attr('type'), $('#share_locs').val());
 }
 
@@ -1165,7 +1168,7 @@ function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
                          return;
                   } catch { return; }
 
-                  console.log('art = ' + data["art_url"]);
+                  // console.log('art = ' + data["art_url"]);
                   //debugger;
                   // Validate if this is a full url, if not, go with the default folder image/icon
                   try
@@ -1185,7 +1188,47 @@ function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
            });
 }
 
+
+class Stack
+{
+    constructor() {
+        this.items = [];
+    }
+
+    // Add a number to the stack
+    push(number) {
+        this.items.push(number);
+    }
+
+    // Take the top number off the stack
+    pop() {
+        if (this.items.length === 0)
+            return "Oops, the stack is empty!";
+        return this.items.pop();
+    }
+
+    // See what the top number is
+    peek() {
+        return this.items[this.items.length - 1];
+    }
+
+    // Check if the stack is empty
+    isEmpty() {
+        return this.items.length === 0;
+    }
+
+    clear() {
+        this.items = [];
+    }
+
+    // Find out how many items are in the stack
+    size() {
+        return this.items.length;
+    }
+}
+
 var G_CurrentFileList = null;
+var G_LastNavigatedPath = new Stack();
 async function loadFileList (filelocation, type, basePath)
 {
     $.ajax ({url: `queryfileloc.py`,
@@ -1219,7 +1262,7 @@ async function loadFileList (filelocation, type, basePath)
 <thead>
 <tr style="white-space:nowrap" class="SongListFormat">
     <th style="width:100%;cursor: pointer;" class="" title="Click to Filter">
-        <span>Filter Filename</span>
+        <span>Filter Title(s) : ${data.length}</span>
         <span style="padding-left:10px;text-decoration: none !important;">
             <input type="text" size=20 id="filenameFilter">
          </span>
@@ -1248,7 +1291,7 @@ async function loadFileList (filelocation, type, basePath)
                  {
                      flTable += `
 <tr class="selectItemHand FileList-DataRow">
-    <td onclick="OnClick_FileList(this, false, !${data[idx].isDirectory})" idx="${idx}" isDirectory="${data[idx].isDirectory}" class="FileList-Row"><span class="FileList-FileType" idx="${idx}">${data[idx].isDirectory ? dirImg : audioImg}</span>&nbsp;<span class="FileList-FileName" isDirectory="${data[idx].isDirectory}">${data[idx].filename}</span></td>
+    <td onclick="OnClick_FileList(this, false, !${data[idx].isDirectory})" idx="${idx}" isDirectory="${data[idx].isDirectory}" filenameHash="${Sha256.hash(G_CurrentFileList[idx].full_path)}" class="FileList-Row"><span class="FileList-FileType" idx="${idx}">${data[idx].isDirectory ? dirImg : audioImg}</span>&nbsp;<span class="FileList-FileName" isDirectory="${data[idx].isDirectory}">${data[idx].filename}</span></td>
 
     <!-- Queue / Playlist controls -->
     <td style="white-space:nowrap">
@@ -1270,6 +1313,29 @@ async function loadFileList (filelocation, type, basePath)
                  }
                  flTable += "</table>";
                  $('#fileBrowser').html(flTable);
+
+                 if (! G_LastNavigatedPath.isEmpty())
+                 {
+                     lastNavigatedPath = G_LastNavigatedPath.peek();
+                     // wait some time after this thread has existed and html has finished rendering before attempting to scroll to a previous position
+                     (async () =>
+                     {
+                          await setTimeout(100);
+                          try {
+                             // scroll to the previous directory if browsing out of an ending folder
+                             // console.log (`G_LastNavigatedPath Trying to locate ${lastNavigatedPath} for ${filelocation}`);
+                             let objFnd = $(`#fileList .FileList-DataRow td[filenamehash="${lastNavigatedPath}"]`)
+                             if ($(objFnd).length > 0)
+                             {
+                                // console.log (`G_LastNavigatedPath Located ${lastNavigatedPath} for ${filelocation}`);
+                                $(objFnd).get(0).scrollIntoView({block: "end", inline: "nearest"});
+
+                                // if successful, then remove item from navigation queue
+                                G_LastNavigatedPath.pop();
+                             }
+                         } catch { }
+                     })();
+                 }
 
                  resizeFilePanels();
                  showHideIconInfo();
@@ -1632,9 +1698,7 @@ function Build_PlaylistContextMenu ()
                                              {
                                                  CreatePlayList (name);
 
-                                                (async () => { await setTimeout(1000);
-                                                    AddLocationToPlayList (name, G_LastChromeCastInfo.slinger_current_media.location, G_LastChromeCastInfo.slinger_current_media.type, false);
-                                                })();
+
                                              }
 
                                              e.data.$menu.trigger('contextmenu:hide');
