@@ -1328,10 +1328,10 @@ async function loadFileList (filelocation, type, basePath)
                              if ($(objFnd).length > 0)
                              {
                                 // console.log (`G_LastNavigatedPath Located ${lastNavigatedPath} for ${filelocation}`);
-                                $(objFnd).get(0).scrollIntoView({block: "end", inline: "nearest"});
-
+                                $(objFnd).get(0).scrollIntoView({block: "center", inline: "nearest"});
                                 // if successful, then remove item from navigation queue
                                 G_LastNavigatedPath.pop();
+                                $(objFnd).parent().addClass ('selected');
                              }
                          } catch { }
                      })();
