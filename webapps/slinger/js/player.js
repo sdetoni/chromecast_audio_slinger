@@ -1321,19 +1321,25 @@ async function loadFileList (filelocation, type, basePath)
                      (async () =>
                      {
                           await setTimeout(100);
-                          try {
+                          try
+                          {
                              // scroll to the previous directory if browsing out of an ending folder
                              // console.log (`G_LastNavigatedPath Trying to locate ${lastNavigatedPath} for ${filelocation}`);
                              let objFnd = $(`#fileList .FileList-DataRow td[filenamehash="${lastNavigatedPath}"]`)
                              if ($(objFnd).length > 0)
                              {
-                                // console.log (`G_LastNavigatedPath Located ${lastNavigatedPath} for ${filelocation}`);
-                                $(objFnd).get(0).scrollIntoView({block: "center", inline: "nearest"});
-                                // if successful, then remove item from navigation queue
-                                G_LastNavigatedPath.pop();
-                                $(objFnd).parent().addClass ('selected');
+                                 // console.log (`G_LastNavigatedPath Located ${lastNavigatedPath} for ${filelocation}`);
+                                 $(objFnd).get(0).scrollIntoView({block: "center", inline: "nearest"});
+                                 // if successful, then remove item from navigation queue
+                                 G_LastNavigatedPath.pop();
+                                 $(objFnd).parent().addClass ('selected');
                              }
-                         } catch { }
+                             else
+                             {
+                                 $(`#fileList`).get(0).scrollIntoView({block: "top", inline: "nearest"});
+                             }
+                         }
+                         catch {  }
                      })();
                  }
 
