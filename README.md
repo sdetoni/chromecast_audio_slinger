@@ -1,4 +1,4 @@
-# Chrome Cast Audio SLinger : Written by Steven De Toni, 2024
+# Chrome Cast Audio Slinger : Written by Steven De Toni, 2024
 The application is suitable for NAS (Network Attached Storage) servers that will allow it to 
 cast audio files to Chrome Cast devices independantly of your phone, tablet, or P.C.
 I has the ability to cast from remote CIFS/Windows file shares as well as local files.
