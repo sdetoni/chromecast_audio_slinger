@@ -202,8 +202,4 @@ Sep 04 19:52:19 detoni-services python3[2187]: 19:52:19:INFO:HTTPInstances.run S
 
 ![Screenshot](screenshots/screen2.png)
 
- 
- 
- 
- 
-<meta name="google-site-verification" content="o_9JpcgELfVVpOiwBVZyXmSOi1Kevn0vHvYF2oR0qys" />
+
