@@ -1395,9 +1395,9 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
         filePath = urllib.parse.unquote_plus(filePath[0])
         fullAccessPath = os.path.abspath(self.homeDir + filePath) + os.path.sep
         if filePath.endswith('/'):
-            fp = os.path.realpath(fullAccessPath) + os.path.sep + '_templates_' + os.path.sep + templateName
+            fp = os.path.abspath(fullAccessPath) + os.path.sep + '_templates_' + os.path.sep + templateName
         else:
-            fp = os.path.dirname(os.path.realpath(fullAccessPath)) + os.path.sep + '_templates_' + os.path.sep + templateName
+            fp = os.path.dirname(os.path.abspath(fullAccessPath)) + os.path.sep + '_templates_' + os.path.sep + templateName
         if not fp.startswith(os.path.abspath(self.homeDir)+ os.path.sep):
             logging.error('HTTPWebServer.templateRun (' + self.command + ') failed access request at path: >' + filePath +  '<  to file  >' + fp + '<')
             return None
