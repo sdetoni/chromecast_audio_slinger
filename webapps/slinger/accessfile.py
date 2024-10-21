@@ -2,6 +2,7 @@ import logging
 import io
 import os
 import daemon.GlobalFuncs         as GF
+import time
 import slinger.SlingerGlobalFuncs as SGF
 from smb.SMBConnection import SMBConnection
 import tempfile
@@ -45,85 +46,101 @@ if not SGF.validateSMBFileAccessLocation(postData["type"].lower(), postData["loc
 #**************/
 #'''
 
-if postData["type"].lower() == 'smb' and postData["location"] != '':
-    # read file locations
-    _, _, server, shareName, filePath = SGF.parseSMBConfigString(postData["location"])
-    username, password = SGF.matchSMBCredentialsConfigString (postData["location"])
-    try:
-        conn = SMBConnection(username=username, password=password, my_name="", remote_name="", use_ntlm_v2=True)
-        assert conn.connect(server)
+# limit the number of con-current downloads to prevent DDOS type effect.
+retry = 5
+while SGF.CUR_CONCURRENT_ACCESSFILE_NO > SGF.MAX_CONCURRENT_ACCESSFILE_NO:
+    retry -= 1
+    if retry < 0:
+        logging.error("TIMEOUT waiting for CUR_CONCURRENT_ACCESSFILE_NO.")
+        logging.error(f"CUR_CONCURRENT_ACCESSFILE_NO = {SGF.CUR_CONCURRENT_ACCESSFILE_NO} MAX_CONCURRENT_ACCESSFILE_NO = {SGF.MAX_CONCURRENT_ACCESSFILE_NO}")
+        exit(0)
+    time.sleep(200)
 
+logging.info(f"accessfile.py: CUR_CONCURRENT_ACCESSFILE_NO = {SGF.CUR_CONCURRENT_ACCESSFILE_NO} MAX_CONCURRENT_ACCESSFILE_NO = {SGF.MAX_CONCURRENT_ACCESSFILE_NO}")
+
+try:
+    SGF.CUR_CONCURRENT_ACCESSFILE_NO += 1
+    if postData["type"].lower() == 'smb' and postData["location"] != '':
+        # read file locations
+        _, _, server, shareName, filePath = SGF.parseSMBConfigString(postData["location"])
+        username, password = SGF.matchSMBCredentialsConfigString (postData["location"])
+        try:
+            conn = SMBConnection(username=username, password=password, my_name="", remote_name="", use_ntlm_v2=True)
+            assert conn.connect(server)
+
+            # send file to destination
+            try:
+                file_attr = conn.getAttributes(shareName, filePath)
+                try:
+                    logging.info (f'{SGF.toASCII(postData["location"])} :: {str(file_attr) }')
+                except:
+                    pass
+
+                scode = 200
+                if fileStartPos > 0:
+                    scode = 206
+
+                file_obj = tempfile.NamedTemporaryFile()
+                file_attributes, fileSize = conn.retrieveFile(shareName, filePath, file_obj)
+                readLen = fileSize
+                file_obj.seek(fileStartPos)
+                if fileEndPos > 0:
+                    readLen = fileEndPos - fileStartPos
+
+                self.do_HEAD(mimetype=self.isMimeType(postData["location"]), turnOffCache=False, statusCode=scode,
+                             closeHeader=True,
+                             otherHeaderDict={'Content-Disposition': f'attachment; filename="{file_attr.filename.encode("utf-8")}"',
+                                              'Content-Range' : f'bytes {fileStartPos}-{readLen}/{fileSize}',
+                                              'Content-Length' : str(readLen)})
+
+                self.outputRaw(file_obj.read(readLen))
+            except Exception as e:
+                self.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
+                logging.error(f"{e} [2] Failed loading file @ {server}\\{shareName}\\{filePath}")
+                output(e)
+            finally:
+                try:
+                    file_obj.close()
+                except:
+                    pass
+        except Exception as e:
+            self.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
+            logging.error(f"{e} [1] Failed loading file @ {server}\\{shareName}\\{filePath}")
+            output(e)
+        finally:
+            conn.close()
+    elif postData["type"].lower() == 'file' and postData["location"] != '':
         # send file to destination
         try:
-            file_attr = conn.getAttributes(shareName, filePath)
-            try:
-                logging.info (f'{SGF.toASCII(postData["location"])} :: {str(file_attr) }')
-            except:
-                pass
-
             scode = 200
             if fileStartPos > 0:
                 scode = 206
 
-            file_obj = tempfile.NamedTemporaryFile()
-            file_attributes, fileSize = conn.retrieveFile(shareName, filePath, file_obj)
+            fObj = open(postData["location"], mode='rb')
+            fObj.seek(0, io.SEEK_END)
+            fileSize = fObj.tell()
             readLen = fileSize
-            file_obj.seek(fileStartPos)
             if fileEndPos > 0:
                 readLen = fileEndPos - fileStartPos
+            fObj.seek(fileStartPos)
+            try:
+                logging.info (f'{SGF.toASCII(postData["location"])}')
+            except:
+                pass
 
-            self.do_HEAD(mimetype=self.isMimeType(postData["location"]), turnOffCache=False, statusCode=scode,
-                         closeHeader=True,
-                         otherHeaderDict={'Content-Disposition': f'attachment; filename="{file_attr.filename.encode("utf-8")}"',
-                                          'Content-Range' : f'bytes {fileStartPos}-{readLen}/{fileSize}',
-                                          'Content-Length' : str(readLen)})
-
-            self.outputRaw(file_obj.read(readLen))
+            self.do_HEAD(mimetype=self.isMimeType (postData["location"]), turnOffCache=False, statusCode=scode, closeHeader=True,
+                         otherHeaderDict= {'Content-Disposition' : f'attachment; filename="{os.path.basename(fObj.name).encode("utf-8")}"',
+                                           'Content-Range' : f'bytes {fileStartPos}-{readLen}/{fileSize}',
+                                           'Content-Length' : str(readLen)})
+            self.outputRaw(fObj.read(readLen))
         except Exception as e:
             self.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
-            logging.error(f"{e} [2] Failed loading file @ {server}\\{shareName}\\{filePath}")
+            logging.error(f'{e} Failed loading file @ {SGF.toASCII(postData["location"])}')
             output(e)
         finally:
             try:
-                file_obj.close()
+                fObj.close()
             except:
                 pass
-    except Exception as e:
-        self.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
-        logging.error(f"{e} [1] Failed loading file @ {server}\\{shareName}\\{filePath}")
-        output(e)
-    finally:
-        conn.close()
-elif postData["type"].lower() == 'file' and postData["location"] != '':
-    # send file to destination
-    try:
-        scode = 200
-        if fileStartPos > 0:
-            scode = 206
-
-        fObj = open(postData["location"], mode='rb')
-        fObj.seek(0, io.SEEK_END)
-        fileSize = fObj.tell()
-        readLen = fileSize
-        if fileEndPos > 0:
-            readLen = fileEndPos - fileStartPos
-        fObj.seek(fileStartPos)
-        try:
-            logging.info (f'{SGF.toASCII(postData["location"])}')
-        except:
-            pass
-
-        self.do_HEAD(mimetype=self.isMimeType (postData["location"]), turnOffCache=False, statusCode=scode, closeHeader=True,
-                     otherHeaderDict= {'Content-Disposition' : f'attachment; filename="{os.path.basename(fObj.name).encode("utf-8")}"',
-                                       'Content-Range' : f'bytes {fileStartPos}-{readLen}/{fileSize}',
-                                       'Content-Length' : str(readLen)})
-        self.outputRaw(fObj.read(readLen))
-    except Exception as e:
-        self.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
-        logging.error(f'{e} Failed loading file @ {SGF.toASCII(postData["location"])}')
-        output(e)
-    finally:
-        try:
-            fObj.close()
-        except:
-            pass
+finally:
+    SGF.CUR_CONCURRENT_ACCESSFILE_NO -= 1

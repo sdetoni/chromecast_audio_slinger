@@ -129,20 +129,20 @@ var G_DisableSongSeek   = {str(GF.Config.getSettingBool('slinger/DISABLE_SONG_SE
             <td style="">
                 <table style="min-width:50px;max-width:40px;float:right" border=0><tr>
                     <td style="padding-right:10px;white-space:nowrap;text-align:center">
-                        <i id="plyrCntrlAddToFavs" onclick="FavouriteAddRemove()" class="playerControls fa-solid fa-star" style="font-size:large;" title="Add/Remove Favourite"><font style="display:none;" class="showHelpText controlsIconFont">Add/Remove Favourite</font></i>
+                        <i id="plyrCntrlAddToFavs" onclick="FavouriteAddRemove()" class="playerControls fa-solid fa-star" style="font-size:x-large;" title="Add/Remove Favourite"><font style="display:none;" class="showHelpText controlsIconFont">Add/Remove Favourite</font></i>
                     </td>                    
                     <td style="padding-right:10px;white-space:nowrap;text-align:center">
-                        <i id="plyrCntrlAddToPlayList" class="playerControls fa-solid fa-table-list hasContextMenu" style="font-size:large;" title="Add to Play List"><font style="display:none;" class="showHelpText controlsIconFont">Add to Play List</font></i>
+                        <i id="plyrCntrlAddToPlayList" class="playerControls fa-solid fa-table-list hasContextMenu" style="font-size:x-large;" title="Add to Play List"><font style="display:none;" class="showHelpText controlsIconFont">Add to Play List</font></i>
                     </td>                
                     <td class="playerControls"><i id="volOnMute" class="fa-solid fa-volume-high" onclick="chromeCastMute($('#ccast_uuid').val())" title="Mute"></i></td>
                     <td class="playerTxt" style="width:100%;min-width:100px"><input type="range" min="1" max="100" value="50" id="volLevel" oninput="chromeCastBasicAction($('#ccast_uuid').val(), 'volume', ($(this).val()/100.0))"></td>
                     <td>                        
                         <table border=0>
                             <tr><td>
-                                <i id="showHelpTextInfo" onclick="showHideIconInfo(! G_ShowHideIconInfo)" class="playerControls fa-solid fa-circle-info" style="font-size: larger;" title="Icon Info On/Off"></i>
+                                <i id="showHelpTextInfo" onclick="showHideIconInfo(! G_ShowHideIconInfo)" class="playerControls fa-solid fa-circle-info" style="" title="Icon Info On/Off"></i>
                             </td></tr>
                             <tr><td>                            
-                                <i id="showAbout"        onclick="About()"                                class="playerControls fa-solid fa-at"          style="font-size: larger;"></i>
+                                <i id="showAbout"        onclick="About()"                                class="playerControls fa-solid fa-at"          style=""></i>
                             </td></tr>
                         </table>
                     </td>                                                                  
@@ -234,10 +234,10 @@ output (f"""
                                   <td style="width:100%" colspan="100%">
                                       <table border=0 style="white-space:nowrap"><tr>
                                       <td>
-                                          <label class="inlinePlayListControls" for="searchDBMetaData">DB MetaData</label>
-                                          <input class="inlinePlayListControls" type="radio" name="searchScope" value="db_metadata" id="searchDBMetaData" checked="checked">                                                        
-                                          <label class="inlinePlayListControls" for="searchFileLocations">File Locations</label>
-                                          <input class="inlinePlayListControls" type="radio" name="searchScope" value="directories" id="searchFileLocations">
+                                          <label class="" for="searchDBMetaData">DB MetaData</label>
+                                          <input class="" type="radio" name="searchScope" value="db_metadata" id="searchDBMetaData" checked="checked">                                                        
+                                          <label class="" for="searchFileLocations">File Locations</label>
+                                          <input class="" type="radio" name="searchScope" value="directories" id="searchFileLocations">
                                       </td>
                                       <td id="searchResultsInfo"></td>                                  
                                       </tr></table>
@@ -265,9 +265,21 @@ output (f"""
         <div id="tabMetaData">
             <table id="tableMetaData" style="width:100%" class="SongListFormat">
                 <tr><th colspan="100%">Music Meta Data Options</th></tr>
-                <tr><td><li><a href="#" onclick="confirm ('Clear all loaded DB Meta Data?') ? chromeCastBasicAction($('#ccast_uuid').val(), 'clear_metadata_cache') || setTimeout (metadataScraperInfo, 2000) : false;">Clear Metadata Cache</a></li></td></tr>
-                <tr><td><li><a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'start_metadata_scraper'); setTimeout (metadataScraperInfo, 2000);">Start Metadata Scraper</a></li></td></tr>
-                <tr><td><li><a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'stop_metadata_scraper');  setTimeout (metadataScraperInfo, 2000); ">Stop Metadata Scraper</a></li></td></tr>
+                <tr><td>
+                    <a href="#" onclick="confirm ('Clear all loaded DB Meta Data?') ? chromeCastBasicAction($('#ccast_uuid').val(), 'clear_metadata_cache') || setTimeout (metadataScraperInfo, 2000) : false;">
+                        <button style="cursor:pointer">Clear Metadata Cache</button>
+                    </a>
+                </td></tr>
+                <tr><td>
+                    <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'start_metadata_scraper'); setTimeout (metadataScraperInfo, 2000);">
+                        <button style="cursor:pointer">Start Metadata Scraper</button>
+                    </a>
+                </td></tr>
+                <tr><td>
+                    <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'stop_metadata_scraper');  setTimeout (metadataScraperInfo, 2000); ">
+                    <button style="cursor:pointer">Stop Metadata Scraper</button>
+                    </a>
+                </td></tr>
                 <tr><td>&nbsp;</td></tr>
                 <tr><th>Meta Data Scraping Status<th></tr>
                 <tr><td id="metadataScrapeStatus" colspan="100%"></td></tr>
@@ -302,12 +314,12 @@ output (f"""
                         <td style="width:100%">        
                             <table border=0 style="text-align:left"><tr>
                             <td>
-                                <i class="playerControls fa-solid fa-broom" style="font-size: larger;text-align:center;" title="Clear Queue" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'queue_clear')"><br><font style="display:none" class="showHelpText controlsIconFont">Clear Queue</font></i>
+                                <i class="playerControls fa-solid fa-broom" style="text-align:center;" title="Clear Queue" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'queue_clear')"><br><font style="display:none" class="showHelpText controlsIconFont">Clear Queue</font></i>
                             </td>                            
                             <td style="width:100%">      
                                 &nbsp;                     
                                 <input type="text" placeholder="Enter new playlist name" id="playlist_name_field" style="color:black">
-                                <i class="playerControls fa-solid fa-square-plus" style="font-size: larger;text-align:center;" title="Save Queue as Playlist" onclick="QueueListToPlaylist($('#playlist_name_field').val())"><br><font style="display:none" class="showHelpText controlsIconFont">Save Queue as Playlist</font></i>                                
+                                <i class="playerControls fa-solid fa-square-plus" style="text-align:center;" title="Save Queue as Playlist" onclick="QueueListToPlaylist($('#playlist_name_field').val())"><br><font style="display:none" class="showHelpText controlsIconFont">Save Queue as Playlist</font></i>                                
                             </td>                  
                             <tr></table>
                         </td>                                                                  
@@ -333,7 +345,7 @@ output (f"""
                     <td>
                         <span>
                             <input type="text" placeholder="Enter new playlist name" id="newPlayListName" style="color:black">
-                            <i class="playerControls fa-solid fa-square-plus" style="font-size: larger;text-align:center;" title="Create Playlist" onclick="CreatePlayList($('#newPlayListName').val())"><br><font class=" showHelpText  controlsIconFont">Create Playlist</font></i>                  
+                            <i class="playerControls fa-solid fa-square-plus" style="text-align:center;" title="Create Playlist" onclick="CreatePlayList($('#newPlayListName').val())"><br><font class=" showHelpText  controlsIconFont">Create Playlist</font></i>                  
                         </span>
                     </td>                                            
                 </tr></table>

@@ -24,6 +24,10 @@ import socket
 DB = slinger.SlingerDB.DB
 SearchArtSem = threading.Semaphore()
 
+# limit the filo onto server for accessfile.py to prevent DDOS
+MAX_CONCURRENT_ACCESSFILE_NO = GF.Config.getSettingValue('slinger/MAX_CONCURRENT_DOWNLOADS', 50)
+CUR_CONCURRENT_ACCESSFILE_NO = 0
+
 def get_host_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.settimeout(0)

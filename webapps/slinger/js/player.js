@@ -633,23 +633,23 @@ function loadPlayList (thisObj, name)
 
     <td style="width:100%; text-align:right">
         <span>
-            <i class="inlinePlayListControls fa-solid fa-user-pen" style="font-size: larger;text-align:center;" title="Rename Playlist" onclick="RenamePlayList(this, $('#playlistBrowser .ui-accordion-header-active').attr('name'))"><br><font style="display:none" class=" showHelpText controlsIconFont">Rename Playlist</font></i>
+            <i class="inlinePlayListControls fa-solid fa-user-pen" style="text-align:center;" title="Rename Playlist" onclick="RenamePlayList(this, $('#playlistBrowser .ui-accordion-header-active').attr('name'))"><br><font style="display:none" class=" showHelpText controlsIconFont">Rename Playlist</font></i>
         </span>
 
         <span>
-            <i class="inlinePlayListControls fa-solid fa-right-left" style="font-size: larger;text-align:center;" title="Invert Selection" onclick="InvertPlayListSelection ()"><br><font style="display:none" class="showHelpText controlsIconFont">Invert Selection</font></i>
+            <i class="inlinePlayListControls fa-solid fa-right-left" style="text-align:center;" title="Invert Selection" onclick="InvertPlayListSelection ()"><br><font style="display:none" class="showHelpText controlsIconFont">Invert Selection</font></i>
         </span>
 
         <span>
-            <i class="inlinePlayListControls fa-solid fa-broom" style="font-size: larger;text-align:center;" title="Clear Selection" onclick="ClearPlayListSelection ()"><br><font style="display:none" class="showHelpText controlsIconFont">Clear Selection</font></i>
+            <i class="inlinePlayListControls fa-solid fa-broom" style="text-align:center;" title="Clear Selection" onclick="ClearPlayListSelection ()"><br><font style="display:none" class="showHelpText controlsIconFont">Clear Selection</font></i>
         </span>
 
         <span>
-            <i class="inlinePlayListControls fa-solid fa-square-minus" style="font-size: larger;text-align:center;" title="Delete Selection" onclick="DeletePlayListItems ()"><br><font style="display:none" class="showHelpText controlsIconFont">Delete Selection</font></i>
+            <i class="inlinePlayListControls fa-solid fa-square-minus" style="text-align:center;" title="Delete Selection" onclick="DeletePlayListItems ()"><br><font style="display:none" class="showHelpText controlsIconFont">Delete Selection</font></i>
         </span>
 
         <span>
-            <i class="inlinePlayListControls fa-solid fa-trash-can" style="font-size: larger;text-align:center;" title="Delete Playlist" onclick="confirm ('Delete Playlist?') ? DeletePlayList($('#playlistBrowser .ui-accordion-header-active').attr('name')) : false;"><br><font style="display:none" class="showHelpText controlsIconFont">Delete Playlist</font></i>
+            <i class="inlinePlayListControls fa-solid fa-trash-can" style="text-align:center;" title="Delete Playlist" onclick="confirm ('Delete Playlist?') ? DeletePlayList($('#playlistBrowser .ui-accordion-header-active').attr('name')) : false;"><br><font style="display:none" class="showHelpText controlsIconFont">Delete Playlist</font></i>
         </span>
     </td>
 </tr>
@@ -1255,7 +1255,7 @@ async function loadFileList (filelocation, type, basePath)
     <br><font style="display:none; white-space:nowrap" class="showHelpText controlsIconFont">Parent Folder</font>
 </td>
 <td style="width:100%">
-    <div id="currentBrowserPath" colspan='100%' style="width:98%">${filelocation.replace (RegExp("^" + escapeRegExp (basePath)), '')}</div>
+    <div id="currentBrowserPath" colspan='100%' onclick="OnClick_FileListParent($('#fileListParent'))">${filelocation.replace (RegExp("^" + escapeRegExp (basePath)), '')}</div>
 </td></tr>
 </table>
 <table id="fileList" style="width:100%">
