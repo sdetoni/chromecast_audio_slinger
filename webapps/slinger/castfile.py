@@ -47,11 +47,13 @@ def backgroundProcess ():
                 queueFileList = SGF.loadDirectoryQueueFile(location=loc, maxDepth=int(postData["max_recurse_depth"]), maxQueueLen=int(postData["max_queue_len"]))
 
             for qf in queueFileList:
+                logging.info (f"castfile: dir_load : {qf['filename']}")
                 if postData['force_cast'].lower() in ('y', 'yes', 'true', 'on'):
                     postData['force_cast'] = ''
                     castQueueObj.loadLocation(self, location=qf["full_path"], type = qf["type"], forcePlay = True)
                 else:
                     castQueueObj.loadLocation(self, location=qf["full_path"], type = qf["type"], forcePlay = False)
+            logging.info(f"castfile: dir_load: Process Events...")
             castQueueObj.processStatusEvent()
         else:
             if loc:

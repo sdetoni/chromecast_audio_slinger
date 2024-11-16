@@ -30,6 +30,8 @@ class SlingerChromeCastQueue:
 
         self.thisQueueItem     = None
 
+        self.submittedQueueItem = None
+
         if playListName:
             self.loadPlaylist (httpObj=httpObj, playListName=playListName, mode = 'replace')
 
@@ -96,23 +98,28 @@ class SlingerChromeCastQueue:
         def _myStatusCallback(chromeCastStatus):
             self.chromeCastStatus = chromeCastStatus
 
-            # if no current playing file, then start one up....
-            if (not self.chromeCastStatus['status']) and (self.playMode in ('auto')) and (len(self.queue) > 0):
-                self._prepNextQueueItem()
-                self._playQueueItem (self.queue[0])
-                self.delQueuedMediaItem(0)
-                logging.info (f"SlingerChromeCastQueue:: starting queued item {SGF.toASCII(str(self.thisQueueItem.metadata))}")
-            # if there are more than one queued item in the list, then add the next one to the queue
-            elif ((self.chromeCastStatus['status']) and
-                  (self.chromeCastStatus['status'][0]['playerState'] in ('IDLE')) and
-                  (self.playMode in ('auto')) and
-                  (len(self.queue) > 0) and
-                  self.queue[0].metadata['slinger_uuid'] != self.cast.media_controller.status.media_metadata['slinger_uuid']):
-                self._prepNextQueueItem()
-                self._playQueueItem (self.queue[0])
-                self.delQueuedMediaItem(0)
-
-                logging.info(f"SlingerChromeCastQueue:: playing first queued item {SGF.toASCII(str(self.thisQueueItem.metadata))}")
+            # if not recently submitted queued item in the last 1 second (try and prevent race conditions), then allow it to continue
+            if( (not self.submittedQueueItem) or ((datetime.datetime.now() - self.submittedQueueItem).total_seconds() >= 1.0)):
+                # if no current playing file, then start one up....
+                if (not self.chromeCastStatus['status']) and (self.playMode in ('auto')) and (len(self.queue) > 0):
+                    self._prepNextQueueItem()
+                    self._playQueueItem (self.queue[0])
+                    self.delQueuedMediaItem(0)
+                    logging.info (f"SlingerChromeCastQueue:: starting queued item {SGF.toASCII(str(self.thisQueueItem.metadata))}")
+                    self.submittedQueueItem = datetime.datetime.now()
+                # if there are more than one queued item in the list, then add the next one to the queue
+                elif ((self.chromeCastStatus['status']) and
+                      (self.chromeCastStatus['status'][0]['playerState'] in ('IDLE')) and
+                      (self.playMode in ('auto')) and
+                      (len(self.queue) > 0) and
+                      self.queue[0].metadata['slinger_uuid'] != self.cast.media_controller.status.media_metadata['slinger_uuid']):
+                    self._prepNextQueueItem()
+                    self._playQueueItem (self.queue[0])
+                    self.delQueuedMediaItem(0)
+                    self.submittedQueueItem = datetime.datetime.now()
+                    logging.info(f"SlingerChromeCastQueue:: playing first queued item {SGF.toASCII(str(self.thisQueueItem.metadata))}")
+            else:
+                logging.warning(f"SlingerChromeCastQueue:: queue playing code bypassed due to race conditions!")
 
             # logging.info (f"_myStatusCallback: {self.cast.uuid} callback completed \n {json.dumps(jsonData, indent=4)}")
             #if (("status" in chromeStatus) and (len(chromeStatus['status']) > 0)) and ("items" in chromeStatus['status'][0]):
@@ -310,7 +317,7 @@ class SlingerChromeCastQueue:
             logging.error(f'loadLocation: Failed to get metadata for {downloadURL}, likely bad file access!')
             return False
         try:
-            logging.info(f'Queuing item {SGF.toASCII(location)}')
+            logging.info(f'Queuing (force play "{forcePlay}") item {SGF.toASCII(location)}')
         except:
             pass
 
