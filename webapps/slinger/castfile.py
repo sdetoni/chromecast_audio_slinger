@@ -15,8 +15,8 @@ if not "ccast_uuid"        in postData: postData["ccast_uuid"]        = ''
 if not "max_recurse_depth" in postData: postData["max_recurse_depth"] = '100'
 if not "max_queue_len"     in postData: postData["max_queue_len"]     = '1000'
 
-
 castQueueObj = SGF.getChromecastQueueObj(postData["ccast_uuid"])
+
 if not castQueueObj:
     logging.error(f"{postData['ccast_uuid']} cast object is not matched!")
     exit(0)
@@ -26,7 +26,7 @@ if not isinstance(postData["location"], list):
 
 def backgroundProcess ():
     for loc in postData["location"]:
-        # if not location found, and there is a current media file loaded in chrome, then issue a play action.
+        # if no location found, and there is a current media file loaded in chrome, then issue a play action.
         if (not loc) and (castQueueObj.cast.media_controller.status.content_id and castQueueObj.cast.media_controller.status.player_is_idle):
             output('ok')
             downloadURL = castQueueObj.cast.media_controller.status.content_id

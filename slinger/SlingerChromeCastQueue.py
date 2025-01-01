@@ -5,6 +5,124 @@ import logging
 import urllib
 import datetime
 import random
+import threading
+
+class SlingerLocalPlayer:
+    class MC:
+        def __init__(self):
+            self.qparent = None
+            self.playback_state = 'UNKNOWN'
+
+        def play_media(self, *args, **kwargs):
+            self.playback_state = 'PLAYING'
+            pass
+
+        def stop (self, *args, **kwargs):
+            self.playback_state = 'IDLE'
+            pass
+
+        def seek (self, pos):
+            pass
+
+        def pause (self, *args, **kwargs):
+            self.playback_state = 'PAUSED'
+            pass
+
+        def update_status (self, callback_function_param):
+            if not callback_function_param or not self.qparent:
+                return
+
+            def _dummyCallback():
+                time.sleep(0.2)
+
+                # if not recently submitted queued item in the last 1 second (try and prevent race conditions), then allow it to continue
+                if ((not self.qparent.submittedQueueItem) or ((datetime.datetime.now() - self.qparent.submittedQueueItem).total_seconds() >= 1.0)):
+                    # if no current playing file, then start one up....
+                    if (self.playback_state in ('IDLE') and (self.qparent.playMode in ('auto')) and (len(self.qparent.queue) > 0)):
+                        self.qparent._prepNextQueueItem()
+                        self.qparent._playQueueItem(self.qparent.queue[0])
+                        self.qparent.delQueuedMediaItem(0)
+                        logging.info(f"SlingerChromeCastQueue:: starting queued item {SGF.toASCII(str(self.qparent.thisQueueItem.metadata))}")
+                        self.qparent.submittedQueueItem = datetime.datetime.now()
+                else:
+                    logging.warning(f"SlingerChromeCastQueue:: queue playing code bypassed due to race conditions!")
+
+                self.qparent.playerStatus = {
+                    'filename':     self.qparent.thisQueueItem.location.split('\\')[-1] if self.qparent.thisQueueItem else '',
+                    'title':        self.qparent.thisQueueItem.metadata['title']        if self.qparent.thisQueueItem else '',
+                    'album_artist': self.qparent.thisQueueItem.metadata['albumArtist']  if self.qparent.thisQueueItem else '',
+                    'album_name':   self.qparent.thisQueueItem.metadata['albumName']    if self.qparent.thisQueueItem else '',
+                    'artist':       self.qparent.thisQueueItem.metadata['artist']       if self.qparent.thisQueueItem else '',
+                    'content_type': self.qparent.thisQueueItem.mimeType                 if self.qparent.thisQueueItem else '',
+                    'current_time': -1,
+                    'duration': -1,
+                    'playback_rate': -1,
+                    'playback_state': self.playback_state,
+                    'volume_level': self.qparent.cast.status.volume_level,
+                    'volume_muted': self.qparent.cast.muted,
+                    'supported_media_commands': None,
+                    'supports_pause': True,
+                    'supports_queue_next': True,
+                    'supports_queue_prev': False,
+                    'supports_seek': True,
+                    'supports_skip_backward': False,
+                    'supports_skip_forward': False,
+                    'supports_stream_mute': True,
+                    'supports_stream_volume': True,
+                    'media_custom_data': False,
+                    'media_metadata': self.qparent.thisQueueItem.metadata if self.qparent.thisQueueItem else '',
+                    'images': None,
+
+                    'slinger_queue_changeno': self.qparent.queueChangeNo,
+                    'slinger_shuffle': self.qparent.shuffleActive,
+                    'slinger_current_media': {'location': '', 'type': ''},
+                    'slinger_sleeping_sec':0,
+                }
+
+                if self.qparent.thisQueueItem:
+                    self.qparent.playerStatus['slinger_current_media'] = {'location': self.qparent.thisQueueItem.location,
+                                                                          'type': self.qparent.thisQueueItem.type}
+
+                self.qparent.completeStatus = self.qparent.playerStatus.copy()
+                self.qparent.completeStatus['slinger_chromecast_queue'] = self.qparent.queue
+
+                callback_function_param(None)
+
+            # use a delayed callback to handle variable synchronisation issue.
+            threading.Thread(target=_dummyCallback).start()
+    class C:
+        pass
+
+    # -==============================================-
+
+    def __init__(self):
+        self.media_controller = SlingerLocalPlayer.MC()
+        self.uuid = SGF.LOCAL_PLAYER
+
+        self.cast = SlingerLocalPlayer.C()
+        self.cast.uuid = SGF.LOCAL_PLAYER
+
+        self.status = SlingerLocalPlayer.C()
+        self.status.volume_level = 1.0
+        self.muted = False
+
+    def queueParent (self, qp):
+        self.qparent = qp
+        self.media_controller.qparent = qp
+        def ignoreCallback (p):
+            pass
+        self.media_controller.update_status(ignoreCallback)
+
+    def wait (self):
+        pass
+
+    def set_volume(self, level):
+        self.status.volume_level = level
+
+    def set_volume_muted (self, muted):
+        self.muted = muted
+
+# ===========================================================================================
 
 class SlingerQueueItem:
     def __init__(self, location, type, downloadURL, mimeType, metadata):
@@ -13,6 +131,8 @@ class SlingerQueueItem:
         self.downloadURL = downloadURL
         self.mimeType    = mimeType
         self.metadata    = metadata
+
+# ===========================================================================================
 
 class SlingerChromeCastQueue:
     def __init__(self, cast, playListName='', httpObj=None):
@@ -97,6 +217,9 @@ class SlingerChromeCastQueue:
 
         def _myStatusCallback(chromeCastStatus):
             self.chromeCastStatus = chromeCastStatus
+
+            if not self.chromeCastStatus:
+                return
 
             # if not recently submitted queued item in the last 1 second (try and prevent race conditions), then allow it to continue
             if( (not self.submittedQueueItem) or ((datetime.datetime.now() - self.submittedQueueItem).total_seconds() >= 1.0)):
@@ -186,7 +309,7 @@ class SlingerChromeCastQueue:
             self.processStatusEventIntKeepActive = self.activeBeforeSeleep
         elif self.processStatusEventIntKeepActive < 0: # go into select mode ...
             self.processStatusEventInt = self.sleepBeforeWake
-            logging.warn(f"*** processStatusEvent : hibernate mode activated for {self.processStatusEventInt} secs ***")
+            logging.warning(f"*** processStatusEvent : hibernate mode activated for {self.processStatusEventInt} secs ***")
 
     def delQueuedMediaItem(self, index = 0):
         if index >= len(self.queue):

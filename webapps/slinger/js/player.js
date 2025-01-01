@@ -80,26 +80,27 @@ class TableSelection
     }
 }
 
-function escapeRegExp(text) {
+function escapeRegExp(text)
+{
   return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 }
 
-function humanFileSize(bytes, si=false, dp=1) {
-  const thresh = si ? 1000 : 1024;
-  if (Math.abs(bytes) < thresh) {
-    return bytes + ' B';
-  }
-  const units = si
-    ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
-    : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
-  let u = -1;
-  const r = 10**dp;
-  do {
-    bytes /= thresh;
-    ++u;
-  } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
-
-  return bytes.toFixed(dp) + ' ' + units[u];
+function humanFileSize(bytes, si=false, dp=1)
+{
+    const thresh = si ? 1000 : 1024;
+    if (Math.abs(bytes) < thresh)
+    {
+        return bytes + ' B';
+    }
+    const units = si ? ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'] : ['KiB', 'MiB', 'GiB', 'TiB', 'PiB', 'EiB', 'ZiB', 'YiB'];
+    let u = -1;
+    const r = 10**dp;
+    do
+    {
+        bytes /= thresh;
+        ++u;
+    } while (Math.round(Math.abs(bytes) * r) / r >= thresh && u < units.length - 1);
+    return bytes.toFixed(dp) + ' ' + units[u];
 }
 
 function ModalWindowLargeArt (picHTML)
@@ -380,7 +381,7 @@ function chromeCastInfo ()
                      {
                          const zeroPad = (num, places) => String(num).padStart(places, '0');
 
-                         if (data.playback_state.toLowerCase() == 'unknown')
+                         if ((! data) || (data.playback_state.toLowerCase() == 'unknown'))
                          {
                              $('#songAlbumName').html('');
                              $('#songArtist').html('');
@@ -396,9 +397,80 @@ function chromeCastInfo ()
                              $('#plyrCntrlAddToFavs').removeClass ('SongIsFavourite');
                          }
 
+                         if (! data)
+                         {
+                            return;
+                         }
+
+                         // -------- Local Player Driver/Actions --------
+
+                         if (data && (ccast_uuid == G_Local_Player))
+                         {
+                             let audio = $("#LocalPlayerDevice");
+                             if (data.slinger_current_media.location && (data.playback_state.toLowerCase() == 'playing') )
+                             {
+                                 if ($('#LocalPlayerDevice').attr('playing_now') != data.slinger_current_media.location)
+                                 {
+                                     audio.attr('src', `accessfile.py?type=${data.slinger_current_media.type}&location=${escape(data.slinger_current_media.location)}`)
+                                     audio.attr('playing_now', data.slinger_current_media.location)
+                                     audio[0].pause();
+                                     audio[0].load();
+                                     audio[0].play();
+                                     audio[0].loop = false;
+                                     audio[0].volume = data.volume_level;
+                                     audio[0].muted  = data.volume_muted;
+                                 }
+                                 else if (audio[0].paused)
+                                 {
+                                     // song completed, next song ...
+                                     if (audio[0].ended)
+                                     {
+                                         chromeCastBasicAction(ccast_uuid, 'queue_next')
+                                     }
+                                     else
+                                     {
+                                         // if not already playing, then load track then play/unpause
+                                         if (audio[0].currentTime <= 0)
+                                         {
+                                             audio[0].pause();
+                                             audio[0].load();
+                                         }
+                                         audio[0].play();
+                                         audio[0].loop = false;
+                                         audio[0].volume = data.volume_level;
+                                         audio[0].muted  = data.volume_muted;
+                                     }
+                                 }
+                             }
+                             else if ((data.playback_state.toLowerCase() == 'paused') && (! audio[0].paused && audio[0].duration > 0))
+                             {
+                                audio[0].pause()
+                             }
+                             else if ((data.playback_state.toLowerCase() == 'idle') && (! audio[0].paused &&  audio[0].duration > 0))
+                             {
+                                 audio[0].pause()
+                                 audio[0].currentTime = 0;
+                                 $('#LocalPlayerDevice').attr('src', '');
+                                 $('#LocalPlayerDevice').attr('playing_now', '');
+                             }
+
+                             data.duration     = audio[0].duration;
+                             data.current_time = audio[0].currentTime;
+
+                             if (G_LastChromeCastInfo && G_LastChromeCastInfo.volume_level != data.volume_level)
+                             {
+                                audio[0].volume = data.volume_level;
+                             }
+
+                             if (G_LastChromeCastInfo && G_LastChromeCastInfo.volume_muted != data.volume_muted)
+                             {
+                                audio[0].muted  = data.volume_muted;
+                             }
+                         }
+
                          // --------------------------------------------
 
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.slinger_shuffle != data.slinger_shuffle))
+                         if ((! G_LastChromeCastInfo) || (data && G_LastChromeCastInfo.slinger_shuffle != data.slinger_shuffle))
                          {
                              if (data.slinger_shuffle)
                              {
@@ -411,7 +483,6 @@ function chromeCastInfo ()
                          }
 
                          // --------------------------------------------
-
                          if (data.volume_muted && $('#volOnMute').hasClass('fa-volume-high'))
                          {
                              $('#volOnMute').removeClass('fa-volume-high')
@@ -468,6 +539,12 @@ function chromeCastInfo ()
                              else if ((data.playback_state.toLowerCase() == 'idle') || (data.playback_state.toLowerCase() == 'paused'))
                              {
                                  $('#plyrCntrlPlay').css('color', '#0a0');
+                                 $('#plyrCntrlPlay').removeClass('fa-circle-pause');
+                                 $('#plyrCntrlPlay').addClass('fa-circle-play');
+                             }
+                             else if (data.playback_state.toLowerCase() == 'unknown')
+                             {
+                                 $('#plyrCntrlPlay').css('color', '#aaa');
                                  $('#plyrCntrlPlay').removeClass('fa-circle-pause');
                                  $('#plyrCntrlPlay').addClass('fa-circle-play');
                              }
@@ -561,7 +638,6 @@ function chromeCastInfo ()
 <tr><th></th><th>Song Title(s) : ${queue.length}</th><th>Album Name</th><th>Artist</th></tr>
 </thead>
 `;
-
                                           if (queue)
                                           {
                                               for (idx = 0; idx < queue.length; idx++)
@@ -1134,6 +1210,20 @@ function LoadFolderArtAsImage (filelocation, type, htmlID, custClass="", custSty
                   console.error("Error:", textStatus, errorThrown);
               }
            });
+}
+
+function OnClick_RestartSong ()
+{
+    ccast_uuid = $('#ccast_uuid').val();
+    if (ccast_uuid == G_Local_Player)
+    {
+        let audio = $("#LocalPlayerDevice");
+        audio[0].currentTime = 0;
+    }
+    else
+        chromeCastBasicAction(ccast_uuid, 'seek', 0);
+
+    return false;
 }
 
 var G_RateLimitFileListFolderArtOp = 0;
@@ -2152,6 +2242,7 @@ function GetChromeCastDevices (forcedScan=false)
                  {
                     ccDevices += `<option value='${results[idx].uuid}' ${ccast_uuid == results[idx].uuid ? 'selected' : '' }>${results[idx].friendly_name}</option>\n`;
                  }
+                 ccDevices += `<option value='${G_Local_Player}' ${ccast_uuid == '${G_Local_Player}' ? 'selected' : '' }>Local Player</option>\n`;
 
                  $('#ccast_uuid').html(ccDevices);
                  $("#ccast_uuid").selectmenu();

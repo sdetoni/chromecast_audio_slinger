@@ -1681,7 +1681,7 @@ class HTTPInstances (threading.Thread):
             self.protocol     = 'http'
 
     def run(self):
-        logging.info ('HTTPInstances.run Starts - ' + self.protocol + '://' + self.host_name + ':' + str(self.port_number))
+        logging.info ('HTTPInstances.run Starts - ' + self.protocol + '://' + (self.host_name if self.host_name != '0.0.0.0' else socket.gethostname()) + ':' + str(self.port_number))
         try:
             self.HTTPDaemon.serve_forever()
         except KeyboardInterrupt:

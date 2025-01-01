@@ -42,8 +42,11 @@ output (f"""
 var G_OS_FileSeparator = "\\{os.sep}";
 var G_LoadFileFolderArt = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_FOLDER_ART_ICONS', 'true')).lower()};
 var G_DisableSongSeek   = {str(GF.Config.getSettingBool('slinger/DISABLE_SONG_SEEK', 'true')).lower()};
+var G_Local_Player      = "{SGF.LOCAL_PLAYER}"
 </script> 
-
+<div id="audio-player-container" style="display:hidden">
+  <audio id="LocalPlayerDevice" src="" playing_now="">
+</div> 
 <div id="playerView" class="rcorners1">
     <div class="overlay-containerSml" style="display:none">    
         <div style="display:none" class=" playingInfo overlay-playinfo playerTxt" >
@@ -116,7 +119,7 @@ var G_DisableSongSeek   = {str(GF.Config.getSettingBool('slinger/DISABLE_SONG_SE
                         <i id="plyrCntrlPlay" class="playerControls fa-regular fa-circle-play" style="font-size: xxx-large;" title="Play/Pause" onclick="chromeCastPlay('', $('#ccast_uuid').val()), $('#share_locs').find('option:selected').attr('type')")><br><font style="display:none" class="showHelpText controlsIconFont">Play/Pause</font></i>
                     </td>                
                     <td>
-                        <i class="playerControls fa-solid fa-rotate-left" style="font-size: xx-large;" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'seek', 0)" title="Restart Song"><br><font style="display:none" class="showHelpText controlsIconFont">Restart Song</font></i>
+                        <i class="playerControls fa-solid fa-rotate-left" style="font-size: xx-large;" onclick="OnClick_RestartSong()" title="Restart Song"><br><font style="display:none" class="showHelpText controlsIconFont">Restart Song</font></i>
                     </td>                                                                                    
                     <td>
                         <i class="playerControls fa-solid fa-forward-step" title="Next Song" style="font-size: xx-large;" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'queue_next')"><br><font style="display:none" class="showHelpText controlsIconFont">Next Song</font></i>

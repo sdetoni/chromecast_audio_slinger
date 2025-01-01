@@ -27,6 +27,7 @@ SearchArtSem = threading.Semaphore()
 # limit the filo onto server for accessfile.py to prevent DDOS
 MAX_CONCURRENT_ACCESSFILE_NO = GF.Config.getSettingValue('slinger/MAX_CONCURRENT_DOWNLOADS', 50)
 CUR_CONCURRENT_ACCESSFILE_NO = 0
+LOCAL_PLAYER                 = "LOCAL_PLAYER"
 
 def get_host_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -528,7 +529,11 @@ def getMediaMetaDataFile (location, httpObj=None):
 # =============== Chromecast Queue Processor ===============
 
 exitQueueProcessing      = False
-ChromeCastQueues         = {}
+ChromeCastQueues         = {LOCAL_PLAYER : SlingerChromeCastQueue.SlingerChromeCastQueue(SlingerChromeCastQueue.SlingerLocalPlayer())}
+ChromeCastQueues[LOCAL_PLAYER].cast.queueParent(ChromeCastQueues[LOCAL_PLAYER])
+
+def queueParent(self, qp):
+    self.qparent = qp
 def chromecastQueueProcessing ():
     global ChromeCastQueues, exitQueueProcessing, chromecastProcesSleepInt
 
