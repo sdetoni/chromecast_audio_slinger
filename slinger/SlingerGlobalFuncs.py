@@ -1,3 +1,5 @@
+LOCAL_PLAYER  = "LOCAL_PLAYER"
+
 import os
 import re
 import traceback
@@ -27,7 +29,6 @@ SearchArtSem = threading.Semaphore()
 # limit the filo onto server for accessfile.py to prevent DDOS
 MAX_CONCURRENT_ACCESSFILE_NO = GF.Config.getSettingValue('slinger/MAX_CONCURRENT_DOWNLOADS', 50)
 CUR_CONCURRENT_ACCESSFILE_NO = 0
-LOCAL_PLAYER                 = "LOCAL_PLAYER"
 
 def get_host_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -558,6 +559,15 @@ def getChromecastQueueObj (ccast_uuid):
         cqo = ChromeCastQueues[key]
         if str(cqo.cast.uuid) == ccast_uuid:
             return cqo
+
+    # test for local player with a unique id, if not found in list, then auto-create an entry and return the new object
+    lpuid = ccast_uuid.split('::')
+    if ((len(lpuid) > 1) and (lpuid[0] == LOCAL_PLAYER) and (lpuid[1] != "")):
+        # create a new unqiue Local Player objects
+        ChromeCastQueues[ccast_uuid] = SlingerChromeCastQueue.SlingerChromeCastQueue(SlingerChromeCastQueue.SlingerLocalPlayer(ccast_uuid))
+        ChromeCastQueues[ccast_uuid].cast.queueParent(ChromeCastQueues[ccast_uuid])
+        return ChromeCastQueues[ccast_uuid]
+
     return None
 
 def GetTotalSeconds (timeDelta):

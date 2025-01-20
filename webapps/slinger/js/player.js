@@ -79,7 +79,29 @@ class TableSelection
         }
     }
 }
+function generateUUID()
+{ // Public Domain/MIT
+    var d = new Date().getTime();//Timestamp
+    var d2 = ((typeof performance !== 'undefined') && performance.now && (performance.now()*1000)) || 0;//Time in microseconds since page-load or 0 if unsupported
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16;//random number between 0 and 16
+        if(d > 0){//Use timestamp until depleted
+            r = (d + r)%16 | 0;
+            d = Math.floor(d/16);
+        } else {//Use microseconds since page-load if supported
+            r = (d2 + r)%16 | 0;
+            d2 = Math.floor(d2/16);
+        }
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+}
 
+function nvl (str, val="")
+{
+    if (str == null)
+        return val
+    return str
+}
 function escapeRegExp(text)
 {
   return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
@@ -364,6 +386,15 @@ function metadataScraperInfo ()
            });
 }
 
+function BaseLocalPlayerID ()
+{
+    return G_Local_Player.split('::')[0];
+}
+function isLocalPlayer (ccast_uuid)
+{
+    return (ccast_uuid.split('::')[0] == BaseLocalPlayerID());
+}
+
 // gather chromecast current status on selected device
 $( document ).ready(function()
 {
@@ -404,7 +435,7 @@ function chromeCastInfo ()
 
                          // -------- Local Player Driver/Actions --------
 
-                         if (data && (ccast_uuid == G_Local_Player))
+                         if (data && isLocalPlayer(ccast_uuid))
                          {
                              let audio = $("#LocalPlayerDevice");
                              if (data.slinger_current_media.location && (data.playback_state.toLowerCase() == 'playing') )
@@ -614,15 +645,24 @@ function chromeCastInfo ()
                          // Display if queue/player monitoring is in sleep mode...
                          if ((data.slinger_sleeping_sec > 4) && ($('#ChromeCastAwakeMonitorTab').css('display') == 'none'))
                          {
-                             $('#ChromeCastAwakeMonitorTab').css('display', 'table');
+                             $('#ChromeCastAwakeMonitorTab').css('display', 'block');
                          }
                          else if ((data.slinger_sleeping_sec < 4) && ($('#ChromeCastAwakeMonitorTab').css('display') != 'None'))
                          {
                             $('#ChromeCastAwakeMonitorTab').css('display', 'none');
                          }
 
-                         // console.log (data.slinger_sleeping_sec + ' ' + $('#ChromeCastAwakeMonitorTab').css('display'));
+                         if (isLocalPlayer(ccast_uuid))
+                         {
+                             $('#ChromeCastNetWrkSharedLocalPlayerTab').css('display', 'block');
+                         }
+                         else
+                         {
+                            $('#ChromeCastNetWrkSharedLocalPlayerTab').css('display', 'none');
+                         }
 
+                         // console.log (data.slinger_sleeping_sec + ' ' + $('#ChromeCastAwakeMonitorTab').css('display'));
+                         // console.log ("data.slinger_queue_changeno :: " + data.slinger_queue_changeno);
                          // --------------------------------------------
                          if (G_LastChromeCastQueueChangeNo != data.slinger_queue_changeno)
                          {
@@ -1215,7 +1255,7 @@ function LoadFolderArtAsImage (filelocation, type, htmlID, custClass="", custSty
 function OnClick_RestartSong ()
 {
     ccast_uuid = $('#ccast_uuid').val();
-    if (ccast_uuid == G_Local_Player)
+    if (isLocalPlayer(ccast_uuid))
     {
         let audio = $("#LocalPlayerDevice");
         audio[0].currentTime = 0;
@@ -2242,24 +2282,91 @@ function GetChromeCastDevices (forcedScan=false)
                  {
                     ccDevices += `<option value='${results[idx].uuid}' ${ccast_uuid == results[idx].uuid ? 'selected' : '' }>${results[idx].friendly_name}</option>\n`;
                  }
-                 ccDevices += `<option value='${G_Local_Player}' ${ccast_uuid == '${G_Local_Player}' ? 'selected' : '' }>Local Player</option>\n`;
+                 ccDevices += `<option id="${BaseLocalPlayerID()}" value='${G_Local_Player}' ${ccast_uuid == '${G_Local_Player}' ? 'selected' : '' }>Local Player</option>\n`;
 
                  $('#ccast_uuid').html(ccDevices);
                  $("#ccast_uuid").selectmenu();
                  $("#ccast_uuid").selectmenu("refresh");
                  $('#ccast_uuid').on('selectmenuchange', function()
                  {
-                    $("#ccast_uuid").trigger("change");
+                     localStorage.setItem('ThisSelectedDevice', $("#ccast_uuid").val());
+                     $("#ccast_uuid").trigger("change");
                  });
+
+                 // set the last select/save device used
+                 thisSelectedDevice = nvl(localStorage.getItem('ThisSelectedDevice', $("#ccast_uuid").val()));
+                 if (thisSelectedDevice != "")
+                 {
+                     $("#ccast_uuid").val(thisSelectedDevice);
+                     $("#ccast_uuid").trigger("change");
+                     $("#ccast_uuid").selectmenu("refresh");
+                 }
              }
            });
+}
+
+function SwitchUniqueLocalPlayer ()
+{
+    if ($("#NetWrkSharedLocalPlayerCB").is(':checked'))
+    {
+        G_Local_Player_UniqueID = "";
+        G_Local_Player = BaseLocalPlayerID();
+        localStorage.setItem('G_Local_Player_UniqueID', G_Local_Player_UniqueID);
+        // console.log ("SwitchUniqueLocalPlayer :: checked :: "  + G_Local_Player)
+    }
+    else
+    {
+        G_Local_Player_UniqueID = GetOrMakeLocalPlayerUniqueID();
+        localStorage.setItem('G_Local_Player_UniqueID', G_Local_Player_UniqueID);
+        G_Local_Player = BaseLocalPlayerID() + '::' + G_Local_Player_UniqueID
+        // console.log ("SwitchUniqueLocalPlayer :: unChecked :: " + G_Local_Player);
+    }
+
+    // console.log ("G_Local_Player :: " + G_Local_Player);
+    $( '#' + BaseLocalPlayerID() ).attr('value', G_Local_Player);
+    $("#ccast_uuid").trigger("change");
+}
+
+function GetOrMakeLocalPlayerUniqueID ()
+{
+    if (G_Generated_Local_Player_UniqueID == "")
+    {
+        G_Generated_Local_Player_UniqueID = generateUUID();
+        localStorage.setItem('G_Generated_Local_Player_UniqueID', G_Generated_Local_Player_UniqueID);
+    }
+    return G_Generated_Local_Player_UniqueID;
+}
+
+function LoadUniqueLocalPlayerID ()
+{
+    $('#NetWrkSharedLocalPlayerCB').checkboxradio();
+
+    G_Local_Player_UniqueID           =  nvl(localStorage.getItem('G_Local_Player_UniqueID'));
+    G_Generated_Local_Player_UniqueID =  nvl(localStorage.getItem('G_Generated_Local_Player_UniqueID'));
+
+    if (G_Local_Player_UniqueID == "" && G_Generated_Local_Player_UniqueID == "")
+    {
+        G_Local_Player_UniqueID = G_Generated_Local_Player_UniqueID = GetOrMakeLocalPlayerUniqueID ();
+    }
+
+    if (G_Local_Player_UniqueID != "")
+    {
+        $("#NetWrkSharedLocalPlayerCB").prop ('checked', false);
+        $('#NetWrkSharedLocalPlayerCB').checkboxradio('refresh');
+        SwitchUniqueLocalPlayer ();
+    }
+    else
+    {
+        $("#NetWrkSharedLocalPlayerCB").prop ('checked', true);
+        $('#NetWrkSharedLocalPlayerCB').checkboxradio('refresh');    
+    }
 }
 
 $( document ).ready(function()
 {
     showHideIconInfo((localStorage.getItem('G_ShowHideIconInfo') == 'true'));
     changeViewSmallBig((localStorage.getItem('G_PlayerViewMode') == 'true'));
-
+    LoadUniqueLocalPlayerID ();
     GetChromeCastDevices ();
 });
 

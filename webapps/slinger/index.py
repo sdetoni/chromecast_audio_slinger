@@ -39,10 +39,12 @@ output ("""
 
 output (f"""
 <script>
-var G_OS_FileSeparator = "\\{os.sep}";
-var G_LoadFileFolderArt = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_FOLDER_ART_ICONS', 'true')).lower()};
-var G_DisableSongSeek   = {str(GF.Config.getSettingBool('slinger/DISABLE_SONG_SEEK', 'true')).lower()};
-var G_Local_Player      = "{SGF.LOCAL_PLAYER}"
+var G_OS_FileSeparator                = "\\{os.sep}";
+var G_LoadFileFolderArt               = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_FOLDER_ART_ICONS', 'true')).lower()};
+var G_DisableSongSeek                 = {str(GF.Config.getSettingBool('slinger/DISABLE_SONG_SEEK', 'true')).lower()};
+var G_Local_Player                    = "{SGF.LOCAL_PLAYER}";
+var G_Local_Player_UniqueID           = "";
+var G_Generated_Local_Player_UniqueID = "";
 </script> 
 <div id="audio-player-container" style="display:hidden">
   <audio id="LocalPlayerDevice" src="" playing_now="">
@@ -87,11 +89,18 @@ var G_Local_Player      = "{SGF.LOCAL_PLAYER}"
                         <select id="ccast_uuid">
                         </select>                    
                     </td>
-                    <td style="text-align:center">
-                        <i class="playerControls fa-solid fa-rotate-left" style="font-size: x-large;padding-left:5px" onclick="GetChromeCastDevices(true);" title="Forced rescan of Chrome Cast Devices"><br><font style="display:none;white-space:nowrap" class="showHelpText controlsIconFont">Rescan</font></i>
+                    <td style="text-align:center">                    
+                        <table border=0 class="playerControls" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'awaken_monitoring');">
+                            <tr>
+                                <td><i class="playerControls fa-solid fa-rotate-left" style="font-size: x-large;padding-left:5px" onclick="GetChromeCastDevices(true);" title="Forced rescan of Chrome Cast Devices"></i></td>
+                            </tr>
+                            <tr>
+                                <td><font style="display:none;white-space:nowrap" class="showHelpText controlsIconFont">Rescan</font></td>
+                            </tr>
+                        </table>
                     </td>
-                    <td style="text-align:center">
-                        <table id="ChromeCastAwakeMonitorTab" border=0 class="playerControls" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'awaken_monitoring');">
+                    <td id="ChromeCastAwakeMonitorTab" style="text-align:center">
+                        <table border=0 class="playerControls" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'awaken_monitoring');">
                             <tr style="color:#eb9a43 !important">
                                 <td><i class="playerControls fa-solid fa-bed" style="font-size:  x-large;padding-left:5px;padding-right:5px;color:#eb9a43 !important" title="Awake Monitoring"></i></td>
                                 <td><font style="white-space:nowrap" class="controlsIconFont" title="Awake Monitoring">Slinger is Hibernating</font></td>
@@ -100,7 +109,21 @@ var G_Local_Player      = "{SGF.LOCAL_PLAYER}"
                                 <font style="display:none;white-space:nowrap" class="showHelpText controlsIconFont">Awake Monitoring</font>
                             </td></tr>
                         </table>
-                    </td>                    
+                    </td>              
+                    <td id="ChromeCastNetWrkSharedLocalPlayerTab" style="text-align:center;display:none">
+                        <table border=0 class="playerControls">
+                            <tr>
+                                <td>
+                                    <div>
+                                        <label class="NetWrkSharedPlayerInstance" for="NetWrkSharedLocalPlayerCB">Network Shared</label>
+                                        <input type="checkbox" class="jquery-ui-cb" name="unique_instance" id="NetWrkSharedLocalPlayerCB" title="Network Shared Instance" onclick="return SwitchUniqueLocalPlayer();"></td>
+                                    </div>
+                            </tr>
+                            <tr><td colspan="100%">
+                                <font style="display:none;white-space:nowrap" class="showHelpText controlsIconFont">Set/Unset Network Shared Local Player Instance</font>
+                            </td></tr>
+                        </table>
+                    </td>                                              
                 </tr>
                 </table>            
             </td>

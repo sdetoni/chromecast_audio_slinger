@@ -8,7 +8,7 @@ import random
 import threading
 
 class SlingerLocalPlayer:
-    class MC:
+    class FakeMediaController:
         def __init__(self):
             self.qparent = None
             self.playback_state = 'UNKNOWN'
@@ -90,28 +90,31 @@ class SlingerLocalPlayer:
 
             # use a delayed callback to handle variable synchronisation issue.
             threading.Thread(target=_dummyCallback).start()
-    class C:
+    class FakeCast:
         pass
 
     # -==============================================-
 
-    def __init__(self):
-        self.media_controller = SlingerLocalPlayer.MC()
-        self.uuid = SGF.LOCAL_PLAYER
+    def __init__(self, uuid=SGF.LOCAL_PLAYER):
+        self.uuid_unique_instance = None
+        self.media_controller     = SlingerLocalPlayer.FakeMediaController()
+        self.uuid                 = uuid
 
-        self.cast = SlingerLocalPlayer.C()
-        self.cast.uuid = SGF.LOCAL_PLAYER
+        self.cast                 = SlingerLocalPlayer.FakeCast()
+        self.cast.uuid            = uuid
 
-        self.status = SlingerLocalPlayer.C()
+        self.status              = SlingerLocalPlayer.FakeCast()
         self.status.volume_level = 1.0
-        self.muted = False
+        self.muted               = False
 
-    def queueParent (self, qp):
-        self.qparent = qp
-        self.media_controller.qparent = qp
+    def wakeNow (self):
         def ignoreCallback (p):
             pass
         self.media_controller.update_status(ignoreCallback)
+    def queueParent (self, qp):
+        self.qparent = qp
+        self.media_controller.qparent = qp
+        self.wakeNow()
 
     def wait (self):
         pass
@@ -194,6 +197,8 @@ class SlingerChromeCastQueue:
     def wakeNow (self):
         self.processStatusEventInt           = 0
         self.processStatusEventIntKeepActive = self.activeBeforeSeleep
+        if isinstance(self.cast, SlingerLocalPlayer):
+            self.cast.wakeNow()
 
     def processStatusEvent (self, wakeNow=False):
         if not self.cast:
