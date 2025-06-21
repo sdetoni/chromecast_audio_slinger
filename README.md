@@ -6,9 +6,10 @@ I has the ability to cast from remote CIFS/Windows file shares as well as local 
 This service will run as a Daemon, monitoring Chrome Cast devices, and slinger audio files 
 to devices from its pending audio queue.
 
-## Version 0.02 Work in progress:
- * Work in progress
-   
+## Version 0.03 Work in progress:
+ * Added .dsf SACD format playback to Chromecast via conversion to FLAC 24 bit 96khz
+ * Current Max supported **Python release** is **3.11** only
+
 ## Config Chrome Cast Slinger
 
 You may need to set the IP address manually depending on how your systems is configured.
@@ -131,13 +132,15 @@ python3 runner.py &
 
 ### Boot program
 **./go**
+```
 21:47:13:INFO:HTTPInstances.init port:8008
 21:47:13:INFO:HTTPInstances.run Starts - http://0.0.0.0:8008
 21:47:13:INFO:HTTPInstances.init port:8009
 21:47:13:INFO:HTTPInstances.run Starts - https://0.0.0.0:8009
+```
 
 ### Access program
-**echo Access Program from $(ip a  | grep inet | grep global | awk -F'/' '{print $1}' | awk '{print "http://"$2":8008"}')**
+```echo Access Program from $(ip a  | grep inet | grep global | awk -F'/' '{print $1}' | awk '{print "http://"$2":8008"}')```
 
 ### Terminate program
 **ps**
@@ -196,6 +199,29 @@ Sep 04 19:52:19 detoni-services python3[2187]: 19:52:19:INFO:HTTPInstances.run S
 ## Enable startup on system reboot
 **sudo systemctl enable cc_audio_slinger.service**
 ```Created symlink /etc/systemd/system/multi-user.target.wants/cc_audio_slinger.service → /etc/systemd/system/cc_audio_slinger.service.```
+
+
+## Transcoding Exotic Formats using FFMPEG
+It is now possible to transcode .dsf (SACD format) files into 24bit 96khz FLAC output. 
+Depending on your system and file access, this process is completed in a few seconds.
+
+See config settings for details. 
+
+Note: This feature uses the pyffmpeg Python package, this may not work correctly on 
+you system (i.e. if fails on Raspberry PI and it installs an x86 binary!).
+if this is the case with your system, install ffmpeg externally, and alter config setting *TC_FFMPEG_EXE_OVERRIDE*
+
+Example:\
+**apt install ffmpeg**\
+...
+
+**which ffmpeg***
+```
+/usr/bin/ffmpeg
+```
+
+Alter Config setting to new install location of ffmpeg\
+``TC_FFMPEG_EXE_OVERRIDE=/usr/bin/ffmpeg``
 
 ## Screen Shots
 ![Screenshot](screenshots/screen1.png)

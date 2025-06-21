@@ -23,6 +23,7 @@ import glob
 import slinger.crontab as crontab
 import socket
 
+AUDIO_TRANSCODE = 'audio/transcode'
 DB = slinger.SlingerDB.DB
 SearchArtSem = threading.Semaphore()
 
