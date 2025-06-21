@@ -208,7 +208,7 @@ Depending on your system and file access, this process is completed in a few sec
 See config settings for details. 
 
 Note: This feature uses the pyffmpeg Python package, this may not work correctly on 
-you system (i.e. this fails on Raspberry PI, and installs an x86 binary and not an Arm binday!).\
+you system (i.e. this fails on Raspberry PI, and installs an x86 and not an Arm binary!).\
 If this is the case with your system, install ffmpeg externally, and alter config setting *TC_FFMPEG_EXE_OVERRIDE*
 
 Example:\
