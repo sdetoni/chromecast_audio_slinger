@@ -593,6 +593,7 @@ function chromeCastInfo ()
                                  $('#songRangePosition').prop('min', 0);
                                  $('#songRangePosition').prop('max', data.current_time);
                                  $('#songRangePosition').val(data.current_time);
+
                                  $('#songRangeHeader').html(ct);
                                  $('#songRangeFooter').html('&infin;');
                              }
@@ -605,7 +606,7 @@ function chromeCastInfo ()
                                  $('#songRangePosition').prop('min', 0);
                                  $('#songRangePosition').prop('max', data.duration);
                                  $('#songRangePosition').val(data.current_time);
-                                 $('#songRangeHeader').html(ct + ' ' + pct + '%');
+                                 $('#songRangeHeader').html(ct);
                                  $('#songRangeFooter').html(tt);
                              }
                              else

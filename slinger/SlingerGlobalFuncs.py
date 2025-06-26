@@ -339,12 +339,8 @@ def getFolderArtSMB (location, trimLeaf = False, smbConn=None):
     return albumArtFilename
 
 def makeDownloadURL (httpObj, type, location):
-    httpPort = GF.Config.getSetting('HTTP_PORT', '')
-    if not httpPort:
-        httpPort = httpObj.port_number
-
     # use host ipv4 address as chromecast may/will not be able to decode local host DNS names.
-    hostnamePort = f"{LocalHostIP}:{httpPort}"
+    hostnamePort = f"{LocalHostIP}:{httpObj.port_number}"
     downloadURL = f'{httpObj.protocol}://{hostnamePort}{httpObj.queryBasePath}accessfile.py'
     downloadURL += f'?type={type}&location={urllib.parse.quote(location)}'
     return downloadURL
@@ -370,7 +366,7 @@ def getMediaMetaDataSMB (location, httpObj=None, smbConn=None):
             cachedMetadata["slinger_uuid"] = str(uuid.uuid1())
             # build cover art download link dynamically
             if cachedMetadata["album_art_location"] and httpObj:
-               cachedMetadata["album_art_url"] = makeDownloadURL(httpObj, cachedMetadata["album_art_location_type"], cachedMetadata["album_art_location"])
+               cachedMetadata["album_art_url"] = makeDownloadURL (httpObj, cachedMetadata["album_art_location_type"], cachedMetadata["album_art_location"])
             return cachedMetadata
 
         if not smbConn:

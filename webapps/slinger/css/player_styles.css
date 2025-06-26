@@ -426,12 +426,11 @@ a:hover, a:focus {
 /* --------------------------------------------- */
 
 #queueBrowserControls {
-    background:#000;
+    background:#fff;
     color:white;
-    width:100%;
 }
 #queueBrowserControls td {
-    background:#000;
+    background:#fff;
     color:white;
     padding:0px;
 }
@@ -445,11 +444,9 @@ a:hover, a:focus {
 /* --------------------------------------------- */
 
 #playlistBrowserControls {
-    background:#000;
     color:white;
 }
 #playlistBrowserControls td {
-    background:#000;
     color:white;
     padding:0px;
 }
@@ -472,7 +469,6 @@ a:hover, a:focus {
 /* --------------------------------------------- */
 
 .inlinePlaylistBrowserControls {
-    background:#fff;
     color:black;
     border-radius: 5px;
     border: 1px solid #7c7d7d;
@@ -483,6 +479,7 @@ a:hover, a:focus {
     cursor: pointer;
     color:#111;
     font-size:x-large;
+    vertical-align: middle;
 }
 .ui-selectmenu-text  {
   font-size: 15px !important;
@@ -517,11 +514,9 @@ a:hover, a:focus {
 }
 
 #playlistBrowserControls {
-    background:#000;
     color:white;
 }
 #playlistBrowserControls td {
-    background:#000;
     color:white;
     padding:0px;
 }

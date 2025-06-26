@@ -205,7 +205,7 @@ class ConfigLoader (object):
                     groupID = grpMatched.group(1).upper().replace('/','\\') # replace pathing forward slash char with black slash
 
                     # matched TEST_SERVICE_STEPS type
-                    if (re.compile('^\[\[\[(.*?)\]\]\]$').search(line)):
+                    if (re.compile(r'^\[\[\[(.*?)\]\]\]$').search(line)):
                         # test if we need return from this section and re-test line for next section
                         if sectionType.upper() == self.secTypeLevel3:  # deeper level, depth > 1
                             lineList.insert(0, line)
@@ -214,7 +214,7 @@ class ConfigLoader (object):
                             configListScope[groupID] = self._loadCfg(lineList, self.secTypeLevel3, {self.secType_ID: self.secTypeLevel3}, self._envVarExpand(groupID))
 
                     # matched TEST_SERVICE type
-                    elif (re.compile ('^\[\[(.*?)\]\]$').search(line)):
+                    elif (re.compile (r'^\[\[(.*?)\]\]$').search(line)):
                         # test if we need return from this section and re-test line for next section
                         if ((sectionType.upper() == self.secTypeLevel1) or
                             (sectionType.upper() == self.secTypeLevel3)): # deeper level, depth > 0
@@ -224,7 +224,7 @@ class ConfigLoader (object):
                             configListScope[self._envVarExpand(groupID)] = self._loadCfg (lineList, self.secTypeLevel1, {self.secType_ID : self.secTypeLevel1}, self._envVarExpand(groupID))
 
                     # matched TEST_SERVGRPID type
-                    elif (re.compile ('^\[(.*?)\]$').search(line)):
+                    elif (re.compile (r'^\[(.*?)\]$').search(line)):
                         # test if we need return from this section and re-test line for next section
                         if sectionType.upper() != self.secTypeGlobal: # base level, depth 0
                             lineList.insert (0, line)
@@ -339,7 +339,7 @@ class ConfigLoader (object):
                     # check for encrypted/obfuscated password type parameters
                     if name in ConfigCredsIDList:
                         p = settings[name]
-                        m = re.search('^\|\|(.*)\|\|$', p)
+                        m = re.search(r'^\|\|(.*)\|\|$', p)
                         if m:  # obfuscated password detected in config file, convert to plain-text before obfuscating again using random key
                             return self._obfuscateString(m.group(1), key=self.__cryptkey, decode=True)
 
@@ -458,7 +458,7 @@ class ConfigLoader (object):
                 if m: # found a match for a key word
                     pw = m.group(4).strip()
                     if pw == "": continue
-                    m  = re.search ('\|\|(.*)\|\|', pw)
+                    m  = re.search (r'\|\|(.*)\|\|', pw)
                     # do not encode existing password that is already encoded
                     if encode:
                         if not m:

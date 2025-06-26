@@ -944,11 +944,11 @@ class MappingRules():
                  'PATH':           httpd.path,
                  'BASEPATH' :      httpd.queryBasePath,
                  'QUERYSTRING':    httpd.queryString,
-                 'QUERYBASEPATH':  re.sub('([^/]+)/?$', '', httpd.path),
-                 'QUERYNAME':      re.sub('(.*)(\?.*)', r"\1", strSubtract(httpd.path, re.sub('([^/]+)/?$', '', httpd.path)))
+                 'QUERYBASEPATH':  re.sub(r'([^/]+)/?$', r'', httpd.path),
+                 'QUERYNAME':      re.sub(r'(.*)(\?.*)', r"\1", strSubtract(httpd.path, re.sub(r'([^/]+)/?$', r'', httpd.path)))
                 }
         for k in cmds.keys():
-            replStr = re.sub('(\{\%\s*'+k+'\s*\%\})', str(cmds[k]), replStr)
+            replStr = re.sub(r'(\{\%\s*'+k+r'\s*\%\})', str(cmds[k]), replStr)
         return replStr
 
     def applyRules (self, httpd, osWebpageDir, basepath, querytomatch, defaultPath=''):
@@ -959,7 +959,7 @@ class MappingRules():
         # logging.debug ("MappingRules.applyRules httpd='" + str(vars(httpd)) + "'")
         if self.debug:
             logging.info ("MappingRules.applyRules file = " + self.filepath)
-            logging.info ("MappingRules.applyRules envs vars = " + self.replaceHTTPVars(httpd, "\{\%BASEPATH\%\}:'{%BASEPATH%}', \{\%HOSTNAME_NAME\%\}:'{%HOSTNAME_NAME%}', \{\%PORT_NUMBER\%\}:'{%PORT_NUMBER%}', \{\%PROTOCOL\%\}:'{%PROTOCOL%}', \{\%COMMAND\%\}:'{%COMMAND%}',\{\%PATH\%\}:'{%PATH%}', \{\%QUERYSTRING\%\}:'{%QUERYSTRING%}', \{\%QUERYBASEPATH\%\}:'{%QUERYBASEPATH%}',\{\%QUERYNAME\%\}:'{%QUERYNAME%}'").replace('\{\%', '{%').replace('\%\}','%}') )
+            logging.info ("MappingRules.applyRules envs vars = " + self.replaceHTTPVars(httpd, r"\{\%BASEPATH\%\}:'{%BASEPATH%}', \{\%HOSTNAME_NAME\%\}:'{%HOSTNAME_NAME%}', \{\%PORT_NUMBER\%\}:'{%PORT_NUMBER%}', \{\%PROTOCOL\%\}:'{%PROTOCOL%}', \{\%COMMAND\%\}:'{%COMMAND%}',\{\%PATH\%\}:'{%PATH%}', \{\%QUERYSTRING\%\}:'{%QUERYSTRING%}', \{\%QUERYBASEPATH\%\}:'{%QUERYBASEPATH%}',\{\%QUERYNAME\%\}:'{%QUERYNAME%}'").replace(r'\{\%', r'{%').replace(r'\%\}',r'%}') )
             logging.info ("MappingRules.applyRules func vars = basepath:'" + basepath + "', querytomatch:'" + querytomatch + "'")
 
         if not osWebpageDir:
@@ -1213,10 +1213,10 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
 
     # overload the base class logging function
     def log_message(self, format, *args):
-        logging.info ("[%s] : %s" % (self.client_address[0], format%args))
+        logging.info ("[%s] : %s" % (str(self.client_address[0]), str(format%args)))
 
     def dbg_message(self, format, *args):
-        logging.debug ("[%s] : %s" % (self.client_address[0], format%args))
+        logging.debug ("[%s] : %s" % (str(self.client_address[0]), str(format%args)))
 
     def getBaseURLAddress (self):
         return self.protocol + '://' + self.host_name + ":" + str(self.port_number)
@@ -1241,16 +1241,16 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
             if self.command.upper() == "POST":
                 self.cgiFormDataPostFull = FieldStorage(fp=self.rfile,
                                                         headers=self.headers,
-                                                            keep_blank_values=1,
-                                                            environ={'REQUEST_METHOD': 'POST',
-                                                                     'CONTENT_TYPE': self.headers['Content-Type'],
-                                                                    }
-                                                           )
+                                                        keep_blank_values=1,
+                                                        environ={'REQUEST_METHOD': 'POST',
+                                                                 'CONTENT_TYPE': self.headers['Content-Type'],
+                                                                }
+                                                        )
 
                 # convert from field storage to normal dictionary list
                 try:
                     for item in self.cgiFormDataPostFull.keys():
-                        if re.match('.*\[\]$',item):
+                        if re.match(r'.*\[\]$',item):
                             arry     = []
                             itemArry = item.rstrip('[]')
                             if isinstance(self.cgiFormDataPostFull[item], list):
@@ -1674,8 +1674,10 @@ class HTTPInstances (threading.Thread):
 
         # if this service is going to be encrypted ...
         if serve_via_ssl:
-            self.protocol     = 'https'
-            self.HTTPDaemon.socket = ssl.wrap_socket (self.HTTPDaemon.socket, certfile=ssl_server_pem, server_side=True,  do_handshake_on_connect=False)
+            self.protocol   = 'https'
+            self.sslContext = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            self.sslContext.load_cert_chain(certfile=ssl_server_pem)
+            self.HTTPDaemon.socket = self.sslContext.wrap_socket(self.HTTPDaemon.socket, server_side=True,  do_handshake_on_connect=False)
             self.HTTPDaemon.socket.setblocking(0)
         else:
             self.protocol     = 'http'

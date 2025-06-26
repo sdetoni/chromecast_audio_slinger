@@ -179,7 +179,16 @@ var G_Generated_Local_Player_UniqueID = "";
             <td colspan="100%">
                 <table style="width:100%" border=0><tr>
                     <td class="playerTxt" id="songRangeHeader"></td>
-                    <td class="playerTxt" style="width:100%"><input type="range" min="1" max="100" value="50" id="songRangePosition" onchange="((! G_DisableSongSeek) && chromeCastBasicAction($('#ccast_uuid').val(), 'seek', $(this).val()))"></td>
+                    <td class="playerTxt" style="width:100%">
+""")
+
+if GF.Config.getSettingBool('slinger/DISABLE_SONG_SEEK', True):
+    output ("""<progress min="1" max="100" value="50" id="songRangePosition"></progress>""")
+else:
+    output ("""<input type="range" min="1" max="100" value="50" id="songRangePosition" onchange="((! G_DisableSongSeek) && chromeCastBasicAction($('#ccast_uuid').val(), 'seek', $(this).val()))">""")
+
+output (f"""                        
+                    </td>
                     <td class="playerTxt" id="songRangeFooter"></td>
                 </tr></table>
             </td>
@@ -340,12 +349,12 @@ output (f"""
                         <td style="width:100%">        
                             <table border=0 style="text-align:left"><tr>
                             <td>
-                                <i class="playerControls fa-solid fa-broom" style="text-align:center;" title="Clear Queue" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'queue_clear')"><br><font style="display:none" class="showHelpText controlsIconFont">Clear Queue</font></i>
+                                <i class="inlinePlayListControls fa-solid fa-broom" style="text-align:center;" title="Clear Queue" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'queue_clear')"><br><font style="display:none" class="showHelpText controlsIconFont">Clear Queue</font></i>
                             </td>                            
                             <td style="width:100%">      
                                 &nbsp;                     
-                                <input type="text" placeholder="Enter new playlist name" id="playlist_name_field" style="color:black">
-                                <i class="playerControls fa-solid fa-square-plus" style="text-align:center;" title="Save Queue as Playlist" onclick="QueueListToPlaylist($('#playlist_name_field').val())"><br><font style="display:none" class="showHelpText controlsIconFont">Save Queue as Playlist</font></i>                                
+                                <input type="text" placeholder="Enter new playlist name" id="playlist_name_field" style="color:black;vertical-align:middle">
+                                <i class="inlinePlayListControls fa-solid fa-square-plus" style="text-align:center;" title="Save Queue as Playlist" onclick="QueueListToPlaylist($('#playlist_name_field').val())"><br><font style="display:none" class="showHelpText controlsIconFont">Save Queue as Playlist</font></i>                                
                             </td>                  
                             <tr></table>
                         </td>                                                                  
@@ -370,8 +379,8 @@ output (f"""
                 <table><tr>
                     <td>
                         <span>
-                            <input type="text" placeholder="Enter new playlist name" id="newPlayListName" style="color:black">
-                            <i class="playerControls fa-solid fa-square-plus" style="text-align:center;" title="Create Playlist" onclick="CreatePlayList($('#newPlayListName').val())"><br><font class=" showHelpText  controlsIconFont">Create Playlist</font></i>                  
+                            <input type="text" placeholder="Enter new playlist name" id="newPlayListName" style="color:black;vertical-align:middle">
+                            <i class="inlinePlayListControls  fa-solid fa-square-plus" style="text-align:center;" title="Create Playlist" onclick="CreatePlayList($('#newPlayListName').val())"><br><font class=" showHelpText  controlsIconFont">Create Playlist</font></i>                  
                         </span>
                     </td>                                            
                 </tr></table>

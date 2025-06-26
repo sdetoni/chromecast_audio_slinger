@@ -6,9 +6,10 @@ I has the ability to cast from remote CIFS/Windows file shares as well as local 
 This service will run as a Daemon, monitoring Chrome Cast devices, and slinger audio files 
 to devices from its pending audio queue.
 
-## Version 0.03 Work in progress:
+## Version 0.04 Work in progress:
  * Added .dsf SACD format playback to Chromecast via conversion to FLAC 24 bit 96khz
- * Current Max supported **Python release** is **3.11** only
+ * Update supported **Python release** up to **3.13**
+ * Fixed graphical issues
 
 ## Config Chrome Cast Slinger
 
@@ -54,9 +55,33 @@ update to ip address of 0.0.0.0
     MATCH_MUSIC_TYPE=3gpp::audio/aac
     MATCH_MUSIC_TYPE=3gpp2::audio/aac
     MATCH_MUSIC_TYPE=m4a::audio/aac
+    
+    # dynamic transcoding
+    MATCH_MUSIC_TYPE=dsf::audio/transcode
+
+   	# transcode formats using ffmpeg
+	TC_FFMPEG_AUDIO_FORMAT=s32
+	TC_FFMPEG_AUDIO_FREQ=96000
+    TC_FFMPEG_AUDIO_OUT_FORMAT=flac
+
+    # extra parameter used in audio
+ 	TC_FFMPEG_OTHER_AUDIO_CFG=-af
+    TC_FFMPEG_OTHER_AUDIO_CFG="lowpass=24000, volume=6dB"
+    TC_FFMPEG_OTHER_AUDIO_CFG=-compression_level
+    TC_FFMPEG_OTHER_AUDIO_CFG=0
+
+    # Override ffmpeg executable location
+    #TC_FFMPEG_EXE_OVERRIDE=
+    #TC_FFMPEG_EXE_OVERRIDE=.\ffmpeg\bin\ffmpeg.exe
+    #TC_FFMPEG_EXE_OVERRIDE=c:\ffmpeg\bin\ffmpeg.exe
+    #TC_FFMPEG_EXE_OVERRIDE=/usr/bin/ffmpeg    
 
     # how long to cache chrome cast device info before re-query device info in seconds. Default 10 mins
     CHROMECAST_CACHE_TIMEOUT=600
+    
+    # if the song seek position fails to work, then you can disable
+    # it with this option.
+    DISABLE_SONG_SEEK=true    
 
     # accepted formats using:
     #   <username/password>::UNC Path

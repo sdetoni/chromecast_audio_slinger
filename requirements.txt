@@ -2,3 +2,4 @@ pychromecast==13.1.0
 pymediainfo
 pysmb
 pyffmpeg
+legacy-cgi; python_version >= '3.13'
