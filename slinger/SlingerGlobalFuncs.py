@@ -338,10 +338,20 @@ def getFolderArtSMB (location, trimLeaf = False, smbConn=None):
             pass
     return albumArtFilename
 
-def makeDownloadURL (httpObj, type, location):
+def makeDownloadURL (httpObj, type, location, chromecastHTTPDownland=False):
+    httpProto    = httpObj.protocol
+    hostnamePort = httpObj.headers['HOST']
+
+    if chromecastHTTPDownland:
+        httpPort     = GF.Config.getSetting('HTTP_PORT', '')
+        httpProto    = 'http'
+        hostnamePort = f"{LocalHostIP}:{httpPort}"
+
+    if not hostnamePort:
+        hostnamePort = f"{LocalHostIP}:{httpObj.port_number}"
+
     # use host ipv4 address as chromecast may/will not be able to decode local host DNS names.
-    hostnamePort = f"{LocalHostIP}:{httpObj.port_number}"
-    downloadURL = f'{httpObj.protocol}://{hostnamePort}{httpObj.queryBasePath}accessfile.py'
+    downloadURL = f'{httpProto}://{hostnamePort}{httpObj.queryBasePath}accessfile.py'
     downloadURL += f'?type={type}&location={urllib.parse.quote(location)}'
     return downloadURL
 

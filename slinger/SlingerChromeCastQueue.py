@@ -434,7 +434,8 @@ class SlingerChromeCastQueue:
             SGF.DB.AddPlayListSong(playListName, q.location, q.type)
 
     def loadLocation (self, httpObj, location, type, forcePlay):
-        downloadURL = SGF.makeDownloadURL(httpObj=httpObj, type=type, location=location)
+        # do not HTTPS download link as the cert is likely self-signed in this type application!
+        downloadURL = SGF.makeDownloadURL(httpObj=httpObj, type=type, location=location, chromecastHTTPDownland=True)
 
         if type == 'smb':
             metadata = SGF.getMediaMetaDataSMB(location, httpObj=httpObj)
