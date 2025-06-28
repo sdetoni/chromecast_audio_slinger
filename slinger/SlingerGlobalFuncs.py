@@ -1,3 +1,5 @@
+import tempfile
+
 LOCAL_PLAYER  = "LOCAL_PLAYER"
 
 import os
@@ -206,6 +208,11 @@ def matchArtTypes (fileName, testForKnownExt=False):
 
     return "unknown"
 
+def getTempDirectoryLocation ():
+    customDir = GF.Config.getSetting('slinger/TEMP_FILE_LOCATION', '').strip()
+    if not customDir:
+        customDir = tempfile.gettempdir()
+    return customDir
 
 def loadDirectoryQueueSMB (location, maxDepth=100, maxQueueLen=1000, queueFileList=None, smbConn=None, matchFunc=getCastMimeType):
     if not queueFileList:

@@ -72,6 +72,25 @@ def processTranscoding (httpObj, location, type, fileStartPos, fileEndPos):
     tmpTransCodeFile   = None
     tmpSrcLocationFile = None
 
+    def cleanupTempfiles ():
+        nonlocal tmpTransCodeFile, tmpSrcLocationFile
+        # clean up temp files...
+        if tmpTransCodeFile and os.path.exists(tmpTransCodeFile.name):
+            try:
+                tmpTransCodeFile.close()
+                os.unlink(tmpTransCodeFile.name)
+                tmpTransCodeFile = None
+            except Exception as e:
+                logging.error(f"Failed to remove temp transcoding file: {e}")
+
+        if tmpSrcLocationFile and os.path.exists(tmpSrcLocationFile.name):
+            try:
+                tmpSrcLocationFile.close()
+                os.unlink(tmpSrcLocationFile.name)
+                tmpSrcLocationFile = None
+            except Exception as e:
+                logging.info(f"Failed to SMB src transcoding file: {e}")
+
     try:
         logging.info("Starting Transcoding...")
 
@@ -88,7 +107,7 @@ def processTranscoding (httpObj, location, type, fileStartPos, fileEndPos):
             username, password                = SGF.matchSMBCredentialsConfigString(location)
             ccfilename                        = filePath.split(r'\\')[-1]
             srcExt                            = ccfilename.split('.')[-1].lower()
-            tmpSrcLocationFile                = tempfile.NamedTemporaryFile(suffix='.' + srcExt, delete=False)
+            tmpSrcLocationFile                = tempfile.NamedTemporaryFile(dir=SGF.getTempDirectoryLocation(), suffix='.' + srcExt, delete=False)
 
             # download source file
             try:
@@ -113,7 +132,7 @@ def processTranscoding (httpObj, location, type, fileStartPos, fileEndPos):
             filePath = location
             ccfilename = os.path.basename(filePath)
 
-        tmpTransCodeFile = tempfile.NamedTemporaryFile(suffix='.' + GF.Config.getSetting('slinger/TC_FFMPEG_AUDIO_OUT_FORMAT', 'flac'), delete=False)
+        tmpTransCodeFile = tempfile.NamedTemporaryFile(dir=SGF.getTempDirectoryLocation(), suffix='.' + GF.Config.getSetting('slinger/TC_FFMPEG_AUDIO_OUT_FORMAT', 'flac'), delete=False)
 
         # Use ffmpeg to convert .dsf to 24-bit 96kHz .flac
         ffmpeg_command = ([FFMPEG_EXE,
@@ -133,6 +152,8 @@ def processTranscoding (httpObj, location, type, fileStartPos, fileEndPos):
         transcodedData = b''
         with open(tmpTransCodeFile.name, 'rb') as file:
                 transcodedData = file.read()
+
+        cleanupTempfiles()
 
         # output transcode data as .flac
         readLen  = len(transcodedData)
@@ -157,18 +178,9 @@ def processTranscoding (httpObj, location, type, fileStartPos, fileEndPos):
 
         logging.info(f"Writing transcoded output of {len(transcodedData)} bytes")
         httpObj.outputRaw (transcodedData)
-    finally:
-        if tmpTransCodeFile and os.path.exists(tmpTransCodeFile.name):
-            try:
-                os.remove(tmpTransCodeFile.name)
-            except:
-                logging.info ("Failed to remove temp transcoding file")
 
-        if tmpSrcLocationFile and os.path.exists(tmpSrcLocationFile.name):
-            try:
-                os.remove(tmpSrcLocationFile.name)
-            except:
-                logging.info ("Failed to SMB src transcoding file")
+    finally:
+        cleanupTempfiles()
 
 # ------------------------------------------------------------------------------------------------------
 
@@ -261,7 +273,6 @@ try:
     ########## Local File System Send File ##########
     elif postData["type"].lower() == 'file' and postData["location"] != '':
         # send file to destination
-        transcoded = False
         try:
             scode = 200
             if fileStartPos > 0:
@@ -296,13 +307,6 @@ try:
         finally:
             try:
                 fObj.close()
-            except:
-                pass
-
-            try:
-                # Clean up the temporary transcoded file
-                if transcoded and os.path.exists(postData["location"]):
-                    os.remove(postData["location"])
             except:
                 pass
 

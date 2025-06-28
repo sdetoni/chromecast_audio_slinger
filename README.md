@@ -6,6 +6,9 @@ I has the ability to cast from remote CIFS/Windows file shares as well as local 
 This service will run as a Daemon, monitoring Chrome Cast devices, and slinger audio files 
 to devices from its pending audio queue.
 
+## Version 0.05 Work in progress:
+ * Added Custom temp directory location for quick RAM disk type transcoding operations.
+ 
 ## Version 0.04 Work in progress:
  * Added .dsf SACD format playback to Chromecast via conversion to FLAC 24 bit 96khz
  * Update supported **Python release** up to **3.13**
@@ -59,13 +62,13 @@ update to ip address of 0.0.0.0
     # dynamic transcoding
     MATCH_MUSIC_TYPE=dsf::audio/transcode
 
-   	# transcode formats using ffmpeg
-	TC_FFMPEG_AUDIO_FORMAT=s32
-	TC_FFMPEG_AUDIO_FREQ=96000
+    # transcode formats using ffmpeg
+    TC_FFMPEG_AUDIO_FORMAT=s32
+    TC_FFMPEG_AUDIO_FREQ=96000
     TC_FFMPEG_AUDIO_OUT_FORMAT=flac
 
     # extra parameter used in audio
- 	TC_FFMPEG_OTHER_AUDIO_CFG=-af
+    TC_FFMPEG_OTHER_AUDIO_CFG=-af
     TC_FFMPEG_OTHER_AUDIO_CFG="lowpass=24000, volume=6dB"
     TC_FFMPEG_OTHER_AUDIO_CFG=-compression_level
     TC_FFMPEG_OTHER_AUDIO_CFG=0
@@ -75,6 +78,12 @@ update to ip address of 0.0.0.0
     #TC_FFMPEG_EXE_OVERRIDE=.\ffmpeg\bin\ffmpeg.exe
     #TC_FFMPEG_EXE_OVERRIDE=c:\ffmpeg\bin\ffmpeg.exe
     #TC_FFMPEG_EXE_OVERRIDE=/usr/bin/ffmpeg    
+	
+    # Override temp file creating (i.e them in an RAM drive for fast I/O), by default its your OS Temp location.
+    # example:
+    #     mount -o size=1G -t tmpfs none /mnt/tmpfs
+    # TEMP_FILE_LOCATION=/mnt/tmpfs
+    TEMP_FILE_LOCATION=	
 
     # how long to cache chrome cast device info before re-query device info in seconds. Default 10 mins
     CHROMECAST_CACHE_TIMEOUT=600
