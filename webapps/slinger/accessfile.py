@@ -8,13 +8,15 @@ import subprocess
 import daemon.GlobalFuncs as GF
 from pyffmpeg import FFmpeg
 from smb.SMBConnection import SMBConnection
-import slinger.SlingerGlobalFuncs as SGF
+import slinger.SlingerGlobalFuncs     as SGF
+import slinger.SlingerChromeCastQueue as SlingerChromeCastQueue
 
 self    = eval('self'); output = self.output
 postData = self.getCGIParametersFormData ()
 
-if not "type"     in postData: postData["type"]     = ''
-if not "location" in postData: postData["location"] = ''
+if not "type"       in postData: postData["type"]       = ''
+if not "location"   in postData: postData["location"]   = ''
+if not "ccast_uuid" in postData: postData["ccast_uuid"] = ''
 
 # dump headers
 #logging.error ("*************************")
@@ -65,7 +67,7 @@ logging.info(f"accessfile.py: CUR_CONCURRENT_ACCESSFILE_NO = {SGF.CUR_CONCURRENT
 # ffmpeg reads and generates its files. Input files are not just streamed in, but have random I/O with in the file to read meta-data.
 # Output files from ffmpeg also have some level of re-write to the output file metadata (file size info etc). Thus, for a consistent trancoded output
 # temporary files are used.
-def processTranscoding (httpObj, location, type, fileStartPos, fileEndPos):
+def processTranscoding (httpObj, ccast_uuid, location, type, fileStartPos, fileEndPos):
     if not location:
         return
 
@@ -145,15 +147,40 @@ def processTranscoding (httpObj, location, type, fileStartPos, fileEndPos):
                            ] +            GF.Config.getSettingList('slinger/TC_FFMPEG_OTHER_AUDIO_CFG', '-compression_level 0') + [ tmpTransCodeFile.name]
                           )
         logging.info(ffmpeg_command)
-        subprocess.run(ffmpeg_command, check=True)
+        cco  = SGF.getChromecastQueueObj(ccast_uuid=ccast_uuid)
+        proc = None
+        try:
+            #subprocess.run(ffmpeg_command, check=True)
+            proc = subprocess.Popen(ffmpeg_command)
 
-        ##################################################
+            # terminate any previous running transcoding, if any. There can (should) be only one!
+            if cco:
+                cco.killTranscodingProc()
 
-        transcodedData = b''
-        with open(tmpTransCodeFile.name, 'rb') as file:
-                transcodedData = file.read()
+            if cco:
+                cco.setTranscodingProc(proc)
 
-        cleanupTempfiles()
+            # check if this process was abnormally terminated, if so, exit and don't return anything!
+            rtnCode = proc.wait()
+            if rtnCode != 0:
+                logging.error(f"Exiting transcoding, return code: {rtnCode}")
+                return
+
+            # clear trancoding process obj
+            if cco:
+                cco.killTranscodingProc()
+
+            transcodedData = b''
+            with open(tmpTransCodeFile.name, 'rb') as file:
+                    transcodedData = file.read()
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Exiting transcoding, process error : {e}")
+            return
+        finally:
+            if cco:
+                if cco.transcodingProcess == proc:
+                    cco.setTranscodingStatus('')
+            cleanupTempfiles()
 
         # output transcode data as .flac
         readLen  = len(transcodedData)
@@ -221,7 +248,7 @@ try:
     SGF.CUR_CONCURRENT_ACCESSFILE_NO += 1
     ########## SMB Network Send File ##########
     if (SGF.getCastMimeType(postData["location"]).lower() == SGF.AUDIO_TRANSCODE) and postData["location"] != '':
-        processTranscoding(httpObj=self, location=postData["location"], type=postData["type"].lower(), fileStartPos=fileStartPos, fileEndPos=fileEndPos)
+        processTranscoding(httpObj=self, ccast_uuid=postData["ccast_uuid"], location=postData["location"], type=postData["type"].lower(), fileStartPos=fileStartPos, fileEndPos=fileEndPos)
 
     elif postData["type"].lower() == 'smb' and postData["location"] != '':
         # read file locations

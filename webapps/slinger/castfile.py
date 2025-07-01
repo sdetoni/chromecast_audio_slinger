@@ -15,7 +15,7 @@ if not "ccast_uuid"        in postData: postData["ccast_uuid"]        = ''
 if not "max_recurse_depth" in postData: postData["max_recurse_depth"] = '100'
 if not "max_queue_len"     in postData: postData["max_queue_len"]     = '1000'
 
-castQueueObj = SGF.getChromecastQueueObj(postData["ccast_uuid"])
+castQueueObj = SGF.getChromecastQueueObj(ccast_uuid=postData["ccast_uuid"])
 
 if not castQueueObj:
     logging.error(f"{postData['ccast_uuid']} cast object is not matched!")

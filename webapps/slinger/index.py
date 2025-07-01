@@ -25,7 +25,7 @@ output ("""
     
     <script type="text/javascript" src="jquery-toast/jquery.toast.js"></script>
     <link rel="stylesheet" href="jquery-toast/jquery.toast.css">
-
+    
     <link rel="stylesheet" href="slider/slider.css">    
     <script type="text/javascript" src="slider/slider.js"></script>
 
@@ -33,7 +33,8 @@ output ("""
 
 	<link rel="stylesheet" href="fontawesome/css/all.css" />
 	<link rel="stylesheet" href="css/player_styles.css" />
-	<link rel="stylesheet" href="css/gear.css" />			
+	<link rel="stylesheet" href="css/gear.css" />	
+    <link rel="stylesheet" href="css/vfd-spinner.css">				
 </head>
 """)
 
@@ -49,7 +50,20 @@ var G_Generated_Local_Player_UniqueID = "";
 <div id="audio-player-container" style="display:hidden">
   <audio id="LocalPlayerDevice" src="" playing_now="">
 </div> 
-<div id="playerView" class="rcorners1">
+<div id="playerView" class="rcorners1">    
+    <div id="busy-transcoding" class="vfd-container"> 
+        <div class="vfd-spinner">
+            <div class="vfd-segment"></div>
+            <div class="vfd-segment"></div>
+            <div class="vfd-segment"></div>
+            <div class="vfd-segment"></div>
+            <div class="vfd-segment"></div>
+            <div class="vfd-segment"></div>
+            <div class="vfd-segment"></div>
+            <div class="vfd-segment"></div>
+        </div>
+        <div class="vfd-label">TRANSCODING</div>
+    </div>        
     <div class="overlay-containerSml" style="display:none">    
         <div style="display:none" class=" playingInfo overlay-playinfo playerTxt" >
             <table border=0>
@@ -61,7 +75,7 @@ var G_Generated_Local_Player_UniqueID = "";
         <div id="playingAlbumArt" class="overlay-albumArt">
             <img id="albumArtURL" onclick="ViewLargeArt(this);" class="selectItemHand" src="img/folder.png" style="height: 200px;">
         </div>
-        <div style="display:none" class="playingInfo overlay-playinfo playerTxt" >
+        <div id="playingSongInfo" style="display:none" class="playingInfo overlay-playinfo playerTxt" >
             <table border=0>
                 <tr><td class="playerTxt" style="white-space:nowrap">Song Title</td><td class="song-title playerTxt" id="songTitle"></td></tr>
                 <tr><td class="playerTxt" style="white-space:nowrap">Album Name</td><td class="song-title playerTxt" id="songAlbumName"></td></tr>

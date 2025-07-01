@@ -12,7 +12,7 @@ if not "ccast_uuid" in postData: postData["ccast_uuid"] = ''
 if not "action"     in postData: postData["action"]     = ''
 if not "val1"       in postData: postData["val1"]       = ''
 
-castQueueObj = SGF.getChromecastQueueObj(postData["ccast_uuid"])
+castQueueObj = SGF.getChromecastQueueObj(ccast_uuid=postData["ccast_uuid"])
 if not castQueueObj:
     logging.error(f"{postData['ccast_uuid']} cast object is not matched!")
     exit(0)

@@ -345,7 +345,7 @@ def getFolderArtSMB (location, trimLeaf = False, smbConn=None):
             pass
     return albumArtFilename
 
-def makeDownloadURL (httpObj, type, location, chromecastHTTPDownland=False):
+def makeDownloadURL (httpObj, type, location, chromecastHTTPDownland=False,ccast_uuid=''):
     httpProto    = httpObj.protocol
     hostnamePort = httpObj.headers['HOST']
 
@@ -359,7 +359,7 @@ def makeDownloadURL (httpObj, type, location, chromecastHTTPDownland=False):
 
     # use host ipv4 address as chromecast may/will not be able to decode local host DNS names.
     downloadURL = f'{httpProto}://{hostnamePort}{httpObj.queryBasePath}accessfile.py'
-    downloadURL += f'?type={type}&location={urllib.parse.quote(location)}'
+    downloadURL += f'?type={type}&location={urllib.parse.quote(location)}&ccast_uuid={urllib.parse.quote(ccast_uuid)}'
     return downloadURL
 
 def getMediaMetaDataSMB (location, httpObj=None, smbConn=None):
@@ -567,20 +567,24 @@ def chromecastQueueProcessing ():
         # wait some time and retest connected chromecast device for activity
         time.sleep(1)
 
-def getChromecastQueueObj (ccast_uuid):
+def getChromecastQueueObj (ccast_uuid = None, ccast_ip=None):
     castQueueObj = None
     for key in ChromeCastQueues.keys():
         cqo = ChromeCastQueues[key]
-        if str(cqo.cast.uuid) == ccast_uuid:
+        if ccast_uuid and str(cqo.cast.uuid) == ccast_uuid:
+            return cqo
+
+        if ccast_ip and str(cqo.cast.cast_info.host) == ccast_ip:
             return cqo
 
     # test for local player with a unique id, if not found in list, then auto-create an entry and return the new object
-    lpuid = ccast_uuid.split('::')
-    if ((len(lpuid) > 1) and (lpuid[0] == LOCAL_PLAYER) and (lpuid[1] != "")):
-        # create a new unqiue Local Player objects
-        ChromeCastQueues[ccast_uuid] = SlingerChromeCastQueue.SlingerChromeCastQueue(SlingerChromeCastQueue.SlingerLocalPlayer(ccast_uuid))
-        ChromeCastQueues[ccast_uuid].cast.queueParent(ChromeCastQueues[ccast_uuid])
-        return ChromeCastQueues[ccast_uuid]
+    if ccast_uuid:
+        lpuid = ccast_uuid.split('::')
+        if ((len(lpuid) > 1) and (lpuid[0] == LOCAL_PLAYER) and (lpuid[1] != "")):
+            # create a new unqiue Local Player objects
+            ChromeCastQueues[ccast_uuid] = SlingerChromeCastQueue.SlingerChromeCastQueue(SlingerChromeCastQueue.SlingerLocalPlayer(ccast_uuid))
+            ChromeCastQueues[ccast_uuid].cast.queueParent(ChromeCastQueues[ccast_uuid])
+            return ChromeCastQueues[ccast_uuid]
 
     return None
 

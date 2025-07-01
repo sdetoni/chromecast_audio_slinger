@@ -405,6 +405,22 @@ function chromeCastInfo ()
 {
     ccast_uuid = $('#ccast_uuid').val();
 
+    function clearSongTitleInfo ()
+    {
+         $('#songAlbumName').html('');
+         $('#songArtist').html('');
+         $('#songTitle').html('');
+         $('#songTitleSml').html('');
+         $('#songFilename').html('');
+         $('#songFileType').html('');
+         $('#albumArtURL').prop('src', G_DefaultCoverArt);
+         $('#albumArtURLSml').prop('src', G_DefaultCoverArt);
+         $('.playingInfo').css('display', 'none');
+
+         $('#plyrCntrlPlay').css('color', '');
+         $('#plyrCntrlAddToFavs').removeClass ('SongIsFavourite');
+    }
+
     $.ajax ({url: `castinfo.py?ccast_uuid=${ccast_uuid}&type=player_status`,
              type: "GET",
              dataType: "json",
@@ -414,18 +430,7 @@ function chromeCastInfo ()
 
                          if ((! data) || (data.playback_state.toLowerCase() == 'unknown'))
                          {
-                             $('#songAlbumName').html('');
-                             $('#songArtist').html('');
-                             $('#songTitle').html('');
-                             $('#songTitleSml').html('');
-                             $('#songFilename').html('');
-                             $('#songFileType').html('');
-                             $('#albumArtURL').prop('src', G_DefaultCoverArt);
-                             $('#albumArtURLSml').prop('src', G_DefaultCoverArt);
-                             $('.playingInfo').css('display', 'none');
-
-                             $('#plyrCntrlPlay').css('color', '');
-                             $('#plyrCntrlAddToFavs').removeClass ('SongIsFavourite');
+                             clearSongTitleInfo ();
                          }
 
                          if (! data)
@@ -434,7 +439,6 @@ function chromeCastInfo ()
                          }
 
                          // -------- Local Player Driver/Actions --------
-
                          if (data && isLocalPlayer(ccast_uuid))
                          {
                              let audio = $("#LocalPlayerDevice");
@@ -442,7 +446,7 @@ function chromeCastInfo ()
                              {
                                  if ($('#LocalPlayerDevice').attr('playing_now') != data.slinger_current_media.location)
                                  {
-                                     audio.attr('src', `accessfile.py?type=${data.slinger_current_media.type}&location=${escape(data.slinger_current_media.location)}`)
+                                     audio.attr('src', `accessfile.py?type=${data.slinger_current_media.type}&location=${encodeURI(data.slinger_current_media.location)}&ccast_uuid=${encodeURI(ccast_uuid)}`)
                                      audio.attr('playing_now', data.slinger_current_media.location)
                                      audio[0].pause();
                                      audio[0].load();
@@ -582,7 +586,19 @@ function chromeCastInfo ()
                          }
 
                          // --------------------------------------------
-
+                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.slinger_current_media.transcoding != data.slinger_current_media.transcoding) )
+                         {
+                              if (data.slinger_current_media.transcoding)
+                              {
+                                  $('#playingSongInfo').css('display', 'none');
+                                  $('#busy-transcoding').css('display', 'flex');
+                              }
+                              else
+                              {
+                                  $('#playingSongInfo').css('display', 'block');
+                                  $('#busy-transcoding').css('display', 'none');
+                              }
+                         }
                          if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.current_time != data.current_time) )
                          {
                              // some tracks do not have the full duration encoded in the mp3 files, in these cases, only show current time.
@@ -1207,7 +1223,7 @@ function OnClick_FileListParent (thisObj)
     if (type == 'smb')
         fileSep = '\\'
 
-    let p  = unescape($(thisObj).attr('filelocationParent'));
+    let p  =  decodeURI($(thisObj).attr('filelocationParent'));
     let fp = p.split (fileSep);
 
     // remove the last item from the path
@@ -1382,7 +1398,7 @@ async function loadFileList (filelocation, type, basePath)
                  flTable += `
 <table border=0 style="width:100%"><tr>
 <td style="padding-right: 5px;">
-    <i id="fileListParent" class="${parentDisabled} fa-solid fa-angles-left selectItemHand" onclick="OnClick_FileListParent(this)" filelocationParent="${escape(filelocation)}"></i>
+    <i id="fileListParent" class="${parentDisabled} fa-solid fa-angles-left selectItemHand" onclick="OnClick_FileListParent(this)" filelocationParent="${encodeURI(filelocation)}"></i>
     <br><font style="display:none; white-space:nowrap" class="showHelpText controlsIconFont">Parent Folder</font>
 </td>
 <td style="width:100%">
@@ -2017,7 +2033,7 @@ function runSearchQuery ()
                      art_url  = G_DefaultCoverArt;
 
                      if (metadata["album_art_location"] != "")
-                         art_url = `accessfile.py?type=${results[idx].type}&location=${escape(metadata["album_art_location"])}`;
+                         art_url = `accessfile.py?type=${results[idx].type}&location=${encodeURI(metadata["album_art_location"])}`;
 
                      srTable += `
 <tr class="dataRow songListRow selectItemHand" idx="{$idx}">

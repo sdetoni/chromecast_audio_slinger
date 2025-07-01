@@ -1,0 +1,74 @@
+  /* Set font size here to scale both spinner and label */
+  .vfd-container {
+    font-size: 5px; /* You can adjust this */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    position: relative;
+    top: 10px;
+  }
+
+  .vfd-spinner {
+    position: relative;
+    width: 6em;      /* 6 * font size */
+    height: 6em;
+  }
+
+  /* Container for all segments */
+  .vfd-segment {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1em;    /* 1 * font size */
+    height: 2.5em;
+    margin: -1.25em -0.5em;
+    border-radius: 0.5em 0.5em 0.15em 0.15em;
+    background: #0ff;
+    box-shadow:
+      0 0 0.3em #0ff,
+      0 0 0.6em #0ff,
+      0 0 1.2em #0ff;
+    opacity: 0.15;
+    transform-origin: center bottom;
+    animation: vfd-glow 1.5s linear infinite;
+  }
+
+  /* Position segments evenly in a circle */
+  /* 8 segments spaced 45deg apart */
+  .vfd-segment:nth-child(1) { transform: rotate(0deg) translateY(-2.5em); animation-delay: 0s; }
+  .vfd-segment:nth-child(2) { transform: rotate(45deg) translateY(-2.5em); animation-delay: 0.1875s; }
+  .vfd-segment:nth-child(3) { transform: rotate(90deg) translateY(-2.5em); animation-delay: 0.375s; }
+  .vfd-segment:nth-child(4) { transform: rotate(135deg) translateY(-2.5em); animation-delay: 0.5625s; }
+  .vfd-segment:nth-child(5) { transform: rotate(180deg) translateY(-2.5em); animation-delay: 0.75s; }
+  .vfd-segment:nth-child(6) { transform: rotate(225deg) translateY(-2.5em); animation-delay: 0.9375s; }
+  .vfd-segment:nth-child(7) { transform: rotate(270deg) translateY(-2.5em); animation-delay: 1.125s; }
+  .vfd-segment:nth-child(8) { transform: rotate(315deg) translateY(-2.5em); animation-delay: 1.3125s; }
+
+  @keyframes vfd-glow {
+    0%, 100% {
+      opacity: 0.15;
+      box-shadow:
+        0 0 0.3em #0ff,
+        0 0 0.6em #0ff,
+        0 0 1.2em #0ff;
+    }
+    50% {
+      opacity: 1;
+      box-shadow:
+        0 0 0.45em #0ff,
+        0 0 0.9em #0ff,
+        0 0 1.8em #0ff;
+    }
+  }
+
+  .vfd-label {
+    margin-top: 3.5em;
+    font-size: 1.5em; /* relative to container's font size */
+    letter-spacing: 0.2em;
+    text-shadow:
+      0 0 0.15em #0ff,
+      0 0 0.3em #0ff,
+      0 0 0.6em #0ff,
+      0 0 0.9em #0ff;
+  }

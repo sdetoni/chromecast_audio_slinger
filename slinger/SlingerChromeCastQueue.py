@@ -7,6 +7,8 @@ import datetime
 import random
 import threading
 
+TRANSCODING='transcoding'
+
 class SlingerLocalPlayer:
     class FakeMediaController:
         def __init__(self):
@@ -75,13 +77,15 @@ class SlingerLocalPlayer:
 
                     'slinger_queue_changeno': self.qparent.queueChangeNo,
                     'slinger_shuffle': self.qparent.shuffleActive,
-                    'slinger_current_media': {'location': '', 'type': ''},
+                    'slinger_current_media': {'location': '', 'type': '', 'transcoding': ''},
                     'slinger_sleeping_sec':0,
                 }
 
                 if self.qparent.thisQueueItem:
-                    self.qparent.playerStatus['slinger_current_media'] = {'location': self.qparent.thisQueueItem.location,
-                                                                          'type': self.qparent.thisQueueItem.type}
+                    self.qparent.playerStatus['slinger_current_media']['location']    = self.qparent.thisQueueItem.location
+                    self.qparent.playerStatus['slinger_current_media']['type']        = self.qparent.thisQueueItem.type
+
+                self.qparent.playerStatus['slinger_current_media']['transcoding'] = self.qparent.transcodingStatus
 
                 self.qparent.completeStatus = self.qparent.playerStatus.copy()
                 self.qparent.completeStatus['slinger_chromecast_queue'] = self.qparent.queue
@@ -103,9 +107,12 @@ class SlingerLocalPlayer:
         self.cast                 = SlingerLocalPlayer.FakeCast()
         self.cast.uuid            = uuid
 
-        self.status              = SlingerLocalPlayer.FakeCast()
-        self.status.volume_level = 1.0
-        self.muted               = False
+        self.cast_info            = SlingerLocalPlayer.FakeCast()
+        self.cast_info.host       = 'LOCAL_PLAYER'
+
+        self.status               = SlingerLocalPlayer.FakeCast()
+        self.status.volume_level  = 1.0
+        self.muted                = False
 
     def wakeNow (self):
         def ignoreCallback (p):
@@ -166,6 +173,9 @@ class SlingerChromeCastQueue:
 
         self.haltProcEvents = False
 
+        self.transcodingStatus  = ''
+        self.transcodingProcess = None
+
         if self.cast:
             self.processStatusEvent(wakeNow=True)
 
@@ -187,12 +197,38 @@ class SlingerChromeCastQueue:
 
     def _playQueueItem (self, queueItem):
         if not queueItem:
-            return;
+            return
 
-        self.playing_uuid =  queueItem.metadata['slinger_uuid']
+        self.playing_uuid  = queueItem.metadata['slinger_uuid']
         self.thisQueueItem = queueItem
+
+        # test if this a transcoding type, set the current status early for chromecast devices as status reqs are usually blocked once casting starts
+        if self.thisQueueItem.mimeType.lower() in (SGF.AUDIO_TRANSCODE,):
+            self.setTranscodingStatus(status=TRANSCODING)
+
         self.cast.wait()
         self.cast.media_controller.play_media(self.thisQueueItem.downloadURL, self.thisQueueItem.mimeType, metadata=self.thisQueueItem.metadata, enqueue=False)
+
+    def setTranscodingStatus (self, status):
+        self.transcodingStatus = status
+        self.playerStatus['slinger_current_media']['transcoding'] = status
+
+    def setTranscodingProc(self, proc):
+        self.transcodingProcess = proc
+        self.setTranscodingStatus(status=TRANSCODING)
+
+    def killTranscodingProc(self):
+        proc = self.transcodingProcess
+        self.transcodingProcess = None
+        self.setTranscodingStatus('')
+
+        # if process is still running!
+        if (proc) and (not proc.poll()):
+            try:
+                logging.warning(f"Terminating transcoding process: {proc}")
+                proc.kill()
+            except:
+                pass
 
     def wakeNow (self):
         self.processStatusEventInt           = 0
@@ -280,11 +316,14 @@ class SlingerChromeCastQueue:
 
                 'slinger_queue_changeno': self.queueChangeNo,
                 'slinger_shuffle':        self.shuffleActive,
-                'slinger_current_media': { 'location' : '', 'type' : ''}
+                'slinger_current_media': { 'location' : '', 'type' : '', 'transcoding': ''}
             }
 
             if self.thisQueueItem:
-                self.playerStatus['slinger_current_media'] = {'location': self.thisQueueItem.location, 'type': self.thisQueueItem.type}
+                self.playerStatus['slinger_current_media']['location']     = self.thisQueueItem.location
+                self.playerStatus['slinger_current_media']['type']         = self.thisQueueItem.type
+
+            self.playerStatus['slinger_current_media']['transcoding']  = self.transcodingStatus
 
             self.completeStatus                             = self.playerStatus.copy()
             self.completeStatus['chrome_status']            = chromeCastStatus
@@ -344,6 +383,7 @@ class SlingerChromeCastQueue:
         self.queue.insert(0, SlingerQueueItem(location, type, downloadURL,mimeType,metadata))
         self.queueChangeNo += 1
         self.wakeNow()
+
     def appendQueueMediaItem (self,location, type, downloadURL, mimeType, metadata):
         self.queue.append(SlingerQueueItem(location, type, downloadURL,mimeType,metadata))
         self.queueChangeNo += 1
@@ -435,7 +475,7 @@ class SlingerChromeCastQueue:
 
     def loadLocation (self, httpObj, location, type, forcePlay):
         # do not HTTPS download link as the cert is likely self-signed in this type application!
-        downloadURL = SGF.makeDownloadURL(httpObj=httpObj, type=type, location=location, chromecastHTTPDownland=True)
+        downloadURL = SGF.makeDownloadURL(httpObj=httpObj, type=type, location=location, chromecastHTTPDownland=True, ccast_uuid=str(self.cast.uuid))
 
         if type == 'smb':
             metadata = SGF.getMediaMetaDataSMB(location, httpObj=httpObj)
