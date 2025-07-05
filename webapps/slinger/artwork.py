@@ -45,7 +45,6 @@ try:
             if md['filename'].lower() == name.lower():
                 coverImgDLS.append({'filename' : md['filename'], 'src' : SGF.makeDownloadURL(self, md['type'], md['full_path']) })
                 loaded = True
-            if loaded:
                 break
 
         if not loaded:
