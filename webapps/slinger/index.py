@@ -62,7 +62,10 @@ var G_Generated_Local_Player_UniqueID = "";
             <div class="vfd-segment"></div>
             <div class="vfd-segment"></div>
         </div>
-        <div class="vfd-label">TRANSCODING</div>
+        <div class="vfd-label">
+            <div>TRANSCODING</div>
+            <div id="vfd-transcode-location"></div>
+        </div>
     </div>        
     <div class="overlay-containerSml" style="display:none">    
         <div style="display:none" class=" playingInfo overlay-playinfo playerTxt" >

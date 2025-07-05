@@ -205,6 +205,9 @@ class SlingerChromeCastQueue:
         # test if this a transcoding type, set the current status early for chromecast devices as status reqs are usually blocked once casting starts
         if self.thisQueueItem.mimeType.lower() in (SGF.AUDIO_TRANSCODE,):
             self.setTranscodingStatus(status=TRANSCODING)
+            self.playerStatus['slinger_current_media']['location'] = self.thisQueueItem.location
+            self.playerStatus['slinger_current_media']['type']     = self.thisQueueItem.type
+
 
         self.cast.wait()
         self.cast.media_controller.play_media(self.thisQueueItem.downloadURL, self.thisQueueItem.mimeType, metadata=self.thisQueueItem.metadata, enqueue=False)
@@ -360,6 +363,7 @@ class SlingerChromeCastQueue:
             return
         del self.queue[index]
         self.queueChangeNo += 1
+        self.wakeNow()
 
     def isDeviceActive (self):
         try:

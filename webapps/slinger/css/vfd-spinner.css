@@ -5,7 +5,7 @@
     flex-direction: column;
     align-items: center;
 
-    position: relative;
+    justify-content: center;
     top: 10px;
   }
 
@@ -66,6 +66,7 @@
     margin-top: 3.5em;
     font-size: 1.5em; /* relative to container's font size */
     letter-spacing: 0.2em;
+    text-align: center;
     text-shadow:
       0 0 0.15em #0ff,
       0 0 0.3em #0ff,

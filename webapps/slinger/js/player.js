@@ -586,12 +586,14 @@ function chromeCastInfo ()
                          }
 
                          // --------------------------------------------
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.slinger_current_media.transcoding != data.slinger_current_media.transcoding) )
+                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.slinger_current_media.transcoding != data.slinger_current_media.transcoding ||
+                                                          G_LastChromeCastInfo.slinger_current_media.location    != data.slinger_current_media.location) )
                          {
                               if (data.slinger_current_media.transcoding)
                               {
                                   $('#playingSongInfo').css('display', 'none');
                                   $('#busy-transcoding').css('display', 'flex');
+                                  $('#vfd-transcode-location').html(data.slinger_current_media.location);
                               }
                               else
                               {
@@ -705,6 +707,7 @@ function chromeCastInfo ()
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["title"]}</td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["albumName"]}</td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["artist"]}</td>
+    <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'del_queued_item_at_index',  ${idx});"><i class="inlinePlayListControls fa-solid fa-square-minus" style="text-align:center;" title="Remove Item" onclick=""></td>
 </tr>`;
                                               }
                                           }
@@ -765,23 +768,22 @@ function loadPlayList (thisObj, name)
     </td>
 
     <td style="width:100%; text-align:right">
-        <span>
+        <span style="padding-right: 10px;">
             <i class="inlinePlayListControls fa-solid fa-user-pen" style="text-align:center;" title="Rename Playlist" onclick="RenamePlayList(this, $('#playlistBrowser .ui-accordion-header-active').attr('name'))"><br><font style="display:none" class=" showHelpText controlsIconFont">Rename Playlist</font></i>
         </span>
 
-        <span>
+        <span style="padding-right: 10px;">
             <i class="inlinePlayListControls fa-solid fa-right-left" style="text-align:center;" title="Invert Selection" onclick="InvertPlayListSelection ()"><br><font style="display:none" class="showHelpText controlsIconFont">Invert Selection</font></i>
         </span>
 
-        <span>
+        <span style="padding-right: 10px;">
             <i class="inlinePlayListControls fa-solid fa-broom" style="text-align:center;" title="Clear Selection" onclick="ClearPlayListSelection ()"><br><font style="display:none" class="showHelpText controlsIconFont">Clear Selection</font></i>
         </span>
 
-        <span>
+        <span style="padding-right: 10px;">
             <i class="inlinePlayListControls fa-solid fa-square-minus" style="text-align:center;" title="Delete Selection" onclick="DeletePlayListItems ()"><br><font style="display:none" class="showHelpText controlsIconFont">Delete Selection</font></i>
         </span>
-
-        <span>
+        <span style="padding-right: 10px;">
             <i class="inlinePlayListControls fa-solid fa-trash-can" style="text-align:center;" title="Delete Playlist" onclick="confirm ('Delete Playlist?') ? DeletePlayList($('#playlistBrowser .ui-accordion-header-active').attr('name')) : false;"><br><font style="display:none" class="showHelpText controlsIconFont">Delete Playlist</font></i>
         </span>
     </td>
@@ -1396,13 +1398,13 @@ async function loadFileList (filelocation, type, basePath)
                  // fileBrowser
                  let flTable = `\n`;
                  flTable += `
-<table border=0 style="width:100%"><tr>
+<table border=0 class="selectItemHand rcorners3" style="width:100%;" onclick="OnClick_FileListParent(this)" filelocationParent="${encodeURI(filelocation)}"><tr>
 <td style="padding-right: 5px;">
-    <i id="fileListParent" class="${parentDisabled} fa-solid fa-angles-left selectItemHand" onclick="OnClick_FileListParent(this)" filelocationParent="${encodeURI(filelocation)}"></i>
+    <i id="fileListParent" class="${parentDisabled} fa-solid fa-angles-left selectItemHand"></i>
     <br><font style="display:none; white-space:nowrap" class="showHelpText controlsIconFont">Parent Folder</font>
 </td>
-<td style="width:100%">
-    <div id="currentBrowserPath" colspan='100%' onclick="OnClick_FileListParent($('#fileListParent'))">${filelocation.replace (RegExp("^" + escapeRegExp (basePath)), '')}</div>
+<td style="width:100%;">
+    <div id="currentBrowserPath"  colspan='100%'>${filelocation.replace (RegExp("^" + escapeRegExp (basePath)), '')}</div>
 </td></tr>
 </table>
 <table id="fileList" style="width:100%">
@@ -2217,6 +2219,7 @@ function playerControlsExpandContract()
 {
     if ($('.overlay-containerSml').css('display') == 'none')
     {
+         $('#busy-transcoding').css('font-size', '2px');
          $(".overlay-containerBig").hide(500, function() {
             $('#playerControlsSmallBig').removeClass('fa-angles-up');
             $('#playerControlsSmallBig').addClass('fa-angles-down');
@@ -2231,6 +2234,7 @@ function playerControlsExpandContract()
             $('#playerControlsSmallBig').addClass('fa-angles-up');
             $('#playerControlsSmallBig').removeClass('fa-angles-down');
             $('#playerControlsSmallBig').removeClass('controlEnabled');
+            $('#busy-transcoding').css('font-size', '5px');
             resizeFilePanels();
          });
          $(".overlay-containerSml").hide(500);

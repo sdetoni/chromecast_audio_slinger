@@ -61,6 +61,7 @@ update to ip address of 0.0.0.0
     
     # dynamic transcoding
     MATCH_MUSIC_TYPE=dsf::audio/transcode
+    MATCH_MUSIC_TYPE=wv::audio/transcode
 
     # transcode formats using ffmpeg
     TC_FFMPEG_AUDIO_FORMAT=s32

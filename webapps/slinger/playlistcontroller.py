@@ -52,12 +52,6 @@ elif (postData["action"] == 'exists_playlist_item') and (postData["name"] != '')
         r = { 'exists' : True, 'rowid' : item['seq'] }
     output(json.dumps(r, default=lambda o: o.__dict__, indent=4))
     exit(0)
-
-elif (postData["action"] == 'rmeove_playlist_item') and (postData["name"] != '') and (len(postData["location"]) > 0) and (len(postData["type"]) > 0):
-    r = {'exists' : SGF.DB.PlayListSongExists (name = postData["name"], location=postData["location"], type=postData["type"]) };
-    output(json.dumps(r, default=lambda o: o.__dict__, indent=4))
-    exit(0)
-
 elif (postData["action"] == 'add_playlist_items') and (postData["name"] != '') and (len(postData["location"]) > 0) and (len(postData["type"]) > 0):
     for loc in postData["location"]:
         # Decode possible unicode string

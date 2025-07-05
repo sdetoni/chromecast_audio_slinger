@@ -65,6 +65,9 @@ elif (postData["action"] == 'clear_metadata_cache'):
 elif (postData["action"] == 'play_queued_item_at_index'):
     castQueueObj.playQueueItemAt(int(postData['val1']))
     output("ok")
+elif (postData["action"] == 'del_queued_item_at_index'):
+    castQueueObj.delQueuedMediaItem(int(postData['val1']))
+    output("ok")
 elif (postData["action"] == 'stop_metadata_scraper'):
     if SGF.scrapeProcesState['active']:
         SGF.scrapeProcesState['active'] = False

@@ -35,10 +35,22 @@ try:
         artWorkMetaData = SGF.loadDirectoryQueueFile(location = SGF.getBaseLocationPath(postData["location"], postData["type"].lower()),
                                                      maxDepth=GF.Config.getSettingValue('slinger/MATCH_ART_MAX_SCAN_DEPTH'),
                                                      matchFunc=SGF.matchArtTypes)
-    # convert images into download urls...
-    imageDLS = []
+
+    # convert images into download urls... in a cover, album art file sorted list.
+    coverImgDLS = []
+    otherImgDLS = []
     for md in artWorkMetaData:
-        imageDLS.append({'filename' : md['filename'], 'src' : SGF.makeDownloadURL(self, md['type'], md['full_path']) })
-    output(json.dumps(imageDLS, default=lambda o: o.__dict__, indent=4))
+        loaded = False
+        for name in GF.Config.getSettingList('slinger/ALBUM_ART_FILENAME'):
+            if md['filename'].lower() == name.lower():
+                coverImgDLS.append({'filename' : md['filename'], 'src' : SGF.makeDownloadURL(self, md['type'], md['full_path']) })
+                loaded = True
+            if loaded:
+                break
+
+        if not loaded:
+            otherImgDLS.append({'filename' : md['filename'], 'src' : SGF.makeDownloadURL(self, md['type'], md['full_path']) })
+
+    output(json.dumps(coverImgDLS + otherImgDLS, default=lambda o: o.__dict__, indent=4))
 finally:
     SGF.SearchArtSem.release()
