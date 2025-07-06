@@ -80,6 +80,17 @@ update to ip address of 0.0.0.0
     #TC_FFMPEG_EXE_OVERRIDE=c:\ffmpeg\bin\ffmpeg.exe
     #TC_FFMPEG_EXE_OVERRIDE=/usr/bin/ffmpeg    
 	
+    # Transcoding file cache location.
+    # This location will store previous transcoded files up to a specified directory usage,
+    # then if will purge previous cached file based upon least recently used algorithm
+    #TC_CACHE_LOCATION=d:\ffmpeg_cache
+    TC_CACHE_LOCATION=
+
+    # accepted formats are: nKB, nMB, nGB, nTB
+    # examples : 100GB == 100 Gigabytes to limit size of cache
+    #              2TB ==   2 Terabytes to limit size of cache
+    TC_CACHE_MAX_SIZE=10GB
+    	
     # Override temp file creating (i.e them in an RAM drive for fast I/O), by default its your OS Temp location.
     # example:
     #     mount -o size=1G -t tmpfs none /mnt/tmpfs

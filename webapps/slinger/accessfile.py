@@ -1,3 +1,4 @@
+import glob
 import re
 import io
 import logging
@@ -5,11 +6,14 @@ import os
 import tempfile
 import time
 import subprocess
+import threading
 import daemon.GlobalFuncs as GF
 from pyffmpeg import FFmpeg
 from smb.SMBConnection import SMBConnection
 import slinger.SlingerGlobalFuncs     as SGF
-import slinger.SlingerChromeCastQueue as SlingerChromeCastQueue
+from pathlib import Path
+import shutil
+import hashlib
 
 self    = eval('self'); output = self.output
 postData = self.getCGIParametersFormData ()
@@ -60,6 +64,94 @@ while SGF.CUR_CONCURRENT_ACCESSFILE_NO > SGF.MAX_CONCURRENT_ACCESSFILE_NO:
     time.sleep(200)
 
 logging.info(f"accessfile.py: CUR_CONCURRENT_ACCESSFILE_NO = {SGF.CUR_CONCURRENT_ACCESSFILE_NO} MAX_CONCURRENT_ACCESSFILE_NO = {SGF.MAX_CONCURRENT_ACCESSFILE_NO}")
+
+def cacheStoreTranscoding (transcodedData, fileExt, origLocation):
+    if len(transcodedData) <= 0:
+        return
+
+    cacheLoc = GF.Config.getSetting('slinger/TC_CACHE_LOCATION', '')
+    if not cacheLoc:
+        return
+    if not Path(cacheLoc).is_dir():
+        logging.error("Transcoding TC_CACHE_LOCATION is not a directory!")
+        logging.error(f"'{GF.Config.getSetting('slinger/TC_CACHE_LOCATION')}' is invalid!")
+        return
+
+    # parse and convert to into byte size
+    try:
+        maxSizeCFG = GF.Config.getSetting('slinger/TC_CACHE_MAX_SIZE', '10MB')
+        match = re.compile(r"(\d+)\s*([A-Za-z]+)*").match(maxSizeCFG)
+        if not match:
+            raise Exception("Parse error")
+        cacheSize, cacheSizeUnit = match.groups()
+        if cacheSizeUnit.lower() == 'tb':
+            cacheSize = int(cacheSize) * (((1024*1024)*1024)*1024)
+        elif cacheSizeUnit.lower() == 'gb':
+            cacheSize = int(cacheSize) * ((1024*1024)*1024)
+        elif cacheSizeUnit.lower() == 'mb':
+            cacheSize = int(cacheSize) * (1024*1024)
+        elif cacheSizeUnit.lower() == 'bb':
+            cacheSize = int(cacheSize) * 1024
+    except:
+        cacheSize = 0
+
+    if cacheSize <= 0:
+        logging.error(f"Unexpected value for setting TC_CACHE_MAX_SIZE: {maxSizeCFG}")
+        logging.error(f"Expected values for setting TC_CACHE_MAX_SIZE like 10MB 10TB 10MB 10KB etc")
+        logging.error(f"Aborted cache store of transcoding")
+        return
+
+    logging.info(f"Transcoding Cache maxsize as : {maxSizeCFG} --> {cacheSize}")
+
+    if len(transcodedData) > cacheSize:
+        logging.warning(f"Transcoding is not able to fix in current max cache size for: {origLocation}")
+        logging.warning(f"Transcoding size {len(transcodedData)} does not fit into {cacheSize}")
+        return
+
+    # read file location to determine used directory size, recursively
+    dirUsageSize = sum(f.stat().st_size for f in Path(cacheLoc).rglob('*') if f.is_file())
+    diskSizeInfo = shutil.disk_usage(cacheLoc)
+    if (cacheSize-(diskSizeInfo.free) >= 0):
+        logging.error(f"Cache max size exceeds the available disk size! disk size avail {diskSizeInfo.free} is less than cache max size {cacheSize}")
+        logging.error(f"Reduce cache size or free up disk!")
+        logging.error(f"Aborting storing this transcoding file!")
+        return
+
+    if dirUsageSize + len(transcodedData) > cacheSize:
+        for file in sorted(glob.glob(cacheLoc + os.sep + '*'), key=os.path.getmtime):
+            os.unlink(file)
+            dirUsageSize = sum(f.stat().st_size for f in Path(cacheLoc).rglob('*') if f.is_file())
+            if dirUsageSize + len(transcodedData) < cacheSize:
+                break
+
+    cacheFilename     = hashlib.sha256(origLocation.encode()).hexdigest() + '.' + fileExt
+    cacheFullFilename = cacheLoc + os.sep + cacheFilename
+    with open(cacheFullFilename, "wb") as cf:
+        cf.write(transcodedData)
+
+    # set the creation & modification time
+    nowTime = time.time()
+    os.utime(cacheFullFilename, (nowTime, nowTime))
+    logging.info (f"Transcoding Cache wrote {origLocation} -> {cacheFullFilename} as {len(transcodedData)} bytes")
+
+def cacheGetTranscode (location, ccast_uuid):
+    cacheLoc = GF.Config.getSetting('slinger/TC_CACHE_LOCATION', '')
+    if not cacheLoc:
+        return
+    if not Path(cacheLoc).is_dir():
+        logging.error("Transcoding TC_CACHE_LOCATION is not a directory!")
+        logging.error(f"'{GF.Config.getSetting('slinger/TC_CACHE_LOCATION')}' is invalid!")
+        return
+
+    cacheFileMatch = ''
+    for file in glob.glob(cacheLoc + os.sep + hashlib.sha256(location.encode()).hexdigest() + '.*'):
+        # update the change/modified file time for use in least recently used algorithm
+        logging.info (f"Transcoded Cache file matched: {location}  -->  {file}")
+        nowTime = time.time()
+        os.utime(file, (nowTime, nowTime))
+        SGF.getChromecastQueueObj(ccast_uuid=ccast_uuid).setTranscodingStatus('')
+        return file
+    return ''
 
 # ------------------------------------------------------------------------------------------------------
 
@@ -134,7 +226,8 @@ def processTranscoding (httpObj, ccast_uuid, location, type, fileStartPos, fileE
             filePath = location
             ccfilename = os.path.basename(filePath)
 
-        tmpTransCodeFile = tempfile.NamedTemporaryFile(dir=SGF.getTempDirectoryLocation(), suffix='.' + GF.Config.getSetting('slinger/TC_FFMPEG_AUDIO_OUT_FORMAT', 'flac'), delete=False)
+        tmpFileExt       = GF.Config.getSetting('slinger/TC_FFMPEG_AUDIO_OUT_FORMAT', 'flac')
+        tmpTransCodeFile = tempfile.NamedTemporaryFile(dir=SGF.getTempDirectoryLocation(), suffix='.' + tmpFileExt, delete=False)
 
         # Use ffmpeg to convert .dsf to 24-bit 96kHz .flac
         ffmpeg_command = ([FFMPEG_EXE,
@@ -146,6 +239,7 @@ def processTranscoding (httpObj, ccast_uuid, location, type, fileStartPos, fileE
                            "-c:a",        GF.Config.getSetting('slinger/TC_FFMPEG_AUDIO_OUT_FORMAT', 'flac'),
                            ] +            GF.Config.getSettingList('slinger/TC_FFMPEG_OTHER_AUDIO_CFG', '-compression_level 0') + [ tmpTransCodeFile.name]
                           )
+
         logging.info(ffmpeg_command)
         cco  = SGF.getChromecastQueueObj(ccast_uuid=ccast_uuid)
         proc = None
@@ -192,8 +286,11 @@ def processTranscoding (httpObj, ccast_uuid, location, type, fileStartPos, fileE
         if fileEndPos > 0:
             readLen = fileEndPos - fileStartPos
 
+        # store this file in the cache... if it has been defined.
+        threading.Thread(target=cacheStoreTranscoding, kwargs={'transcodedData':transcodedData, 'fileExt':tmpFileExt, 'origLocation':location}).start()
+
         ext        = ccfilename.split('.')[-1].lower()
-        ccfilename = re.sub(ext + '$', 'flac', ccfilename)
+        ccfilename = re.sub(ext + '$', tmpFileExt, ccfilename)
         httpObj.do_HEAD(mimetype=httpObj.isMimeType(ccfilename), turnOffCache=False, statusCode=scode,
                         closeHeader=True,
                         otherHeaderDict={'Content-Disposition': f'attachment; filename="{ccfilename}"',
@@ -208,6 +305,45 @@ def processTranscoding (httpObj, ccast_uuid, location, type, fileStartPos, fileE
 
     finally:
         cleanupTempfiles()
+
+def sendStandardFile (httpObj, location):
+    # send file to destination
+    try:
+        scode = 200
+        if fileStartPos > 0:
+            scode = 206
+
+        # read file to send to chromecast
+        fObj = open(location, mode='rb')
+        fObj.seek(0, io.SEEK_END)
+        fileSize = fObj.tell()
+        readLen = fileSize
+
+        if fileEndPos > 0:
+            readLen = fileEndPos - fileStartPos
+        fObj.seek(fileStartPos)
+        try:
+            logging.info(f'Sending file @ location={SGF.toASCII(location)} :: filesize={fileSize}')
+        except:
+            pass
+
+        # set response header
+        httpObj.do_HEAD(mimetype=httpObj.isMimeType(postData["location"]), turnOffCache=False, statusCode=scode, closeHeader=True,
+                     otherHeaderDict={'Content-Disposition': f'attachment; filename="{os.path.basename(fObj.name).encode("utf-8")}"',
+                                      'Content-Range': f'bytes {fileStartPos}-{readLen}/{fileSize}',
+                                      'Content-Length': str(readLen)})
+
+        # write output
+        httpObj.outputRaw(fObj.read(readLen))
+    except Exception as e:
+        httpObj.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
+        logging.error(f'{e} Failed loading file @ {SGF.toASCII(postData["location"])}')
+        output(e)
+    finally:
+        try:
+            fObj.close()
+        except:
+            pass
 
 # ------------------------------------------------------------------------------------------------------
 
@@ -248,7 +384,11 @@ try:
     SGF.CUR_CONCURRENT_ACCESSFILE_NO += 1
     ########## SMB Network Send File ##########
     if (SGF.getCastMimeType(postData["location"]).lower() == SGF.AUDIO_TRANSCODE) and postData["location"] != '':
-        processTranscoding(httpObj=self, ccast_uuid=postData["ccast_uuid"], location=postData["location"], type=postData["type"].lower(), fileStartPos=fileStartPos, fileEndPos=fileEndPos)
+        filename = cacheGetTranscode(postData["location"], ccast_uuid=postData["ccast_uuid"])
+        if not filename:
+            processTranscoding(httpObj=self, ccast_uuid=postData["ccast_uuid"], location=postData["location"], type=postData["type"].lower(), fileStartPos=fileStartPos, fileEndPos=fileEndPos)
+        else:
+            sendStandardFile(httpObj=self, location=filename)
 
     elif postData["type"].lower() == 'smb' and postData["location"] != '':
         # read file locations
@@ -299,43 +439,6 @@ try:
             conn.close()
     ########## Local File System Send File ##########
     elif postData["type"].lower() == 'file' and postData["location"] != '':
-        # send file to destination
-        try:
-            scode = 200
-            if fileStartPos > 0:
-                scode = 206
-
-            # read file to send to chromecast
-            fObj = open(postData["location"], mode='rb')
-            fObj.seek(0, io.SEEK_END)
-            fileSize = fObj.tell()
-            readLen = fileSize
-
-            if fileEndPos > 0:
-                readLen = fileEndPos - fileStartPos
-            fObj.seek(fileStartPos)
-            try:
-                logging.info (f'location={SGF.toASCII(postData["location"])} :: filesize={fileSize}')
-            except:
-                pass
-
-            # set response header
-            self.do_HEAD(mimetype=self.isMimeType (postData["location"]), turnOffCache=False, statusCode=scode, closeHeader=True,
-                         otherHeaderDict= {'Content-Disposition' : f'attachment; filename="{os.path.basename(fObj.name).encode("utf-8")}"',
-                                           'Content-Range' : f'bytes {fileStartPos}-{readLen}/{fileSize}',
-                                           'Content-Length' : str(readLen)})
-
-            # write output
-            self.outputRaw(fObj.read(readLen))
-        except Exception as e:
-            self.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
-            logging.error(f'{e} Failed loading file @ {SGF.toASCII(postData["location"])}')
-            output(e)
-        finally:
-            try:
-                fObj.close()
-            except:
-                pass
-
+        sendStandardFile(httpObj = self, location = postData["location"])
 finally:
     SGF.CUR_CONCURRENT_ACCESSFILE_NO -= 1
