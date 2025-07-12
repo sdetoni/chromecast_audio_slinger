@@ -50,7 +50,7 @@ class SlingerLocalPlayer:
                     logging.warning(f"SlingerChromeCastQueue:: queue playing code bypassed due to race conditions!")
 
                 self.qparent.playerStatus = {
-                    'filename':     self.qparent.thisQueueItem.location.split('\\')[-1] if self.qparent.thisQueueItem else '',
+                    'filename':     self.qparent.thisQueueItem.location.split('&')[0].split('\\')[-1] if self.qparent.thisQueueItem else '',
                     'title':        self.qparent.thisQueueItem.metadata['title']        if self.qparent.thisQueueItem else '',
                     'album_artist': self.qparent.thisQueueItem.metadata['albumArtist']  if self.qparent.thisQueueItem else '',
                     'album_name':   self.qparent.thisQueueItem.metadata['albumName']    if self.qparent.thisQueueItem else '',
@@ -292,7 +292,7 @@ class SlingerChromeCastQueue:
             #if (("status" in chromeStatus) and (len(chromeStatus['status']) > 0)) and ("items" in chromeStatus['status'][0]):
             #    logging.info(f"_myStatusCallback: {self.cast.uuid} : Item Queue Number : {len(chromeStatus['status'][0]['items'])}")
             self.playerStatus = {
-                'filename': (urllib.parse.unquote(self.cast.media_controller.status.content_id.split('location=')[-1]).split('\\')[-1] if self.cast.media_controller.status.content_id else ''),
+                'filename': (urllib.parse.unquote(self.cast.media_controller.status.content_id.split('location=')[-1]).split('&')[0].split('\\')[-1] if self.cast.media_controller.status.content_id else ''),
                 'title': self.cast.media_controller.status.title,
                 'album_artist': self.cast.media_controller.status.album_artist,
                 'album_name': self.cast.media_controller.status.album_name,
