@@ -1,66 +1,108 @@
-  /* Set font size here to scale both spinner and label */
-  .vfd-container {
-    font-size: 5px; /* You can adjust this */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    .vfd-container {
+      position: relative;
+      width: fit-content;
+      font-size: 5px; /* Change this to scale everything */
+      height: 6.25em;  /* Equivalent to 100px if font-size is 16px */
+      top:10px;
 
-    justify-content: center;
-    top: 10px;
-  }
-
-  .vfd-spinner {
-    position: relative;
-    width: 6em;      /* 6 * font size */
-    height: 6em;
-  }
-
-  /* Container for all segments */
-  .vfd-segment {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 1em;    /* 1 * font size */
-    height: 2.5em;
-    margin: -1.25em -0.5em;
-    border-radius: 0.5em 0.5em 0.15em 0.15em;
-    background: #0ff;
-    box-shadow:
-      0 0 0.3em #0ff,
-      0 0 0.6em #0ff,
-      0 0 1.2em #0ff;
-    opacity: 0.15;
-    transform-origin: center bottom;
-    animation: vfd-glow 1.5s linear infinite;
-  }
-
-  /* Position segments evenly in a circle */
-  /* 8 segments spaced 45deg apart */
-  .vfd-segment:nth-child(1) { transform: rotate(0deg) translateY(-2.5em); animation-delay: 0s; }
-  .vfd-segment:nth-child(2) { transform: rotate(45deg) translateY(-2.5em); animation-delay: 0.1875s; }
-  .vfd-segment:nth-child(3) { transform: rotate(90deg) translateY(-2.5em); animation-delay: 0.375s; }
-  .vfd-segment:nth-child(4) { transform: rotate(135deg) translateY(-2.5em); animation-delay: 0.5625s; }
-  .vfd-segment:nth-child(5) { transform: rotate(180deg) translateY(-2.5em); animation-delay: 0.75s; }
-  .vfd-segment:nth-child(6) { transform: rotate(225deg) translateY(-2.5em); animation-delay: 0.9375s; }
-  .vfd-segment:nth-child(7) { transform: rotate(270deg) translateY(-2.5em); animation-delay: 1.125s; }
-  .vfd-segment:nth-child(8) { transform: rotate(315deg) translateY(-2.5em); animation-delay: 1.3125s; }
-
-  @keyframes vfd-glow {
-    0%, 100% {
-      opacity: 0.15;
-      box-shadow:
-        0 0 0.3em #0ff,
-        0 0 0.6em #0ff,
-        0 0 1.2em #0ff;
+      /* DEBUG: display:flex !important; */
+      justify-content: center;
     }
-    50% {
+
+    .vfd-vfd-waveform {
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.25em; /* Scales with font size */
+    }
+
+    .vfd-bar {
+      width: 0.375em;  /* ~6px at 16px font-size */
+      height: 1.25em;   /* ~20px */
+      background: #0ff;
+      border-radius: 0.1875em;
+      transform-origin: center;
+      animation-timing-function: cubic-bezier(0.445, 0.05, 0.55, 0.95);
+      animation-iteration-count: infinite;
+    }
+
+    /* Glows */
+    .vfd-wave1 .vfd-bar {
+      box-shadow: 0 0 0.5em #0ff, 0 0 1em #0ff, 0 0 2em #0ff;
       opacity: 1;
-      box-shadow:
-        0 0 0.45em #0ff,
-        0 0 0.9em #0ff,
-        0 0 1.8em #0ff;
     }
-  }
+
+    .vfd-wave2 .vfd-bar {
+      box-shadow: 0 0 0.25em #0ff, 0 0 0.5em #0ff, 0 0 1em #0ff;
+      opacity: 1;
+    }
+
+    @keyframes smoothWave1 {
+      0%   { transform: scaleY(1); }
+      20%  { transform: scaleY(1.8); }
+      40%  { transform: scaleY(2.6); }
+      60%  { transform: scaleY(1.8); }
+      80%  { transform: scaleY(1.2); }
+      100% { transform: scaleY(1); }
+    }
+
+    @keyframes smoothWave2 {
+      0%   { transform: scaleY(1.1); }
+      25%  { transform: scaleY(2); }
+      50%  { transform: scaleY(2.3); }
+      75%  { transform: scaleY(1.4); }
+      100% { transform: scaleY(0.9); }
+    }
+
+    /* Foreground vfd-wave1 */
+    .vfd-wave1 .vfd-bar:nth-child(n) {
+      animation: smoothWave1 1.2s infinite;
+    }
+
+    .vfd-wave1 .vfd-bar:nth-child(1)  { animation-delay: 0s; }
+    .vfd-wave1 .vfd-bar:nth-child(2)  { animation-delay: 0.1s; }
+    .vfd-wave1 .vfd-bar:nth-child(3)  { animation-delay: 0.2s; }
+    .vfd-wave1 .vfd-bar:nth-child(4)  { animation-delay: 0.3s; }
+    .vfd-wave1 .vfd-bar:nth-child(5)  { animation-delay: 0.4s; }
+    .vfd-wave1 .vfd-bar:nth-child(6)  { animation-delay: 0.5s; }
+    .vfd-wave1 .vfd-bar:nth-child(7)  { animation-delay: 0.6s; }
+    .vfd-wave1 .vfd-bar:nth-child(8)  { animation-delay: 0.7s; }
+    .vfd-wave1 .vfd-bar:nth-child(9)  { animation-delay: 0.8s; }
+    .vfd-wave1 .vfd-bar:nth-child(10) { animation-delay: 0.9s; }
+    .vfd-wave1 .vfd-bar:nth-child(11) { animation-delay: 1.0s; }
+    .vfd-wave1 .vfd-bar:nth-child(12) { animation-delay: 1.1s; }
+    .vfd-wave1 .vfd-bar:nth-child(13) { animation-delay: 1.2s; }
+    .vfd-wave1 .vfd-bar:nth-child(14) { animation-delay: 1.3s; }
+    .vfd-wave1 .vfd-bar:nth-child(15) { animation-delay: 1.4s; }
+    .vfd-wave1 .vfd-bar:nth-child(16) { animation-delay: 1.5s; }
+    .vfd-wave1 .vfd-bar:nth-child(17) { animation-delay: 1.6s; }
+    .vfd-wave1 .vfd-bar:nth-child(18) { animation-delay: 1.7s; }
+
+    /* Background vfd-wave2 */
+    .vfd-wave2 .vfd-bar:nth-child(n) {
+      animation: smoothWave2 1.5s infinite;
+    }
+
+    .vfd-wave2 .vfd-bar:nth-child(1)  { animation-delay: 0.3s; }
+    .vfd-wave2 .vfd-bar:nth-child(2)  { animation-delay: 0.4s; }
+    .vfd-wave2 .vfd-bar:nth-child(3)  { animation-delay: 0.5s; }
+    .vfd-wave2 .vfd-bar:nth-child(4)  { animation-delay: 0.8s; }
+    .vfd-wave2 .vfd-bar:nth-child(5)  { animation-delay: 0.7s; }
+    .vfd-wave2 .vfd-bar:nth-child(6)  { animation-delay: 0.8s; }
+    .vfd-wave2 .vfd-bar:nth-child(7)  { animation-delay: 0.9s; }
+    .vfd-wave2 .vfd-bar:nth-child(8)  { animation-delay: 1.0s; }
+    .vfd-wave2 .vfd-bar:nth-child(9)  { animation-delay: 1.1s; }
+    .vfd-wave2 .vfd-bar:nth-child(10) { animation-delay: 1.2s; }
+    .vfd-wave2 .vfd-bar:nth-child(11) { animation-delay: 1.5s; }
+    .vfd-wave2 .vfd-bar:nth-child(12) { animation-delay: 1.4s; }
+    .vfd-wave2 .vfd-bar:nth-child(13) { animation-delay: 1.5s; }
+    .vfd-wave2 .vfd-bar:nth-child(14) { animation-delay: 1.6s; }
+    .vfd-wave2 .vfd-bar:nth-child(15) { animation-delay: 1.7s; }
+    .vfd-wave2 .vfd-bar:nth-child(16) { animation-delay: 1.8s; }
+    .vfd-wave2 .vfd-bar:nth-child(17) { animation-delay: 1.9s; }
+    .vfd-wave2 .vfd-bar:nth-child(18) { animation-delay: 2.2s; }
 
   .vfd-label {
     margin-top: 3.5em;

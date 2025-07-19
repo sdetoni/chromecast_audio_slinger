@@ -52,19 +52,25 @@ var G_Generated_Local_Player_UniqueID = "";
 </div> 
 <div id="playerView" class="rcorners1">    
     <div id="busy-transcoding" class="vfd-container"> 
-        <div class="vfd-spinner">
-            <div class="vfd-segment"></div>
-            <div class="vfd-segment"></div>
-            <div class="vfd-segment"></div>
-            <div class="vfd-segment"></div>
-            <div class="vfd-segment"></div>
-            <div class="vfd-segment"></div>
-            <div class="vfd-segment"></div>
-            <div class="vfd-segment"></div>
-        </div>
-        <div class="vfd-label">
+        <div style="position: absolute; right: 59%; top:10%;">
+                <div class="vfd-vfd-waveform vfd-wave2">
+                  <!-- 18 vfd-bars -->
+                  <div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div>
+                  <div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div>
+                  <div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div>
+                  <div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div>
+                </div>
+                <div class="vfd-vfd-waveform vfd-wave1">
+                  <!-- 18 vfd-bars -->
+                  <div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div>
+                  <div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div>
+                  <div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div>
+                  <div class="vfd-bar"></div><div class="vfd-bar"></div><div class="vfd-bar"></div>
+                </div>
+            </div>  
+        <div class="vfd-label">      
             <div>TRANSCODING</div>
-            <div id="vfd-transcode-location"></div>
+            <div id="vfd-transcode-location">D:\music\dsf\yuri_korzunov-through-wait-for_spring-64fs.dsf</div>
         </div>
     </div>        
     <div class="overlay-containerSml" style="display:none">    
