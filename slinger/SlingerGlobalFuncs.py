@@ -21,9 +21,10 @@ from smb.SMBConnection import SMBConnection
 import smb
 import time
 import uuid
-import glob
 import slinger.crontab as crontab
 import socket
+import base64
+import requests
 
 AUDIO_TRANSCODE = 'audio/transcode'
 DB = slinger.SlingerDB.DB
@@ -47,6 +48,46 @@ def get_host_ip():
     return IP
 
 LocalHostIP = get_host_ip()
+
+#  Step 1: Login and get bearer token
+def Spotify_GetAccessToken(client_id, client_secret):
+    auth_str = f"{client_id}:{client_secret}"
+    b64_auth_str = base64.b64encode(auth_str.encode()).decode()
+
+    headers = { "Authorization": f"Basic {b64_auth_str}" }
+    data    = { "grant_type": "client_credentials" }
+    response = requests.post("https://accounts.spotify.com/api/token", headers=headers, data=data)
+    response.raise_for_status()
+    return response.json()["access_token"]
+
+# Step 2: Fetch playlist tracks
+def Spotify_GetPlaylistTracks(access_token, playlist_id):
+    headers = { "Authorization": f"Bearer {access_token}" }
+
+    url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
+    all_tracks = []
+    params = { "limit": 100, "offset": 0 }
+
+    while True:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        data = response.json()
+        items = data.get("items", [])
+        if not items:
+            break
+        all_tracks.extend(items)
+        if data["next"] is None:
+            break
+        params["offset"] += len(items)
+    return all_tracks
+
+def Spotify_GetPlaylistInfo(access_token, playlist_id):
+    headers = { "Authorization": f"Bearer {access_token}" }
+    url = f"https://api.spotify.com/v1/playlists/{playlist_id}"
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
+    return data
 
 def rtnNoPasswordSMBPath (location):
     un, pw, serv, sName, fp = parseSMBConfigString(location)
@@ -540,7 +581,6 @@ def getMediaMetaDataFile (location, httpObj=None):
 
     return metadata
 
-
 # =============== Chromecast Queue Processor ===============
 
 exitQueueProcessing      = False
@@ -704,7 +744,7 @@ scrapeProcesState = {
 def scraperProcess ():
     global scrapeProcesState
     if scrapeProcesState['active']:
-        logging.info("scraperProcess:: scrapper is already running, exiting!")
+        logging.info("scraperProcess:: a scrapper process is already running, exiting!")
         return
     try:
         scrapeProcesState['active'] = True
@@ -718,6 +758,95 @@ def scraperProcess ():
     except Exception as e:
         logging.error(f"scraperProcess : {str(e)}")
     finally:
+        scrapeProcesState['active'] = False
+        scrapeProcesState['file_path'] = scrapeProcesState['processing_filename'] = ''
+
+
+def fileExistsFile(location):
+    try:
+        return os.path.exists(location)
+    except:
+        pass
+    return False
+
+
+def fileExistsSMB(location, smbConn=None):
+    if not validateSMBFileAccessLocation('smb', location):
+        return False
+
+    try:
+        _, _, server, shareName, filePath = parseSMBConfigString(location)
+        if not smbConn:
+            username, password = matchSMBCredentialsConfigString(location)
+            conn = SMBConnection(username=username, password=password, my_name="", remote_name="", use_ntlm_v2=True)
+            conn.connect(server)
+        else:
+            conn = smbConn
+
+        return (conn.getAttributes(shareName, filePath) != None)
+    except Exception as e:
+        logging.error(f"{e} Failed testing file @ {server}\\{shareName}\\{filePath}")
+    finally:
+        try:
+            if not smbConn:
+                conn.close()
+        except:
+            pass
+    return False
+
+def scraperValidateProcess ():
+    global scrapeProcesState
+    if scrapeProcesState['active']:
+        logging.info("scraperProcess:: a scrapper process is already running, exiting!")
+        return
+    smbConnCache = {}
+    cur          = DB.sqlRtnCursor('select * from metadata_cache order by type')
+    columns      = cur.description
+    try:
+        scrapeProcesState['active'] = True
+        cacheNum = DB.CountMetadataCache()
+        rowCount = 0
+        for r in cur.fetchall():
+            # turn row in dict
+            row = {}
+            for (index, column) in enumerate(r):
+                row[columns[index][0]] = column
+
+            rowCount += 1
+            scrapeProcesState['file_path'] = f"{rowCount}/{cacheNum}"
+
+            if row['type'] == 'file':
+                if not fileExistsFile(row['location']):
+                    scrapeProcesState['processing_filename'] = f'Purging metadata @ {row["location"]}'
+                    logging.info(scrapeProcesState['processing_filename'])
+                    DB.DelMetadata(row['id_hash'], row['type'])
+            elif row['type'] == 'smb':
+                _, _, server, shareName, filePath = parseSMBConfigString(row['location'])
+                if server in smbConnCache.keys():
+                    smbConn = smbConnCache[server]
+                else:
+                    username, password = matchSMBCredentialsConfigString(row['location'])
+                    smbConn = SMBConnection(username=username, password=password, my_name="", remote_name="", use_ntlm_v2=True)
+                    smbConn.connect(server)
+                    smbConnCache[server] = smbConn
+
+                if not fileExistsSMB(row['location'], smbConn=smbConn):
+                    scrapeProcesState['processing_filename'] = f'Purging metadata @ {row["location"]}'
+                    logging.info(scrapeProcesState['processing_filename'])
+                    DB.DelMetadata(row['id_hash'], row['type'])
+    except Exception as e:
+        logging.error(f"scraperValidateProcess : {str(e)}")
+    finally:
+        try:
+            cur.close()
+        except:
+            pass
+
+        for key in smbConnCache.keys():
+            try:
+                smbConnCache[key].close()
+            except:
+                pass
         scrapeProcesState['active'] = False
         scrapeProcesState['file_path'] = scrapeProcesState['processing_filename'] = ''
 

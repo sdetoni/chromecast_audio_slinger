@@ -70,7 +70,7 @@ var G_Generated_Local_Player_UniqueID = "";
             </div>  
         <div class="vfd-label">      
             <div>TRANSCODING</div>
-            <div id="vfd-transcode-location">D:\music\dsf\yuri_korzunov-through-wait-for_spring-64fs.dsf</div>
+            <div id="vfd-transcode-location"></div>
         </div>
     </div>        
     <div class="overlay-containerSml" style="display:none">    
@@ -321,25 +321,39 @@ output (f"""
         </div>
     
         <div id="tabMetaData">
-            <table id="tableMetaData" style="width:100%" class="SongListFormat">
+            <table id="tableMetaData" style="width:100%" class="SongListFormat" border=0>
                 <tr><th colspan="100%">Music Meta Data Options</th></tr>
-                <tr><td>
-                    <a href="#" onclick="confirm ('Clear all loaded DB Meta Data?') ? chromeCastBasicAction($('#ccast_uuid').val(), 'clear_metadata_cache') || setTimeout (metadataScraperInfo, 2000) : false;">
-                        <button style="cursor:pointer">Clear Metadata Cache</button>
-                    </a>
-                </td></tr>
-                <tr><td>
-                    <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'start_metadata_scraper'); setTimeout (metadataScraperInfo, 2000);">
-                        <button style="cursor:pointer">Start Metadata Scraper</button>
-                    </a>
-                </td></tr>
-                <tr><td>
-                    <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'stop_metadata_scraper');  setTimeout (metadataScraperInfo, 2000); ">
-                    <button style="cursor:pointer">Stop Metadata Scraper</button>
-                    </a>
-                </td></tr>
+                <tr style="white-space:nowrap">
+                    <td>
+                        <a href="#" onclick="confirm ('Clear all loaded DB Meta Data?') ? chromeCastBasicAction($('#ccast_uuid').val(), 'clear_metadata_cache') || setTimeout (metadataScraperInfo, 2000) : false;">
+                            <button style="cursor:pointer">Clear Metadata Cache</button>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'start_metadata_scraper'); setTimeout (metadataScraperInfo, 2000);">
+                            <button style="cursor:pointer">Start Metadata Scraper</button>
+                        </a>
+                    </td>
+                    
+                    <td>
+                        <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'validate_metadata');  setTimeout (metadataScraperInfo, 2000); ">
+                        <button style="cursor:pointer">Validate Metadata</button>
+                        </a>
+                    </td>                    
+                    <td>
+                        <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'stop_metadata_scraper');  setTimeout (metadataScraperInfo, 2000); ">
+                        <button style="cursor:pointer">Stop Metadata Scraper</button>
+                        </a>
+                    </td>
+                        
+                    <td style="width:100%">
+                    </td>                                                                
+                </tr>
+
                 <tr><td>&nbsp;</td></tr>
-                <tr><th>Meta Data Scraping Status<th></tr>
+                               
+                <tr><th colspan="100%">Meta Data Scraping Status</th></tr>
                 <tr><td id="metadataScrapeStatus" colspan="100%"></td></tr>
                 <tr>
                     <td>
@@ -354,6 +368,19 @@ output (f"""
                         </tr></table>                          
                     </td>
                 </tr>               
+                
+                <tr><td>&nbsp;</td></tr>
+                
+               <tr><th colspan="100%">Spotify Playlist Importer</th></tr>
+                <tr id="ImportSpotifyPlayListID">             
+                    <td colspan=4><input placeholder="https://open.spotify.com/playlist/..." type="text" style="width:100%" id="spotify_playlist_url"><td>
+                    <td style="white-space:nowrap">
+                        <a href="#" onclick="ImportSpotifyPlayList($('#spotify_playlist_url').val(), $('#ImportSpotifyPlayListID'));">
+                        <button style="cursor:pointer">Import &amp; Match</button>
+                        </a>
+                    </td>                    
+                </tr>
+                                
                 <tr><td colspan="100%" style="height:100%"></td></tr>  
             </table>        
         </div>      
@@ -374,7 +401,7 @@ output (f"""
                             <td>
                                 <i class="inlinePlayListControls fa-solid fa-broom" style="text-align:center;" title="Clear Queue" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'queue_clear')"><br><font style="display:none" class="showHelpText controlsIconFont">Clear Queue</font></i>
                             </td>                            
-                            <td style="width:100%">      
+                            <td style="width:100%;text-align:right">      
                                 &nbsp;                     
                                 <input type="text" placeholder="Enter new playlist name" id="playlist_name_field" style="color:black;vertical-align:middle">
                                 <i class="inlinePlayListControls fa-solid fa-square-plus" style="text-align:center;" title="Save Queue as Playlist" onclick="QueueListToPlaylist($('#playlist_name_field').val())"><br><font style="display:none" class="showHelpText controlsIconFont">Save Queue as Playlist</font></i>                                
@@ -399,12 +426,10 @@ output (f"""
         </div>              
         <div id="tabPlaylistBrowser">            
             <div id="playlistBrowserControls" class="rcorners1">
-                <table><tr>
+                <table style="width:100%;text-align:right"><tr>
                     <td>
-                        <span>
                             <input type="text" placeholder="Enter new playlist name" id="newPlayListName" style="color:black;vertical-align:middle">
-                            <i class="inlinePlayListControls  fa-solid fa-square-plus" style="text-align:center;" title="Create Playlist" onclick="CreatePlayList($('#newPlayListName').val())"><br><font class=" showHelpText  controlsIconFont">Create Playlist</font></i>                  
-                        </span>
+                            <i class="inlinePlayListControls  fa-solid fa-square-plus" style="text-align:center;" title="Create Playlist" onclick="CreatePlayList($('#newPlayListName').val())"><br><font class=" showHelpText  controlsIconFont">Create Playlist</font></i>
                     </td>                                            
                 </tr></table>
             </div>           

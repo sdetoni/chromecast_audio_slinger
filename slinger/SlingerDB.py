@@ -73,9 +73,35 @@ class SlingerDB (DBIO.DBIO):
         except Exception as ex:
             logging.error('DBIO.GetCachedMetadata failure ' + str(ex))
         return None
+
     def ClearMetadataCache (self):
-        self.sqlNoResults('delete from  metadata_cache')
+        self.sqlNoResults('delete from metadata_cache')
         self.commit()
+
+    def DelMetadata (self, id_hash, type):
+        self.sqlNoResults('delete from metadata_cache where id_hash = ? and type = ?', (id_hash, type))
+
+    def SearchMetaDataTrackAlbumArtist (self, regexTrack, regexArtist, regexAlbum):
+        cur = self.sqlRtnCursor('select * from metadata_cache')
+        self.abortSearch = False
+        columns = cur.description
+        result = []
+        for value in cur.fetchall():
+            if self.abortSearch:
+                break
+
+            tmp = {}
+            for (index, column) in enumerate(value):
+                tmp[columns[index][0]] = column
+
+            # check if this is the row to match on ...
+            metadata = json.loads(tmp['metadata'])
+            if re.search(regexTrack, metadata['title'], re.IGNORECASE)     and \
+               (re.search(regexAlbum, metadata['albumName'], re.IGNORECASE) or re.search(regexArtist, metadata['artist'], re.IGNORECASE)):
+                result.append(tmp)
+
+        cur.close()
+        return result
 
     def SearchMetaData (self, regex, maxResultsLen=1000):
         cur = self.sqlRtnCursor('select * from metadata_cache')
@@ -95,7 +121,6 @@ class SlingerDB (DBIO.DBIO):
             if re.search(regex, metadata['title'], re.IGNORECASE) or        \
                re.search(regex, metadata['albumName'], re.IGNORECASE) or    \
                re.search(regex, metadata['artist'], re.IGNORECASE) or       \
-               re.search(regex, metadata['album_artist'], re.IGNORECASE) or \
                re.search(regex, metadata['album_artist'], re.IGNORECASE) or \
                re.search(regex, tmp['location'], re.IGNORECASE):
                 if len(result) >= maxResultsLen:
@@ -140,11 +165,6 @@ class SlingerDB (DBIO.DBIO):
         self.sqlNoResults("insert into playlists (name, created, lastplayed) values (?, ?, null)", (playListName.strip(), datetime.datetime.now()))
         self.commit()
 
-    def AddPlayListSong (self, playListName, location, type):
-        # playlist_songs (name varchar(64) not null, seq integer, location text, type varchar(32)
-        self.sqlNoResults("insert into playlist_songs (name, location, type) values (?, ?, ?)",(playListName, location, type))
-        self.commit()
-
     def GetPlayListNames(self):
         try:
             return self.sqlRtnResults('select name from playlists')
@@ -165,7 +185,10 @@ class SlingerDB (DBIO.DBIO):
             pass
         return None
 
-    def AddPlayListSong (self, playListName, location, type ):
+    def AddPlayListSong (self, playListName, location, type, unique=True):
+        if unique and self.PlayListSongExists(name=playListName, location=location, type=type):
+            return
+
         try:
             self.TransactionLock()
             self.sqlNoResults('insert into playlist_songs (name, location, type) values (?, ? ,?)', (playListName, location, type))

@@ -3,7 +3,6 @@ import slinger.SlingerGlobalFuncs as SGF
 import threading
 import json
 import time
-import pychromecast
 
 self = eval('self'); output = self.output
 
@@ -74,6 +73,12 @@ elif (postData["action"] == 'stop_metadata_scraper'):
         time.sleep(1)
     SGF.scrapeProcesState['metadata_num'] = SGF.DB.CountMetadataCache()
     output(json.dumps(SGF.scrapeProcesState, default=lambda o: o.__dict__, indent=4))
+elif (postData["action"] == 'validate_metadata'):
+    if not SGF.scrapeProcesState['active']:
+        threading.Thread(target=SGF.scraperValidateProcess).start()
+        time.sleep(1)
+    SGF.scrapeProcesState['metadata_num'] = SGF.DB.CountMetadataCache()
+    output(json.dumps(SGF.scrapeProcesState, default=lambda o: o.__dict__, indent=4))
 elif (postData["action"] == 'status_metadata_scraper'):
     SGF.scrapeProcesState['metadata_num'] = SGF.DB.CountMetadataCache()
     output(json.dumps(SGF.scrapeProcesState, default=lambda o: o.__dict__, indent=4))
@@ -86,7 +91,6 @@ elif (postData["action"] == 'start_metadata_scraper'):
 elif (postData["action"] == 'awaken_monitoring'):
     castQueueObj.wakeNow()
     output('ok')
-
 #requested_volume = float(sys.argv[1]) if len(sys.argv) > 1 else None
 #if requested_volume != None:
 #    cast.set_volume(requested_volume)

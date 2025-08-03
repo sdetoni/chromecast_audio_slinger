@@ -358,7 +358,7 @@ function metadataScraperInfo ()
     <td style="white-space:nowrap">${data['metadata_num']}</td>
 </tr>
 <tr>
-    <td style="white-space:nowrap">Processing Path:</td>
+    <td style="white-space:nowrap">Processing:</td>
 </tr>
 <tr>
     <td colspan="100%">${fpath}</td>
@@ -1122,6 +1122,58 @@ function SearchGotoFolder(idx)
     return false;
 }
 
+function ImportSpotifyPlayList (spotifyURL, thisObj=null)
+{
+    if (thisObj)
+        $(thisObj).addClass("ui-state-disabled");
+
+     $.toast({
+         heading: 'Importing Spotify Playlist',
+         text: `please wait...`,
+         icon: 'info'
+     });
+
+    $.ajax ({url: `playlistcontroller.py?action=import_spotify_playlist&spotifyPlaylistUrl=${encodeURIComponent(spotifyURL)}`,
+             type: "GET",
+             success: function(result)
+             {
+                 console.log (`ImportSpotifyPlayList success : ${ result}`);
+                 // Reload the playlists!
+                 LoadPlaylistNames ();
+                 if (thisObj)
+                     $(thisObj).removeClass("ui-state-disabled");
+
+                 result = result.replaceAll('FAILED MATCH', '<span style="color:red">FAILED MATCH</span>');
+                 list = result.split("\n")
+                 $.toast({
+                     heading: list[0],
+                     text: list.splice(1),
+                     icon: 'info',
+                     hideAfter: 60 * 1000,
+                     beforeShow: function ()
+                                 {
+                                     $('.jq-toast-single').css('width',      '600px');
+                                     $('.jq-toast-single').css('height',     '400px');
+                                     $('.jq-toast-single').css('overflow-y', 'scroll');
+                                 }
+                 });
+             },
+             error: function(jqXHR, status, errorThrown)
+             {
+                 console.log (`ImportSpotifyPlayList error : status:${status} ${ errorThrown}`);
+                 if (thisObj)
+                     $(thisObj).removeClass("ui-state-disabled");
+
+                 $.toast({
+                     heading: 'error',
+                     text: `Failed importing Spotify Playlist: ${errorThrown}`,
+                     icon: 'error',
+                     hideAfter: 5000
+                 });
+             }
+           });
+}
+
 function CreateSearchListPlayList(name, thisObj=null)
 {
     name = name.replace("'", "").replace('"', '').trim();
@@ -1696,6 +1748,8 @@ function LoadPlaylistNames ()
              dataType: "json",
              success: function(data)
              {
+                 $('#playlistBrowser').empty();
+
                  let loadFirst = true;
                  for (idx = 0; idx < data.length; idx++)
                  {
