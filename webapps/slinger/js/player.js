@@ -254,6 +254,7 @@ function resizeFilePanels ()
 var TabPos  = 3;
 function tabShrinkGrow (action)
 {
+    let indexChar = "&#9579;"
     if (action == 'grow')
     {
         TabPos++;
@@ -276,7 +277,7 @@ function tabShrinkGrow (action)
             $('#tabsRightSize').css('width', '50%');
             $('.tabsLeftShrinkGrowHideShow').css('display', '');
             $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html('[--<b class="shrinkgrow_posidx">|</b>--]');
+            $('.shrinkgrow_pos').html(`&#9507;&#9472;&#9472;<b class="shrinkgrow_posidx">${indexChar}</b>&#9472;&#9472;&#9508;`);
             break;
 
         case 2: // [-|---]
@@ -286,7 +287,7 @@ function tabShrinkGrow (action)
             $('#tabsRightSize').css('width', '75%');
             $('.tabsLeftShrinkGrowHideShow').css('display', '');
             $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html('[-<b class="shrinkgrow_posidx">|</b>---]');
+            $('.shrinkgrow_pos').html(`&#9507;&#9472;<b class="shrinkgrow_posidx">${indexChar}</b>&#9472;&#9472;&#9472;&#9508;`);
             break;
 
         case 1: // [|----]
@@ -296,7 +297,7 @@ function tabShrinkGrow (action)
             $('#tabsRightSize').css('width', '100%');
             $('.tabsLeftShrinkGrowHideShow').css('display', 'none');
             $('.tabsRightShrinkGrowHideShow').css('display', '');
-            $('.shrinkgrow_pos').html('[<b class="shrinkgrow_posidx">|</b>----]');
+            $('.shrinkgrow_pos').html(`&#9507;<b class="shrinkgrow_posidx">${indexChar}</b>&#9472;&#9472;&#9472;&#9472;&#9508;`);
             break;
 
         case 4: // [---|-]
@@ -306,7 +307,7 @@ function tabShrinkGrow (action)
             $('#tabsRightSize').css('width', '25%');
             $('.tabsLeftShrinkGrowHideShow').css('display', '');
             $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html('[---<b class="shrinkgrow_posidx">|</b>-]');
+            $('.shrinkgrow_pos').html(`&#9507;&#9472;&#9472;&#9472;<b class="shrinkgrow_posidx">${indexChar}</b>&#9472;&#9508;`);
             break;
 
         case 5: // [----|]
@@ -316,7 +317,7 @@ function tabShrinkGrow (action)
             $('#tabsRightSize').css('width', '0%');
             $('.tabsLeftShrinkGrowHideShow').css('display', '');
             $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html('[----<b class="shrinkgrow_posidx">|</b>]');
+            $('.shrinkgrow_pos').html(`&#9507;&#9472;&#9472;&#9472;&#9472;<b class="shrinkgrow_posidx">${indexChar}</b>&#9508;`);
             break;
     }
 }
@@ -350,12 +351,12 @@ function metadataScraperInfo ()
                  var tabStatus = `
 <table style="width:100%" border=0>
 <tr>
-    <td style="white-space:nowrap">Active:</td>
-    <td style="white-space:nowrap">${data['active']}</td>
+    <td style="white-space:nowrap;width:100%">Active:</td>
+    <td style="white-space:nowrap;text-align:right">${data['active']}</td>
 </tr>
 <tr>
-    <td style="white-space:nowrap">Meta Data File Num Loaded:</td>
-    <td style="white-space:nowrap">${data['metadata_num']}</td>
+    <td style="white-space:nowrap;width:100%">Meta Data File Num Loaded:</td>
+    <td style="white-space:nowrap;text-align:right">${data['metadata_num']}</td>
 </tr>
 <tr>
     <td style="white-space:nowrap">Processing:</td>
@@ -365,8 +366,8 @@ function metadataScraperInfo ()
 </tr>
 <tr><td colspan="100%">&nbsp;</td></tr>
 <tr>
-    <td style="white-space:nowrap">Next Scraping Event:</td>
-    <td style="white-space:nowrap">${data['next_process_event']}</td>
+    <td style="white-space:nowrap;width:100%">Next Scraping Event:</td>
+    <td style="white-space:nowrap;text-align:right">${data['next_process_event']}</td>
 </tr>
 </table>
 `

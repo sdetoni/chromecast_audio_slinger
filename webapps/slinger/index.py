@@ -357,7 +357,7 @@ output (f"""
                 <tr><td id="metadataScrapeStatus" colspan="100%"></td></tr>
                 <tr>
                     <td>
-                        <table class="tabsLeftShrinkGrowHideShow tabsLeftShrinkGrow"><tr>
+                        <table class="tabsLeftShrinkGrowHideShow tabsLeftShrinkGrow" border=0><tr>
                             <td>
                                 <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
                             </td>
@@ -371,16 +371,21 @@ output (f"""
                 
                 <tr><td>&nbsp;</td></tr>
                 
-               <tr><th colspan="100%">Spotify Playlist Importer</th></tr>
+                <tr><th colspan="100%">Spotify Playlist Importer</th></tr>
                 <tr id="ImportSpotifyPlayListID">             
-                    <td colspan=4><input placeholder="https://open.spotify.com/playlist/..." type="text" style="width:100%" id="spotify_playlist_url"><td>
-                    <td style="white-space:nowrap">
-                        <a href="#" onclick="ImportSpotifyPlayList($('#spotify_playlist_url').val(), $('#ImportSpotifyPlayListID'));">
-                        <button style="cursor:pointer">Import &amp; Match</button>
-                        </a>
+                    <td colspan="100%" style="white-space:nowrap">
+                        <table class="SongListFormat"><tr>
+                            <td style="width:100%">
+                                <input placeholder="https://open.spotify.com/playlist/..." type="text" style="width:100%" id="spotify_playlist_url">
+                            </td>
+                            <td style="white-space:nowrap">
+                                <a href="#" onclick="ImportSpotifyPlayList($('#spotify_playlist_url').val(), $('#ImportSpotifyPlayListID'));">
+                                    <button style="cursor:pointer">Import &amp; Match</button>
+                                </a>
+                            </td>
+                        </tr></table>
                     </td>                    
-                </tr>
-                                
+                </tr>                                
                 <tr><td colspan="100%" style="height:100%"></td></tr>  
             </table>        
         </div>      

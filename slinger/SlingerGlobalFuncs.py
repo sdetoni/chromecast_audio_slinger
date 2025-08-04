@@ -800,7 +800,12 @@ def scraperValidateProcess ():
         logging.info("scraperProcess:: a scrapper process is already running, exiting!")
         return
     smbConnCache = {}
-    cur          = DB.sqlRtnCursor('select * from metadata_cache order by type')
+    cur          = DB.sqlRtnCursor("""
+    select 'cache'    as table_type, location, type,  id_hash as id_ref, '' as playlist_name from metadata_cache
+union all
+    select 'playlist' as table_type, location, type, seq      as id_ref, name as playlist_name from playlist_songs 
+order by type""")
+
     columns      = cur.description
     try:
         scrapeProcesState['active'] = True
@@ -814,12 +819,12 @@ def scraperValidateProcess ():
 
             rowCount += 1
             scrapeProcesState['file_path'] = f"{rowCount}/{cacheNum}"
+            scrapeProcesState['processing_filename'] = ""
+            purgeRow = False
 
             if row['type'] == 'file':
                 if not fileExistsFile(row['location']):
-                    scrapeProcesState['processing_filename'] = f'Purging metadata @ {row["location"]}'
-                    logging.info(scrapeProcesState['processing_filename'])
-                    DB.DelMetadata(row['id_hash'], row['type'])
+                    purgeRow = True
             elif row['type'] == 'smb':
                 _, _, server, shareName, filePath = parseSMBConfigString(row['location'])
                 if server in smbConnCache.keys():
@@ -831,9 +836,18 @@ def scraperValidateProcess ():
                     smbConnCache[server] = smbConn
 
                 if not fileExistsSMB(row['location'], smbConn=smbConn):
-                    scrapeProcesState['processing_filename'] = f'Purging metadata @ {row["location"]}'
-                    logging.info(scrapeProcesState['processing_filename'])
-                    DB.DelMetadata(row['id_hash'], row['type'])
+                    purgeRow = True
+
+            if purgeRow:
+                scrapeProcesState['processing_filename'] = f'Purging metadata @ {row["location"]}'
+                logging.info(scrapeProcesState['processing_filename'])
+
+                if row['table_type'] in ('cache'):
+                    DB.DelMetadata(row['id_ref'], row['type'])
+                elif row['table_type'] in ('playlist'):
+                    if row['id_ref'] and row['playlist_name']:
+                        DB.DeletePlayListSongs (playListName=row['playlist_name'], rowidList=[row['id_ref']])
+
     except Exception as e:
         logging.error(f"scraperValidateProcess : {str(e)}")
     finally:
