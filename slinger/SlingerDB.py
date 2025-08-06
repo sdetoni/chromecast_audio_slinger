@@ -209,6 +209,13 @@ class SlingerDB (DBIO.DBIO):
             logging.error('DBIO.GetPlayListSongs failure ' + str(ex))
         return None
 
+    def GetPlayListSong (self, playListSeq):
+        try:
+            return self.sqlRtnResults('select * from playlist_songs where seq = ?', (playListSeq,))
+        except Exception as ex:
+            logging.error('DBIO.GetPlayListSong failure ' + str(ex))
+        return None
+
     def RenamePlayList (self, name, newName):
         name = name.strip()
         newName = newName.strip()

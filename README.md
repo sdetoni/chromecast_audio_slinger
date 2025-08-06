@@ -6,6 +6,13 @@ I has the ability to cast from remote CIFS/Windows file shares as well as local 
 This service will run as a Daemon, monitoring Chrome Cast devices, and slinger audio files 
 to devices from its pending audio queue.
 
+## Version 0.06 Work in progress:
+ * Added in browser Config Editor
+ * Added graphical UI tweaks to the playlist
+ * Added Spotify Playlist loader
+ * Added metadata file validation (i.e. if you delete music files then run validation to remove metadata)
+ * Moved most of the Ajax calls to use POST to work around encoding GET parameters
+
 ## Version 0.05 Work in progress:
  * Added Custom temp directory location for quick RAM disk type transcoding operations.
  

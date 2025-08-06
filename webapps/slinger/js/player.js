@@ -164,9 +164,11 @@ function FolderLoadLargeArt (location, type)
   if (location != "" && type != "")
   {
         $.ajax ({url: `artwork.py`,
-                 type:     "POST",
-                 data:     {"location" : location,
-                            "type"     : type},
+                 type: "POST",
+                 data: {
+                     "location" : location,
+                     "type"     : type
+                 },
                  dataType: "json",
                  success: function(data)
                  {
@@ -254,7 +256,11 @@ function resizeFilePanels ()
 var TabPos  = 3;
 function tabShrinkGrow (action)
 {
-    let indexChar = "&#9579;"
+    let leftChar = "&#9500;";
+    let indexChar = "&#9579;";
+    let dashChar = "&#9472";
+    let rightChar = "&#9508;";
+
     if (action == 'grow')
     {
         TabPos++;
@@ -277,7 +283,7 @@ function tabShrinkGrow (action)
             $('#tabsRightSize').css('width', '50%');
             $('.tabsLeftShrinkGrowHideShow').css('display', '');
             $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html(`&#9507;&#9472;&#9472;<b class="shrinkgrow_posidx">${indexChar}</b>&#9472;&#9472;&#9508;`);
+            $('.shrinkgrow_pos').html(`${leftChar}${dashChar}${dashChar}<b class="shrinkgrow_posidx">${indexChar}</b>${dashChar}${dashChar}${rightChar}`);
             break;
 
         case 2: // [-|---]
@@ -287,7 +293,7 @@ function tabShrinkGrow (action)
             $('#tabsRightSize').css('width', '75%');
             $('.tabsLeftShrinkGrowHideShow').css('display', '');
             $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html(`&#9507;&#9472;<b class="shrinkgrow_posidx">${indexChar}</b>&#9472;&#9472;&#9472;&#9508;`);
+            $('.shrinkgrow_pos').html(`${leftChar}${dashChar}<b class="shrinkgrow_posidx">${indexChar}</b>${dashChar}${dashChar}${dashChar}${rightChar}`);
             break;
 
         case 1: // [|----]
@@ -297,7 +303,7 @@ function tabShrinkGrow (action)
             $('#tabsRightSize').css('width', '100%');
             $('.tabsLeftShrinkGrowHideShow').css('display', 'none');
             $('.tabsRightShrinkGrowHideShow').css('display', '');
-            $('.shrinkgrow_pos').html(`&#9507;<b class="shrinkgrow_posidx">${indexChar}</b>&#9472;&#9472;&#9472;&#9472;&#9508;`);
+            $('.shrinkgrow_pos').html(`${leftChar}<b class="shrinkgrow_posidx">${indexChar}</b>${dashChar}${dashChar}${dashChar}${dashChar}${rightChar}`);
             break;
 
         case 4: // [---|-]
@@ -307,7 +313,7 @@ function tabShrinkGrow (action)
             $('#tabsRightSize').css('width', '25%');
             $('.tabsLeftShrinkGrowHideShow').css('display', '');
             $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html(`&#9507;&#9472;&#9472;&#9472;<b class="shrinkgrow_posidx">${indexChar}</b>&#9472;&#9508;`);
+            $('.shrinkgrow_pos').html(`${leftChar}${dashChar}${dashChar}${dashChar}<b class="shrinkgrow_posidx">${indexChar}</b>${dashChar}${rightChar}`);
             break;
 
         case 5: // [----|]
@@ -317,7 +323,7 @@ function tabShrinkGrow (action)
             $('#tabsRightSize').css('width', '0%');
             $('.tabsLeftShrinkGrowHideShow').css('display', '');
             $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html(`&#9507;&#9472;&#9472;&#9472;&#9472;<b class="shrinkgrow_posidx">${indexChar}</b>&#9508;`);
+            $('.shrinkgrow_pos').html(`${leftChar}${dashChar}${dashChar}${dashChar}${dashChar}<b class="shrinkgrow_posidx">${indexChar}</b>${rightChar}`);
             break;
     }
 }
@@ -337,8 +343,12 @@ function metadataScraperInfo ()
 {
     ccast_uuid = $('#ccast_uuid').val();
 
-    $.ajax ({url: `castcontroller.py?ccast_uuid=${ccast_uuid}&action=status_metadata_scraper`,
-             type:     "GET",
+    $.ajax ({url: `castcontroller.py`,
+             type: "POST",
+             data: {
+                "ccast_uuid" : ccast_uuid,
+                "action"     : "status_metadata_scraper"
+             },
              dataType: "json",
              success: function(data)
              {
@@ -381,7 +391,7 @@ function metadataScraperInfo ()
              error: function(jqXHR, textStatus, errorThrown)
              {
                  // On error, log the error to console
-                 console.error("Error:", textStatus, errorThrown);
+                 console.error(`Error: ${textStatus}, ${errorThrown}`);
                  setTimeout(metadataScraperInfo, 10000);
              }
            });
@@ -422,8 +432,12 @@ function chromeCastInfo ()
          $('#plyrCntrlAddToFavs').removeClass ('SongIsFavourite');
     }
 
-    $.ajax ({url: `castinfo.py?ccast_uuid=${ccast_uuid}&type=player_status`,
-             type: "GET",
+    $.ajax ({url: `castinfo.py`,
+             type: "POST",
+             data: {
+                "ccast_uuid" : ccast_uuid,
+                "type"       : "player_status"
+             },
              dataType: "json",
              success: function(data)
                      {
@@ -687,8 +701,12 @@ function chromeCastInfo ()
                          if (G_LastChromeCastQueueChangeNo != data.slinger_queue_changeno)
                          {
                              G_LastChromeCastQueueChangeNo = data.slinger_queue_changeno;
-                             $.ajax ({url: `castinfo.py?ccast_uuid=${ccast_uuid}&type=queue_list`,
-                                      type: "GET",
+                             $.ajax ({url: `castinfo.py`,
+                                      type: "POST",
+                                      data : {
+                                          "ccast_uuid" : ccast_uuid,
+                                          "type"       : "queue_list"
+                                      },
                                       dataType: "json",
                                       success: function(queue)
                                       {
@@ -719,7 +737,7 @@ function chromeCastInfo ()
                                       },
                                       error: function(jqXHR, textStatus, errorThrown)
                                       {
-                                                console.error("Error:", textStatus, errorThrown);
+                                          console.error(`Error: ${textStatus}, ${errorThrown}`);
                                       }
                                     });
                          }
@@ -728,7 +746,7 @@ function chromeCastInfo ()
              error: function(jqXHR, textStatus, errorThrown)
              {
                  // On error, log the error to console
-                 console.error("Error:", textStatus, errorThrown);
+                 console.error(`Error: ${textStatus}, ${errorThrown}`);
              }
            });
     return false;
@@ -740,8 +758,12 @@ function chromeCastInfo ()
 
 function loadPlayList (thisObj, name)
 {
-    $.ajax ({url: `playlistcontroller.py?action=playlist_list&name=${name}`,
-             type: "GET",
+    $.ajax ({url: `playlistcontroller.py`,
+             type: "POST",
+             data: {
+                 "action" : "playlist_list",
+                 "name"   : name
+             },
              dataType: "json",
              success: function(data)
              {
@@ -757,14 +779,14 @@ function loadPlayList (thisObj, name)
 <table class="inlinePlaylistBrowserControls" style="width:100%;height:auto">
 <tr>
     <td style="white-space:nowrap">
+        <span style="padding-right: 10px;">
+            <i class="inlinePlayListControls fa-solid fa-circle-play" style="padding-left: 10px;font-size: x-large;text-align:center;vertical-align: middle;" title="Playlist to Queue" onclick="$('#tabQueueBrowserSelect').click(); queuePlayPlaylist ($('#ccast_uuid').val(), $('#playlistBrowser .ui-accordion-content-active select').val(), $('#playlistBrowser .ui-accordion-header-active').attr('name')); "><br><font style="display:none" class="controlsIconFont showHelpText">Playlist to Queue</font></i>
+        </span>
         <span>
             <select class="inlinePlayMode" name="PlayMode">
                 <option value="play_playlist_replace">Replace</opion>
                 <option value="play_playlist_append">Append</opion>
             </select>
-        </span>
-        <span>
-            <i class="inlinePlayListControls fa-solid fa-circle-play" style="padding-left: 10px;font-size: x-large;text-align:center;vertical-align: middle;" title="Playlist to Queue" onclick="$('#tabQueueBrowserSelect').click(); chromeCastBasicAction($('#ccast_uuid').val(), $('#playlistBrowser .ui-accordion-content-active select').val(), $('#playlistBrowser .ui-accordion-header-active').attr('name')); "><br><font style="display:none" class="controlsIconFont showHelpText">Playlist to Queue</font></i>
         </span>
     </td>
 
@@ -806,6 +828,7 @@ function loadPlayList (thisObj, name)
     <td>${queue[idx].metadata["title"]}</td>
     <td>${queue[idx].metadata["albumName"]}</td>
     <td>${queue[idx].metadata["artist"]}</td>
+    <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_playlist_item_at_index', [ ${queue[idx].seq} ]);"><i class="inlinePlayListControls fa-solid fa-circle-play" style="text-align:center;" title="Play Item" onclick=""></i></td>
 </tr>`;
                      }
                  }
@@ -825,9 +848,56 @@ function loadPlayList (thisObj, name)
              error: function(jqXHR, textStatus, errorThrown)
              {
                  // On error, log the error to console
-                 console.error("Error:", textStatus, errorThrown);
+                 console.error(`Error: ${textStatus}, ${errorThrown}`);
              }
            });
+}
+
+function queuePlayPlaylist (ccast_uuid, playlistAction, playlistName)
+{
+    // check if there are selected items in the playlist, if so then only play/place those items into the Queue Browser
+    let refID = G_PlayListRefs[playlistName];
+    let allItems = $(`#${refID}_tab .dataRow`);
+    let songRowIDs = [];
+    for (let idx = 0; idx < allItems.length; idx++)
+    {
+        if ($(allItems[idx]).hasClass ('selected'))
+            songRowIDs.push ($(allItems[idx]).attr('rowid'));
+    }
+    if (songRowIDs.length > 0)
+    {
+        if (playlistAction == 'play_playlist_replace')
+            chromeCastBasicAction (ccast_uuid, 'play_playlist_replace_item_at_index', songRowIDs);
+        else
+            chromeCastBasicAction (ccast_uuid, 'play_playlist_append_item_at_index', songRowIDs);
+    }
+    else
+        chromeCastBasicAction(ccast_uuid, playlistAction, playlistName); // If no items selected, then play/queue the whole play list
+}
+
+function showConfigEditor ()
+{
+    // Create and open the dialog with an iframe
+    $("#configEditorDialog").html('<iframe src="configEditor.py" width="100%" height="100%" frameborder="0"></iframe>').dialog({
+        modal: true,
+        width: "80%",
+        height: $(window).height() * 0.8,
+        position: {
+            my: "center top",
+            at: "center top+10%",
+            of: window
+        },
+        open: function ()
+        {
+            // Make sure the iframe fills the dialog
+            $(this).css("overflow", "hidden");
+            $(this).find("iframe").css({
+            width: "100%",
+            height: "100%",
+            border: "0"
+        });
+      }
+    });
 }
 
 function chromeCastPlay (file, ccast_uuid, type, queueDirectory=false, forcePlay=false)
@@ -845,6 +915,7 @@ function chromeCastPlay (file, ccast_uuid, type, queueDirectory=false, forcePlay
 
     // summit requested song to current play queue (Queue Browser)
     $.ajax ({url: 'castfile.py',
+             type: "POST",
              data : {
                 "ccast_uuid":      ccast_uuid,
                 "type" :           type,
@@ -852,7 +923,6 @@ function chromeCastPlay (file, ccast_uuid, type, queueDirectory=false, forcePlay
                 "force_cast":      forcePlay,
                 "location" :       file
              },
-             type: "POST",
              success: function(result)
              {
                  $('#tabQueueBrowserSelect').click();
@@ -914,12 +984,12 @@ function RenamePlayList(thisObj, playlistName)
                        {
                             let newname = $('#renamedPlayListName').val().trim();
                             $.ajax ({url: 'playlistcontroller.py',
+                                         type: "POST",
                                          data : {
                                             "action":         "rename_playlist",
                                             "name":           playlistName,
                                             "newname":        newname
                                          },
-                                         type: "POST",
                                          success: function(result)
                                          {
                                              if (result == 'ok')
@@ -948,7 +1018,7 @@ function RenamePlayList(thisObj, playlistName)
                             $(this).dialog("close");
                        },
                        class:"",
-                       style:"background-color:skyblue;color:white"
+                       style:"background-color:#0078a9;color:white"
                    },
                    {   text: "Cancel",
                        click: function ()
@@ -963,14 +1033,14 @@ function RenamePlayList(thisObj, playlistName)
 function AddLocationToPlayList (playlistName, location, type, isDirectory)
 {
     $.ajax ({url: 'playlistcontroller.py',
+         type: "POST",
          data : {
             "action":         "add_playlist_items",
             "name":           playlistName,
             "type":           type,
             "directory_load": isDirectory,
-            "location":       location,
+            "location":       location
          },
-         type: "POST",
          success: function(result)
          {
              // Reload the current playlist!
@@ -1048,13 +1118,13 @@ function FavouriteAddRemove (ccinfo=null)
 
     $.ajax ({url: `playlistcontroller.py`,
              type: "POST",
-             dataType: 'json',
              data: {
                 'action'   : 'exists_playlist_item',
                 'name'     : G_FavouritesName,
                 'location' : ccinfo.slinger_current_media.location,
                 'type'     : ccinfo.slinger_current_media.type
              },
+             dataType: 'json',
              success: function(result)
              {
                  if (result.exists)
@@ -1080,13 +1150,13 @@ function ShowIsFavourite (ccinfo=null)
 
     $.ajax ({url: `playlistcontroller.py`,
              type: "POST",
-             dataType: 'json',
              data: {
                 'action'   : 'exists_playlist_item',
                 'name'     : G_FavouritesName,
                 'location' : ccinfo.slinger_current_media.location,
                 'type'     : ccinfo.slinger_current_media.type
              },
+             dataType: 'json',
              success: function(result)
              {
                  if (result.exists)
@@ -1134,8 +1204,12 @@ function ImportSpotifyPlayList (spotifyURL, thisObj=null)
          icon: 'info'
      });
 
-    $.ajax ({url: `playlistcontroller.py?action=import_spotify_playlist&spotifyPlaylistUrl=${encodeURIComponent(spotifyURL)}`,
-             type: "GET",
+    $.ajax ({url: `playlistcontroller.py`,
+             type: "POST",
+             data : {
+                  "action" : "import_spotify_playlist",
+                  "spotifyPlaylistUrl" : spotifyURL
+             },
              success: function(result)
              {
                  console.log (`ImportSpotifyPlayList success : ${ result}`);
@@ -1181,8 +1255,12 @@ function CreateSearchListPlayList(name, thisObj=null)
     if (name == '')
         return;
 
-    $.ajax ({url: `playlistcontroller.py?action=create_playlist&name=${name}`,
-             type: "GET",
+    $.ajax ({url: `playlistcontroller.py`,
+             type: "POST",
+             data: {
+                  "action" : "create_playlist",
+                  "name"   : name
+             },
              success: function(result)
              {
                  AddPlayList(name);
@@ -1205,8 +1283,13 @@ function QueueListToPlaylist (newPlayListName)
     newPlayListName = newPlayListName.trim();
     ccast_uuid = $('#ccast_uuid').val();
     action = 'save_queue_to_playlist';
-    $.ajax ({url: `castcontroller.py?ccast_uuid=${ccast_uuid}&action=${action}&val1=${newPlayListName}` ,
-             type: "GET",
+    $.ajax ({url: `castcontroller.py` ,
+             type: "POST",
+             data : {
+                 "ccast_uuid": ccast_uuid,
+                 "action":     action,
+                 "val1":       newPlayListName
+             },
              success: function(result)
              {
                  AddPlayList(newPlayListName);
@@ -1261,8 +1344,13 @@ function chromeCastMute (ccast_uuid)
 
 function chromeCastBasicAction (ccast_uuid, action, val1='')
 {
-    $.ajax ({url: `castcontroller.py?ccast_uuid=${ccast_uuid}&action=${action}&val1=${val1}` ,
-             type: "GET",
+    $.ajax ({url: `castcontroller.py`,
+             type: "POST",
+             data : {
+                "ccast_uuid" : ccast_uuid,
+                "action"     : action,
+                "val1"       : val1
+             },
              success: function(result)
              {
                 console.log(result);
@@ -1319,7 +1407,7 @@ function LoadFolderArtAsImage (filelocation, type, htmlID, custClass="", custSty
               error: function(jqXHR, textStatus, errorThrown)
               {
                   // On error, log the error to console
-                  console.error("Error:", textStatus, errorThrown);
+                  console.error(`Error: ${textStatus}, ${errorThrown}`);
               }
            });
 }
@@ -1383,7 +1471,7 @@ function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
               {
                   G_RateLimitFileListFolderArtOp--;
                   // On error, log the error to console
-                  console.error("Error:", textStatus, errorThrown);
+                  console.error(`Error: ${textStatus}, ${errorThrown}`);
                   if (RateLimitLoadFileListFolderArt > 0)
                     RateLimitLoadFileListFolderArt--;
               }
@@ -1646,8 +1734,12 @@ function CreatePlayList(name, fileListThisObj=null)
     if (name == '')
         return;
 
-    $.ajax ({url: `playlistcontroller.py?action=create_playlist&name=${name}`,
-             type: "GET",
+    $.ajax ({url: `playlistcontroller.py`,
+             type: "POST",
+             data: {
+                "action" : "create_playlist",
+                "name"   : name
+             },
              success: function(result)
              {
                  AddPlayList(name);
@@ -1673,8 +1765,12 @@ function AccordianRemovePlayList (name)
 
 function DeletePlayList (name)
 {
-    $.ajax ({url: `playlistcontroller.py?action=delete_playlist&name=${name}`,
-             type: "GET",
+    $.ajax ({url: `playlistcontroller.py`,
+             type: "POST",
+             data: {
+                "action" : "delete_playlist",
+                "name"   : name
+             },
              success: function(result)
              {
                  AccordianRemovePlayList (name);
@@ -1709,10 +1805,12 @@ function InvertPlayListSelection ()
 
 function DeletePlayListRowIDs (name, rowIDS)
 {
-    $.ajax ({url: `playlistcontroller.py?action=delete_playlist_items&name=${name}`,
+    $.ajax ({url: `playlistcontroller.py`,
              type: "POST",
              data: {
-                rowid: rowIDS
+                "action" : "delete_playlist_items",
+                "name"   : name,
+                "rowid"  : rowIDS
              },
              success: function(result)
              {
@@ -1724,7 +1822,7 @@ function DeletePlayListRowIDs (name, rowIDS)
              error: function(jqXHR, textStatus, errorThrown)
              {
                  // On error, log the error to console
-                 console.error("Error:", textStatus, errorThrown);
+                 console.error(`Error: ${textStatus}, ${errorThrown}`);
              }
            });
 }
@@ -1744,8 +1842,11 @@ function DeletePlayListItems()
 
 function LoadPlaylistNames ()
 {
-    $.ajax ({url: `playlistcontroller.py?action=get_playlist_names`,
-             type: "GET",
+    $.ajax ({url: `playlistcontroller.py`,
+             type: "POST",
+             data: {
+                  "action" : "get_playlist_names"
+             },
              dataType: "json",
              success: function(data)
              {
@@ -1965,8 +2066,11 @@ function SearchQueryInfo ()
 {
     ccast_uuid = $('#ccast_uuid').val();
 
-    $.ajax ({url: `executequery.py?action=status`,
-             type:     "GET",
+    $.ajax ({url: `executequery.py`,
+             type: "POST",
+             data: {
+                  "action" : "status"
+             },
              dataType: "json",
              success: function(data)
              {
@@ -1996,7 +2100,7 @@ function SearchQueryInfo ()
              error: function(jqXHR, textStatus, errorThrown)
              {
                  // On error, log the error to console
-                 console.error("Error:", textStatus, errorThrown);
+                 console.error(`Error: ${textStatus}, ${errorThrown}`);
                  G_SearchTimeoutID = setTimeout(SearchQueryInfo, 10000);
              }
            });

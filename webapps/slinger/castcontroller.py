@@ -15,7 +15,6 @@ castQueueObj = SGF.getChromecastQueueObj(ccast_uuid=postData["ccast_uuid"])
 if not castQueueObj:
     logging.error(f"{postData['ccast_uuid']} cast object is not matched!")
     exit(0)
-
 if postData["action"] == "stop":
     castQueueObj.stop()
     output("stop")
@@ -55,7 +54,6 @@ elif postData["action"] in ("play_playlist_replace", "play_playlist_append"):
         mode = 'append'
     def bgloadPlaylist(httpObj, playListName, mode):
         castQueueObj.loadPlaylist(httpObj, playListName, mode)
-
     threading.Thread(target=bgloadPlaylist, args=(self,postData['val1'], mode)).start()
     output(f"{postData['action']} {postData['val1']}")
 elif (postData["action"] == 'clear_metadata_cache'):
@@ -91,6 +89,26 @@ elif (postData["action"] == 'start_metadata_scraper'):
 elif (postData["action"] == 'awaken_monitoring'):
     castQueueObj.wakeNow()
     output('ok')
+elif (postData["action"] in ("play_playlist_replace_item_at_index", "play_playlist_append_item_at_index", "play_playlist_item_at_index")):
+    if postData["action"] in ("play_playlist_replace_item_at_index", "play_playlist_item_at_index"):
+        forcePlay = True
+    else:
+        forcePlay = False
+
+    # if running replace action, then clear the queue before loading new songs!
+    if postData["action"] in ("play_playlist_replace_item_at_index"):
+        castQueueObj.clear()
+
+    queueSongs = postData['val1']
+    if isinstance (postData['val1'], str):
+        queueSongs = [postData['val1']]
+
+    for songId in queueSongs:
+        for row in SGF.DB.GetPlayListSong(songId):
+            castQueueObj.loadLocation(self, location=row['location'], type=row['type'], forcePlay=forcePlay)
+            forcePlay = False
+    output("ok")
+
 #requested_volume = float(sys.argv[1]) if len(sys.argv) > 1 else None
 #if requested_volume != None:
 #    cast.set_volume(requested_volume)

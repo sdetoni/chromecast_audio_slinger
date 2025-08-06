@@ -100,89 +100,103 @@ elif (postData["action"] == 'rename_playlist') and (postData["name"] != '') and 
         output('name already exists')
     exit(0)
 elif  (postData["action"] == 'import_spotify_playlist'):
-    spotifyPlaylistUrl  = postData["spotifyPlaylistUrl"]
-    spotifyPlaylistID   = spotifyPlaylistUrl.split("/")[-1].split("?")[0]
-    spotifyClientID     = GF.Config.getSetting ('slinger/SPOTIFY_CLIENT_ID',     "5f573c9620494bae87890c0f08a60293")
-    spotifyClientSecret = GF.Config.getSetting ('slinger/SPOTIFT_CLIENT_SECRET', "212476d9b0f3472eaa762d90b19b0ba8")
-    accessToken         = SGF.Spotify_GetAccessToken  (client_id=spotifyClientID, client_secret=spotifyClientSecret)
-    tracks              = SGF.Spotify_GetPlaylistTracks (access_token=accessToken, playlist_id=spotifyPlaylistID)
-    playListInfo        = SGF.Spotify_GetPlaylistInfo (access_token=accessToken, playlist_id=spotifyPlaylistID)
+    if SGF.scrapeProcesState['active']:
+        exit(0)
 
-    # create a new playlist
-    if not playListInfo:
-        logging.error(f"Playlist appears invalid : {spotifyPlaylistUrl}")
-        exit (0)
+    SGF.scrapeProcesState['active'] = True
+    try:
+        spotifyPlaylistUrl  = postData["spotifyPlaylistUrl"]
+        spotifyPlaylistID   = spotifyPlaylistUrl.split("/")[-1].split("?")[0]
+        spotifyClientID     = GF.Config.getSetting ('slinger/SPOTIFY_CLIENT_ID',     "5f573c9620494bae87890c0f08a60293")
+        spotifyClientSecret = GF.Config.getSetting ('slinger/SPOTIFT_CLIENT_SECRET', "212476d9b0f3472eaa762d90b19b0ba8")
+        accessToken         = SGF.Spotify_GetAccessToken  (client_id=spotifyClientID, client_secret=spotifyClientSecret)
+        tracks              = SGF.Spotify_GetPlaylistTracks (access_token=accessToken, playlist_id=spotifyPlaylistID)
+        playListInfo        = SGF.Spotify_GetPlaylistInfo (access_token=accessToken, playlist_id=spotifyPlaylistID)
 
-    SGF.DB.CreatePlayList(playListInfo["name"])
+        # create a new playlist
+        if not playListInfo:
+            logging.error(f"Playlist appears invalid : {spotifyPlaylistUrl}")
+            exit (0)
 
-    # scan spotify playlist and match to metadata
-    infoResponse = ""
-    loadedCount = 0
-    failedCount = 0
+        SGF.DB.CreatePlayList(playListInfo["name"])
 
-    for track in tracks:
-        matchedLocation = {'row' : None, 'score' : 0, 'metadata' : '' }
+        # scan spotify playlist and match to metadata
+        infoResponse = ""
+        loadedCount = 0
+        failedCount = 0
+        totalTracks = len(tracks)
+        countTracks = 0
 
-        for matchPass in range (0,2):  # first pass match on name as is, next passes removed remastered keywords
-            trackName   = track["track"]["name"]
-            trackAlbum  = track["track"]["album"]["name"]
-            trackArtist = track["track"]["artists"][0]["name"]
+        for track in tracks:
+            countTracks += 1
+            SGF.scrapeProcesState['file_path'] = f'{playListInfo["name"]}: {countTracks}/{totalTracks} '
+            SGF.scrapeProcesState['processing_filename'] = track["track"]["name"]
+            matchedLocation = {'row' : None, 'score' : 0, 'metadata' : '' }
 
-            if matchPass:
-                for regexpNamePat in (r'(.*)(\(.*\))', r'(.*)(- remaster.*)'):
-                    m = re.match(regexpNamePat, trackName, re.IGNORECASE)
-                    if m:
-                        trackName = m.group(1).strip()
-                    m = re.match(regexpNamePat, trackAlbum, re.IGNORECASE)
-                    if m:
-                        trackAlbum = m.group(1).strip()
+            for matchPass in range (0,2):  # first pass match on name as is, next passes removed remastered keywords
+                trackName   = track["track"]["name"]
+                trackAlbum  = track["track"]["album"]["name"]
+                trackArtist = track["track"]["artists"][0]["name"]
 
-                if re.match(r".*\/.*", trackArtist):
-                    trackArtist = re.sub(r'(.*?)\s*\/\s*(.*)', r'(\g<1>|\g<2>)',  trackArtist, count=1, flags=re.IGNORECASE)
-
-
-            for row  in SGF.DB.SearchMetaDataTrackAlbumArtist (regexTrack=trackName, regexArtist=trackArtist, regexAlbum=trackAlbum):
-                score    = 10
-                metadata = json.loads(row['metadata'])
-                bitrate  = 0
-
-                # increate name matching by removing '- Remastered' name tags
-                if (re.search(trackAlbum, metadata['albumName'], re.IGNORECASE) and re.search(trackArtist, metadata['artist'], re.IGNORECASE)):
-                    score = 50
-
-                # very basic bitrate calculation
-                if 'bitrate' in metadata.keys():
-                    try:
-                        br      =  int(metadata['bitrate'].split(' ')[0])
-                        bitrate =  br
-                        score   += br / 100
-                    except:
-                        pass
-                elif row['location'].lower().endswith('.flac'):
-                    score += 100
-
-                if (not matchedLocation['row']) or (matchedLocation['score'] < score):
-                    matchedLocation['row']      = row
-                    matchedLocation['score']    = score
-                    matchedLocation['metadata'] = metadata
-                    continue
-
-            if matchedLocation['row']:
-                logging.info (f"Loading {SGF.toASCII(str(matchedLocation['row']['location']))} into play list '{playListInfo['name']}'")
-                SGF.DB.AddPlayListSong(playListInfo["name"], matchedLocation['row']["location"], matchedLocation['row']['type'])
-                infoResponse += f"ADDED '{trackName}' from album '{trackAlbum}', artist '{trackArtist}'\n"
-                loadedCount += 1
-                break
-            else:
                 if matchPass:
-                    logging.warning(f"Failed matching '{trackName}' on album '{trackAlbum}' as artist '{trackArtist}'")
-                    infoResponse += f"FAILED MATCH on '{trackName}' from album '{trackAlbum}', artist '{trackArtist}'\n"
-                    failedCount += 1
+                    for regexpNamePat in (r'(.*)(\(.*\))', r'(.*)(- remaster.*)'):
+                        m = re.match(regexpNamePat, trackName, re.IGNORECASE)
+                        if m:
+                            trackName = m.group(1).strip()
+                        m = re.match(regexpNamePat, trackAlbum, re.IGNORECASE)
+                        if m:
+                            trackAlbum = m.group(1).strip()
 
-    infoResponse = f"Play List: {playListInfo['name']}\n" + \
-                   f"Loaded: {loadedCount}, Failed Matches: {failedCount}, Playlist Size:{loadedCount + failedCount}\n\n" + \
-                   infoResponse
-    output(infoResponse.strip())
+                    if re.match(r".*\/.*", trackArtist):
+                        trackArtist = re.sub(r'(.*?)\s*\/\s*(.*)', r'(\g<1>|\g<2>)',  trackArtist, count=1, flags=re.IGNORECASE)
+
+
+                for row  in SGF.DB.SearchMetaDataTrackAlbumArtist (regexTrack=trackName, regexArtist=trackArtist, regexAlbum=trackAlbum):
+                    score    = 10
+                    metadata = json.loads(row['metadata'])
+                    bitrate  = 0
+
+                    # increate name matching by removing '- Remastered' name tags
+                    if (re.search(trackAlbum, metadata['albumName'], re.IGNORECASE) and re.search(trackArtist, metadata['artist'], re.IGNORECASE)):
+                        score = 50
+
+                    # very basic bitrate calculation
+                    if 'bitrate' in metadata.keys():
+                        try:
+                            br      =  int(metadata['bitrate'].split(' ')[0])
+                            bitrate =  br
+                            score   += br / 100
+                        except:
+                            pass
+                    elif row['location'].lower().endswith('.flac'):
+                        score += 100
+
+                    if (not matchedLocation['row']) or (matchedLocation['score'] < score):
+                        matchedLocation['row']      = row
+                        matchedLocation['score']    = score
+                        matchedLocation['metadata'] = metadata
+                        continue
+
+                if matchedLocation['row']:
+                    logging.info (f"Loading {SGF.toASCII(str(matchedLocation['row']['location']))} into play list '{playListInfo['name']}'")
+                    SGF.DB.AddPlayListSong(playListInfo["name"], matchedLocation['row']["location"], matchedLocation['row']['type'])
+                    infoResponse += f"ADDED '{trackName}' from album '{trackAlbum}', artist '{trackArtist}'\n"
+                    loadedCount += 1
+                    break
+                else:
+                    if matchPass:
+                        logging.warning(f"Failed matching '{trackName}' on album '{trackAlbum}' as artist '{trackArtist}'")
+                        infoResponse += f"FAILED MATCH on '{trackName}' from album '{trackAlbum}', artist '{trackArtist}'\n"
+                        failedCount += 1
+
+        infoResponse = f"Play List: {playListInfo['name']}\n" + \
+                       f"Loaded: {loadedCount}, Failed Matches: {failedCount}, Playlist Size:{loadedCount + failedCount}\n\n" + \
+                       infoResponse
+        output(infoResponse.strip())
+    finally:
+        SGF.scrapeProcesState['file_path']           = ""
+        SGF.scrapeProcesState['processing_filename'] = ""
+        SGF.scrapeProcesState['active']              = False
     exit(0)
 
 output ("nope!")

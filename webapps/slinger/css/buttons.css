@@ -1,0 +1,170 @@
+@import url("font-awesome.css");
+
+.fa-IconSpLeft {
+    margin-right:5px;
+}
+
+.fa-IconSpRight {
+    margin-left:5px;
+}
+
+.fa-IconSp {
+    margin-right:5px;
+}
+
+.fa-IconPopup {
+  font-size: 80%;
+  vertical-align: top;
+}
+
+.button-toolbar
+{
+    border-radius: 2px !important;
+    padding:6px;
+}
+
+.pure-button {
+    padding-left:   5px;
+    padding-right:  5px;
+    padding-top:    3px;
+    padding-bottom: 3px;
+	
+	border-radius: 2px !important;
+}
+
+
+.pure-button a:link    {color:  #FFFFFF;}
+.pure-button a:visited {color:  #FFFFFF;}
+.pure-button a:hover   {color:  #BBBBBB;}
+.pure-button a:focus   {color:  #BBBBBB;}
+.pure-button a:active   {color: #FFFFFF;}
+
+.button-start,
+.button-direction,
+.button-pause,
+.button-warning,
+.button-filter,
+.button-filter_sel,
+.button-secondary {
+    color: white;
+    border-radius: 4px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.button-start {
+    background: rgb(00, 200, 0); /* this is a green */
+}
+
+.button-filter {
+    background: RGB(170,0,213); /* this is a purple */
+}
+
+.button-filter-sel {
+    background: RGB(130,0,167); /* this is a purple */
+}
+
+.button-header {
+    background: RGB(44,126,219); /* this is a light blue */
+}
+
+
+.button-direction {
+    background: rgb(0, 145, 212); /* this is a cyan */
+}
+
+.button-pause {
+    background: rgb(202, 60, 60); /* this is a maroon */
+}
+
+.button-warning {
+    background: rgb(223, 117, 20); /* this is an orange */
+}
+
+.button-secondary {
+    background: rgb(66, 184, 221); /* this is a light blue */
+}
+/*
+.button-xxsmall {
+    font-size: 55%;
+}
+
+.button-xsmall {
+    font-size: 60%;
+}
+
+.button-small {
+    font-size: 70%;
+}
+
+.button-medium {
+    font-size: 90%;
+}
+
+.button-large {
+    font-size: 110%;
+}
+
+.button-xlarge {
+    font-size: 125%;
+}
+*/
+
+select {
+    outline: 0;
+	border: 0 !important;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	background: black;
+	width: 100px;
+	text-indent: 0.01px;
+	text-overflow: "";
+    text-align:left;
+	color: #FFFFFF;
+	border-radius: 2px;
+	padding: 5px;
+	box-shadow: inset 0 0 5px rgba(000,000,000, .1);
+}
+select.option_round {
+	border-radius: 5px 5px;
+}
+select.option_round_wider {
+    width: 200px;
+	border-radius: 5px 5px;
+}
+
+/*** Change the popup modal windows title bar/font size ***/
+.ui-dialog .ui-dialog-titlebar, .ui-dialog .ui-dialog-buttonpane { font-size: 0.5em; }
+
+
+
+
+/* Start by setting display:none to make this hidden.
+   Then we position it in relation to the viewport window
+   with position:fixed. Width, height, top and left speak
+   speak for themselves. Background we set to 80% white with
+   our animation centered, and no-repeating */
+.PacifierModal {
+    display:    none;
+    position:   fixed;
+    z-index:    1000;
+    top:        0;
+    left:       0;
+    height:     100%;
+    width:      100%;
+    background: rgba( 255, 255, 255, .8 )
+                url('../css/pacifier.gif')
+                50% 50%
+                no-repeat;
+}
+
+/* When the body has the loading class, we turn
+   the scrollbar off with overflow:hidden */
+body.busy {
+    overflow: hidden;
+}
+
+/* Anytime the body has the loading class, our
+   modal element will be visible */
+body.busy .PacifierModal {
+    display: block;
+}

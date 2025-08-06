@@ -48,11 +48,13 @@ a:hover, a:focus {
 
 #showHelpTextInfo  {
     padding-left: 10px;
-    padding-bottom: 5px;
 }
 
 #showAbout {
-    padding-top: 5px;
+    padding-left: 10px;
+}
+
+#showCfgCog {
     padding-left: 10px;
 }
 
@@ -69,10 +71,10 @@ a:hover, a:focus {
 
 /* ----- JQUERY UI Interface changes ------- */
 
-
 .ui-button {
   padding: 5px 5px;
 }
+
 .ui-tabs .ui-tabs-nav .ui-tabs-anchor {
   padding: 5px 5px;
 }
@@ -84,6 +86,11 @@ a:hover, a:focus {
     margin: 0;
     padding: 0px 0px 0px;
 }
+
+.ui-dialog .ui-dialog-content {
+    padding: 0px !important;
+}
+
 
 /* jquery ui, no title bar */
 .custom-no-titlebar .ui-dialog-titlebar {
