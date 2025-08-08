@@ -875,10 +875,12 @@ function queuePlayPlaylist (ccast_uuid, playlistAction, playlistName)
         chromeCastBasicAction(ccast_uuid, playlistAction, playlistName); // If no items selected, then play/queue the whole play list
 }
 
+
+
 function showConfigEditor ()
 {
     // Create and open the dialog with an iframe
-    $("#configEditorDialog").html('<iframe src="configEditor.py" width="100%" height="100%" frameborder="0"></iframe>').dialog({
+    $("#configEditorDialog").html('<iframe src="configeditor.py" width="100%" height="100%" frameborder="0"></iframe>').dialog({
         modal: true,
         width: "80%",
         height: $(window).height() * 0.8,
@@ -2376,6 +2378,8 @@ function showHideIconInfo (mode=G_ShowHideIconInfo)
 
 function playerControlsExpandContract()
 {
+    document.body.style.overflow = "hidden";
+    
     if ($('.overlay-containerSml').css('display') == 'none')
     {
          $('#busy-transcoding').css('font-size', '2px');

@@ -25,6 +25,7 @@ import slinger.crontab as crontab
 import socket
 import base64
 import requests
+from slinger.ColourLogFormatter import ColouredLogFormatter
 
 AUDIO_TRANSCODE = 'audio/transcode'
 DB = slinger.SlingerDB.DB
@@ -33,6 +34,11 @@ SearchArtSem = threading.Semaphore()
 # limit the filo onto server for accessfile.py to prevent DDOS
 MAX_CONCURRENT_ACCESSFILE_NO = GF.Config.getSettingValue('slinger/MAX_CONCURRENT_DOWNLOADS', 50)
 CUR_CONCURRENT_ACCESSFILE_NO = 0
+
+# add custom logging formatting and buffer
+ColLogFormatter = ColouredLogFormatter("%(asctime)s:%(levelname)s:%(message)s", datefmt='%H:%M:%S')
+for handler in logging.getLogger().handlers:
+    handler.setFormatter(ColLogFormatter)
 
 def get_host_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

@@ -58,6 +58,10 @@ a:hover, a:focus {
     padding-left: 10px;
 }
 
+#showLogViewer {
+    padding-left: 10px;
+}
+
 .rcorners1 {
   border-radius: 3px;
   border: 2px solid #7c7d7d;

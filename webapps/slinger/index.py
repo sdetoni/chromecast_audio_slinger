@@ -176,7 +176,7 @@ var G_Generated_Local_Player_UniqueID = "";
                 </tr></table>                
             </td>                        
             <td style="">
-                <table style="min-width:50px;max-width:40px;float:right" border=0>
+                <table style="min-width:50px;max-width:40px;float:right;" border=0>
                 <tr>
                     <td style="padding-right:10px;white-space:nowrap;text-align:center">
                         <i id="plyrCntrlAddToFavs" onclick="FavouriteAddRemove()" class="playerControls fa-solid fa-star" style="font-size:x-large;" title="Add/Remove Favourite"><font style="display:none;" class="showHelpText controlsIconFont">Add/Remove Favourite</font></i>
@@ -187,11 +187,21 @@ var G_Generated_Local_Player_UniqueID = "";
                     <td class="playerControls"><i id="volOnMute" class="fa-solid fa-volume-high" onclick="chromeCastMute($('#ccast_uuid').val())" title="Mute"></i></td>
                     <td class="playerTxt" style="width:100%;min-width:100px"><input type="range" min="1" max="100" value="50" id="volLevel" oninput="chromeCastBasicAction($('#ccast_uuid').val(), 'volume', ($(this).val()/100.0))"></td>
                 </tr>
+                <tr><td style="height:5px"></td></tr>
                 <tr>                    
                     <td colspan="100%" style="text-align:right">
-                        <i id="showHelpTextInfo" onclick="showHideIconInfo(! G_ShowHideIconInfo)" class="playerControls fa-solid fa-circle-info" style="" title="Icon Info On/Off"></i>
-                        <i id="showAbout"        onclick="About()"                                class="playerControls fa-solid fa-at"          style=""></i>
-                        <i id="showCfgCog"       onclick="showConfigEditor()"                     class="playerControls fa-solid fa-cog"         style="" title="Config Editor"></i>                    
+                        <i id="showHelpTextInfo" onclick="showHideIconInfo(! G_ShowHideIconInfo)" class="playerControls fa-solid fa-circle-info" style="text-align:center" title="Icon Info On/Off">
+                            <font style="display: none;" class="showHelpText controlsIconFont">This text info</font>
+                        </i>                                                   
+                        <i id="showAbout"        onclick="About()"                                class="playerControls fa-solid fa-at"          style="text-align:center" title="About the Author">
+                            <font style="display: none;" class="showHelpText controlsIconFont">Author</font>
+                        </i>                           
+                        <i id="showCfgCog"       onclick="showConfigEditor()"                     class="playerControls fa-solid fa-cog"         style="text-align:center" title="Config Editor">
+                            <font style="display: none;" class="showHelpText controlsIconFont">Config Editor</font>
+                        </i>                           
+                        <i id="showLogViewer"    onclick="window.open('logviewer.py', '_blank');"                        class="playerControls fa-solid fa-file-lines"  style="text-align:center" title="Server Log Viewer">
+                            <font style="display: none;" class="showHelpText controlsIconFont">Server Log Viewer</font>
+                        </i>    
                     </td>                                                                  
                 </table>
             </td>            
@@ -457,6 +467,7 @@ output (f"""
 
 <!-- configuration Editor container -->
 <div id="configEditorDialog" title="Configuration Editor" style="display:none;"></div>
+
 """)
 output ("""
 </html>
