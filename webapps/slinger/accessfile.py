@@ -310,11 +310,12 @@ def processTranscoding (httpObj, ccast_uuid, location, type, fileStartPos, fileE
             cleanupTempfiles()
 
         # output transcode data as .flac
-        readLen  = len(transcodedData)
+        readLen  = len(transcodedData)-1
         fileSize = len(transcodedData)
-        scode = 200
-        if fileStartPos > 0:
-            scode = 206
+#        scode = 200
+#        if fileStartPos > 0:
+#            scode = 206
+        scode = 206
 
         if fileEndPos > 0:
             readLen = fileEndPos - fileStartPos
@@ -324,6 +325,7 @@ def processTranscoding (httpObj, ccast_uuid, location, type, fileStartPos, fileE
 
         ext        = ccfilename.split('.')[-1].lower()
         ccfilename = re.sub(ext + '$', tmpFileExt, ccfilename)
+        httpObj.protocol_version = "HTTP/1.1"
         httpObj.do_HEAD(mimetype=httpObj.isMimeType(ccfilename), turnOffCache=False, statusCode=scode,
                         closeHeader=True,
                         otherHeaderDict={'Content-Disposition': f'attachment; filename="{ccfilename}"',
@@ -339,18 +341,20 @@ def processTranscoding (httpObj, ccast_uuid, location, type, fileStartPos, fileE
     finally:
         cleanupTempfiles()
 
-def sendStandardFile (httpObj, location):
+def sendStandardFile (httpObj, location, fileStartPos, fileEndPos):
     # send file to destination
     try:
-        scode = 200
-        if fileStartPos > 0:
-            scode = 206
+#        scode = 200
+#        if fileStartPos > 0:
+#            scode = 206
+
+        scode = 206
 
         # read file to send to chromecast
         fObj = open(location, mode='rb')
         fObj.seek(0, io.SEEK_END)
         fileSize = fObj.tell()
-        readLen = fileSize
+        readLen = fileSize-1
 
         if fileEndPos > 0:
             readLen = fileEndPos - fileStartPos
@@ -361,6 +365,7 @@ def sendStandardFile (httpObj, location):
             pass
 
         # set response header
+        httpObj.protocol_version = "HTTP/1.1"
         httpObj.do_HEAD(mimetype=httpObj.isMimeType(postData["location"]), turnOffCache=False, statusCode=scode, closeHeader=True,
                      otherHeaderDict={'Content-Disposition': f'attachment; filename="{os.path.basename(fObj.name).encode("utf-8")}"',
                                       'Content-Range': f'bytes {fileStartPos}-{readLen}/{fileSize}',
@@ -369,6 +374,8 @@ def sendStandardFile (httpObj, location):
         # write output
         chunkSize = 4096
         while True:
+            if chunkSize > readLen:
+                chunkSize = readLen
             chunk = fObj.read(chunkSize)
             if not chunk:
                 break
@@ -376,8 +383,7 @@ def sendStandardFile (httpObj, location):
             readLen = readLen - len(chunk)
             if readLen <= 0:
                 break
-            if chunkSize > readLen:
-                chunkSize = readLen
+
 
 #        httpObj.outputRaw(fObj.read(readLen))
     except Exception as e:
@@ -400,7 +406,7 @@ try:
         if not filename:
             processTranscoding(httpObj=self, ccast_uuid=postData["ccast_uuid"], location=postData["location"], type=postData["type"].lower(), fileStartPos=fileStartPos, fileEndPos=fileEndPos)
         else:
-            sendStandardFile(httpObj=self, location=filename)
+            sendStandardFile(httpObj=self, location=filename,fileStartPos=fileStartPos, fileEndPos=fileEndPos)
 
     elif postData["type"].lower() == 'smb' and postData["location"] != '':
         # read file locations
@@ -418,7 +424,7 @@ try:
                 except:
                     pass
 
-                readLen  = file_attr.file_size
+                readLen  = file_attr.file_size-1
                 fileSize = file_attr.file_size
                 scode = 200
                 if fileStartPos > 0:
@@ -428,6 +434,7 @@ try:
                     readLen = fileEndPos - fileStartPos
 
                 ccfilename = os.path.basename(filePath.split(r'\\')[-1])
+#                self.protocol_version = "HTTP/1.1"
                 self.do_HEAD(mimetype=self.isMimeType(filePath.split('.')[-1].lower()), turnOffCache=False, statusCode=scode,
                              closeHeader=True,
                              otherHeaderDict={'Content-Disposition': f'attachment; filename="{ccfilename.encode("utf-8")}"',
@@ -451,6 +458,6 @@ try:
             conn.close()
     ########## Local File System Send File ##########
     elif postData["type"].lower() == 'file' and postData["location"] != '':
-        sendStandardFile(httpObj = self, location = postData["location"])
+        sendStandardFile(httpObj = self, location = postData["location"],fileStartPos=fileStartPos, fileEndPos=fileEndPos)
 finally:
     SGF.CUR_CONCURRENT_ACCESSFILE_NO -= 1

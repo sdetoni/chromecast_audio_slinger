@@ -500,6 +500,7 @@ function chromeCastInfo ()
                              let video = $("#LocalVideoPlayerDevice");
                              let thisAVID  = ""
                              let thisAVDev = null;
+
                              if (isVideo (data.content_type))
                              {
                                  thisAVDev = video
@@ -525,6 +526,11 @@ function chromeCastInfo ()
                                      thisAVDev[0].loop = false;
                                      thisAVDev[0].volume = data.volume_level;
                                      thisAVDev[0].muted  = data.volume_muted;
+
+                                     if (thisAVID == "#LocalVideoPlayerDevice")
+                                         audio[0].pause();
+                                     else
+                                         video[0].pause();
                                  }
                                  else if (thisAVDev[0].paused)
                                  {
@@ -1477,13 +1483,31 @@ function LoadFolderArtAsImage (filelocation, type, htmlID, custClass="", custSty
            });
 }
 
+function OnClick_SeekSong (thisObj)
+{
+    ccast_uuid = $('#ccast_uuid').val();
+    if (isLocalPlayer(ccast_uuid))
+    {
+        let audio = $("#LocalAudioPlayerDevice");
+        let video = $("#LocalVideoPlayerDevice");
+        audio[0].currentTime = $(thisObj).val();
+        video[0].currentTime = $(thisObj).val();
+    }
+    else
+        chromeCastBasicAction($('#ccast_uuid').val(), 'seek', $(thisObj).val())
+
+    return false;
+}
+
 function OnClick_RestartSong ()
 {
     ccast_uuid = $('#ccast_uuid').val();
     if (isLocalPlayer(ccast_uuid))
     {
         let audio = $("#LocalAudioPlayerDevice");
+        let video = $("#LocalVideoPlayerDevice");
         audio[0].currentTime = 0;
+        video[0].currentTime = 0;
     }
     else
         chromeCastBasicAction(ccast_uuid, 'seek', 0);

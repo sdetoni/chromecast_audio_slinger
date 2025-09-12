@@ -219,7 +219,7 @@ var G_Generated_Local_Player_UniqueID = "";
 if GF.Config.getSettingBool('slinger/DISABLE_SONG_SEEK', True):
     output ("""<progress min="1" max="100" value="50" id="songRangePosition" style="cursor: default;"></progress>""")
 else:
-    output ("""<input type="range" min="1" max="100" value="50" id="songRangePosition" onchange="((! G_DisableSongSeek) && chromeCastBasicAction($('#ccast_uuid').val(), 'seek', $(this).val()))">""")
+    output ("""<input type="range" min="1" max="100" value="50" id="songRangePosition" onchange="OnClick_SeekSong(this)">""")
 
 output (f"""                        
                     </td>
