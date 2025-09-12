@@ -10,6 +10,8 @@ import threading
 import daemon.GlobalFuncs as GF
 from pyffmpeg import FFmpeg
 from smb.SMBConnection import SMBConnection
+
+
 import slinger.SlingerGlobalFuncs     as SGF
 from pathlib import Path
 import shutil
@@ -156,31 +158,10 @@ def cacheGetTranscode (location, ccast_uuid):
 # ------------------------------------------------------------------------------------------------------
 
 class readerToHTTP:
-    def __init__(self, chunk_size=4096, fileStartPos=0, readLen=-1, httpObj=None):
-        self.chunk_size   = chunk_size
+    def __init__(self, httpObj=None):
         self.httpObj      = httpObj
-        self.fileStartPos = fileStartPos
-        self.readLen      = readLen
 
     def write(self, data):
-        if self.readLen == 0:
-            return
-
-        if self.fileStartPos > 0:
-            if len(data) <= self.fileStartPos:
-                self.fileStartPos -= len(data)
-                return
-            else:
-                data = data[self.fileStartPos:]
-                self.fileStartPos = 0
-
-        if self.readLen == 0:
-            return
-
-        if self.readLen > 0:
-            if len(data) > self.readLen:
-                data = data[:self.readLen]
-            self.readLen -= len(data)
         self.httpObj.outputRaw(data)
 
     def close(self):
@@ -384,8 +365,6 @@ def sendStandardFile (httpObj, location, fileStartPos, fileEndPos):
             if readLen <= 0:
                 break
 
-
-#        httpObj.outputRaw(fObj.read(readLen))
     except Exception as e:
         httpObj.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
         logging.error(f'{e} Failed loading file @ {SGF.toASCII(postData["location"])}')
@@ -411,49 +390,50 @@ try:
     elif postData["type"].lower() == 'smb' and postData["location"] != '':
         # read file locations
         _, _, server, shareName, filePath = SGF.parseSMBConfigString(postData["location"])
-        username, password = SGF.matchSMBCredentialsConfigString (postData["location"])
+        username, password = SGF.matchSMBCredentialsConfigString(postData["location"])
         try:
-            conn = SMBConnection(username=username, password=password, my_name="", remote_name="", use_ntlm_v2=True)
+            #conn = SMBConnection(username=username, password=password, my_name="", remote_name="", use_ntlm_v2=True)
+            conn = SMBConnection(username=username, password=password, my_name="", remote_name="")
             assert conn.connect(server)
 
             # send file to destination
             try:
                 file_attr = conn.getAttributes(shareName, filePath)
                 try:
-                    logging.info (f'{SGF.toASCII(postData["location"])} :: {str(file_attr) }')
+                    logging.info(f'{SGF.toASCII(postData["location"])} :: {str(file_attr)}')
                 except:
                     pass
 
-                readLen  = file_attr.file_size-1
+                readLen = file_attr.file_size - 1
                 fileSize = file_attr.file_size
-                scode = 200
-                if fileStartPos > 0:
-                    scode = 206
+#                scode = 200
+#                if fileStartPos > 0:
+#                    scode = 206
+                scode = 206
 
                 if fileEndPos > 0:
                     readLen = fileEndPos - fileStartPos
 
                 ccfilename = os.path.basename(filePath.split(r'\\')[-1])
-#                self.protocol_version = "HTTP/1.1"
+                self.protocol_version = "HTTP/1.1"
                 self.do_HEAD(mimetype=self.isMimeType(filePath.split('.')[-1].lower()), turnOffCache=False, statusCode=scode,
                              closeHeader=True,
                              otherHeaderDict={'Content-Disposition': f'attachment; filename="{ccfilename.encode("utf-8")}"',
                                               'Content-Range': f'bytes {fileStartPos}-{readLen}/{fileSize}',
                                               'Content-Length': str(readLen)})
 
-                logging.info("Transferring SMB file ... ")
-
-                smbReader = readerToHTTP (httpObj=self, fileStartPos=fileStartPos, readLen=readLen)
-                file_attributes, _ = conn.retrieveFile(shareName, filePath, smbReader)
+                logging.info(f"Transferring SMB file @ fileStartPos {fileStartPos}, readLen {readLen}... ")
+                smbReader = readerToHTTP(httpObj=self)
+                file_attributes, readFileSize = conn.retrieveFileFromOffset(shareName, filePath, smbReader, offset=fileStartPos, max_length=readLen)
 
             except Exception as e:
                 self.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
                 logging.error(f"{e} [2] Failed loading file @ {server}\\{shareName}\\{filePath}")
-                output(e)
+                output(str(e))
         except Exception as e:
             self.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
             logging.error(f"{e} [1] Failed loading file @ {server}\\{shareName}\\{filePath}")
-            output(e)
+            output(str(e))
         finally:
             conn.close()
     ########## Local File System Send File ##########
