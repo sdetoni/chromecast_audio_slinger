@@ -64,8 +64,11 @@ if postData["type"].lower() == 'smb' and postData["location"] != '':
             if file.isDirectory:
                 full_path += '\\'
 
-            f = { "create_time" : file.create_time, "filename" : file.filename, "isDirectory" : file.isDirectory,
-                  "isNormal" : file.isNormal, "short_name" : file.short_name, "file_size" : file.file_size, "full_path" : full_path }
+            f = { "create_time" : file.create_time,
+                  "filename"    : file.filename,
+                  "isDirectory" : file.isDirectory,
+                  "content_type"    : SGF.getCastMimeType(file.filename),
+                  "isNormal"    : file.isNormal, "short_name" : file.short_name, "file_size" : file.file_size, "full_path" : full_path }
             fileList.append(f)
     conn.close()
 
@@ -80,8 +83,13 @@ elif postData["type"].lower() == 'file' and postData["location"] != '':
         full_path = postData["location"].rstrip(os.sep) + os.sep + d + os.sep
         s = os.stat(full_path)
 
-        f = {"create_time": s.st_ctime, "filename": d, "isDirectory": True,
-             "isNormal": False, "short_name": d, "file_size": 0,
+        f = {"create_time": s.st_ctime,
+             "filename": d,
+             "isDirectory": True,
+             "isNormal": False,
+             "short_name": d,
+             "content_type": "",
+             "file_size": 0,
              "full_path": full_path}
         fileList.append(f)
 
@@ -95,8 +103,13 @@ elif postData["type"].lower() == 'file' and postData["location"] != '':
         if  (postData["filter_type"] in ('audio_only')) and (not SGF.getCastMimeType(fileName=f, testForKnownExt=True)):
             continue
 
-        f = {"create_time": s.st_ctime, "filename": f, "isDirectory": False,
-             "isNormal": True, "short_name": f, "file_size": s.st_size,
+        f = {"create_time": s.st_ctime,
+             "filename": f,
+             "isDirectory": False,
+             "isNormal": True,
+             "short_name": f,
+             "content_type": SGF.getCastMimeType(f),
+             "file_size": s.st_size,
              "full_path": full_path}
         fileList.append(f)
 

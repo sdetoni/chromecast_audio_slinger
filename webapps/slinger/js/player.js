@@ -243,13 +243,13 @@ function ViewLargeArt (imgObj)
 function resizeFilePanels ()
 {
     // calculate viewing height for fileList
-    try{ $('#fileList').css('height', `${$(window).innerHeight() - $('#fileList').offset().top - 10}px`)               } catch {}
-    try{ $('#searchList').css('height', `${$(window).innerHeight() - $('#searchList').offset().top - 10}px`)           } catch {}
-    try{ $('#tableMetaData').css('height', `${$(window).innerHeight() - $('#tableMetaData').offset().top - 10}px`)     } catch {}
+    try{ $('#fileList').css('height',      `${$(window).innerHeight() - $('#fileList').offset().top      - 10}px`)  } catch {}
+    try{ $('#searchList').css('height',    `${$(window).innerHeight() - $('#searchList').offset().top    - 10}px`)  } catch {}
+    try{ $('#tableMetaData').css('height', `${$(window).innerHeight() - $('#tableMetaData').offset().top - 10}px`)  } catch {}
 
 
     try{ $('#playlistBrowser').css('height', `${$(window).innerHeight() - $('#playlistBrowser').offset().top - 10}px`) } catch {}
-    try{ $('#queueBrowser').css('height', `${$(window).innerHeight() - $('#queueBrowser').offset().top - 10}px`)       } catch {}
+    try{ $('#queueBrowser').css('height',    `${$(window).innerHeight() - $('#queueBrowser').offset().top    - 10}px`) } catch {}
     // console.log (`{$(window).innerHeight()}  playlistBrowser:${$('#playlistBrowser').offset().top}`)
 }
 
@@ -335,9 +335,34 @@ $( document ).ready(function()
 var G_LastChromeCastInfo          = null;
 var G_LastChromeCastQueueChangeNo = -1;
 var G_DefaultCoverArt = 'img/folder.png';
-var G_DefaultCoverArt = 'img/folder.png';
+var G_DefaultCoverAudioArt = 'img/folder_audio.png';
+var G_DefaultCoverVideoArt = 'img/folder_video.png';
 
 // #######################################################################################################
+
+function isVideo (mimeType)
+{
+    if ((mimeType != "") && (mimeType.split("/")[0].trim().toLowerCase() == "video"))
+        return true;
+    return false
+}
+
+function isAudio (mimeType)
+{
+    if ((mimeType != "") && (mimeType.split("/")[0].trim().toLowerCase() == "audio"))
+        return true;
+    return false
+}
+
+function getDefaultCoverArt (mimeType=null)
+{
+    if (mimeType && isVideo (mimeType))
+        return G_DefaultCoverVideoArt;
+    else if (mimeType && isAudio (mimeType))
+        return G_DefaultCoverAudioArt;
+    else
+        return G_DefaultCoverArt;
+}
 
 function metadataScraperInfo ()
 {
@@ -412,6 +437,7 @@ $( document ).ready(function()
 setTimeout(metadataScraperInfo, 1000);
 
 var cciIntvalID = setInterval(chromeCastInfo, 1000);
+var ccReqNum    = 0
 function chromeCastInfo ()
 {
     ccast_uuid = $('#ccast_uuid').val();
@@ -424,14 +450,15 @@ function chromeCastInfo ()
          $('#songTitleSml').html('');
          $('#songFilename').html('');
          $('#songFileType').html('');
-         $('#albumArtURL').prop('src', G_DefaultCoverArt);
-         $('#albumArtURLSml').prop('src', G_DefaultCoverArt);
+         $('#albumArtURL').prop('src', getDefaultCoverArt());
+         $('#albumArtURLSml').prop('src', getDefaultCoverArt());
          $('.playingInfo').css('display', 'none');
 
          $('#plyrCntrlPlay').css('color', '');
          $('#plyrCntrlAddToFavs').removeClass ('SongIsFavourite');
     }
 
+    ccReqNum++;
     $.ajax ({url: `castinfo.py`,
              type: "POST",
              data: {
@@ -456,68 +483,83 @@ function chromeCastInfo ()
                          // -------- Local Player Driver/Actions --------
                          if (data && isLocalPlayer(ccast_uuid))
                          {
-                             let audio = $("#LocalPlayerDevice");
+                             let audio = $("#LocalAudioPlayerDevice");
+                             let video = $("#LocalVideoPlayerDevice");
+                             let thisAVID  = ""
+                             let thisAVDev = null;
+                             if (isVideo (data.content_type))
+                             {
+                                 thisAVDev = video
+                                 thisAVID  = "#LocalVideoPlayerDevice";
+                                 $("#video-player-container").css("display","block");
+                             }
+                             else
+                             {
+                                 thisAVDev = audio
+                                 thisAVID  = "#LocalAudioPlayerDevice";
+                                 $("#video-player-container").css("display","None");
+                             }
+
                              if (data.slinger_current_media.location && (data.playback_state.toLowerCase() == 'playing') )
                              {
-                                 if ($('#LocalPlayerDevice').attr('playing_now') != data.slinger_current_media.location)
+                                 if ($(thisAVDev).attr('playing_now') != data.slinger_current_media.location)
                                  {
-                                     audio.attr('src', `accessfile.py?type=${data.slinger_current_media.type}&location=${encodeURI(data.slinger_current_media.location)}&ccast_uuid=${encodeURI(ccast_uuid)}`)
-                                     audio.attr('playing_now', data.slinger_current_media.location)
-                                     audio[0].pause();
-                                     audio[0].load();
-                                     audio[0].play();
-                                     audio[0].loop = false;
-                                     audio[0].volume = data.volume_level;
-                                     audio[0].muted  = data.volume_muted;
+                                     thisAVDev.attr('src', `accessfile.py?type=${data.slinger_current_media.type}&location=${encodeURI(data.slinger_current_media.location)}&ccast_uuid=${encodeURI(ccast_uuid)}`)
+                                     thisAVDev.attr('playing_now', data.slinger_current_media.location)
+                                     thisAVDev[0].pause();
+                                     thisAVDev[0].load();
+                                     thisAVDev[0].play();
+                                     thisAVDev[0].loop = false;
+                                     thisAVDev[0].volume = data.volume_level;
+                                     thisAVDev[0].muted  = data.volume_muted;
                                  }
-                                 else if (audio[0].paused)
+                                 else if (thisAVDev[0].paused)
                                  {
                                      // song completed, next song ...
-                                     if (audio[0].ended)
+                                     if (thisAVDev[0].ended)
                                      {
                                          chromeCastBasicAction(ccast_uuid, 'queue_next')
                                      }
                                      else
                                      {
                                          // if not already playing, then load track then play/unpause
-                                         if (audio[0].currentTime <= 0)
+                                         if (thisAVDev[0].currentTime <= 0)
                                          {
-                                             audio[0].pause();
-                                             audio[0].load();
+                                             thisAVDev[0].pause();
+                                             thisAVDev[0].load();
+                                             thisAVDev[0].play();
+                                             thisAVDev[0].loop = false;
                                          }
-                                         audio[0].play();
-                                         audio[0].loop = false;
-                                         audio[0].volume = data.volume_level;
-                                         audio[0].muted  = data.volume_muted;
+                                         thisAVDev[0].volume = data.volume_level;
+                                         thisAVDev[0].muted  = data.volume_muted;
                                      }
                                  }
                              }
-                             else if ((data.playback_state.toLowerCase() == 'paused') && (! audio[0].paused && audio[0].duration > 0))
+                             else if ((data.playback_state.toLowerCase() == 'paused') && (! thisAVDev[0].paused && thisAVDev[0].duration > 0))
                              {
-                                audio[0].pause()
+                                thisAVDev[0].pause()
                              }
-                             else if ((data.playback_state.toLowerCase() == 'idle') && (! audio[0].paused &&  audio[0].duration > 0))
+                             else if ((data.playback_state.toLowerCase() == 'idle') && (! thisAVDev[0].paused &&  thisAVDev[0].duration > 0))
                              {
-                                 audio[0].pause()
-                                 audio[0].currentTime = 0;
-                                 $('#LocalPlayerDevice').attr('src', '');
-                                 $('#LocalPlayerDevice').attr('playing_now', '');
+                                 thisAVDev[0].pause()
+                                 thisAVDev[0].currentTime = 0;
+                                 $(thisAVID).attr('src', '');
+                                 $(thisAVID).attr('playing_now', '');
                              }
 
-                             data.duration     = audio[0].duration;
-                             data.current_time = audio[0].currentTime;
+                             data.duration     = thisAVDev[0].duration;
+                             data.current_time = thisAVDev[0].currentTime;
 
                              if (G_LastChromeCastInfo && G_LastChromeCastInfo.volume_level != data.volume_level)
                              {
-                                audio[0].volume = data.volume_level;
+                                thisAVDev[0].volume = data.volume_level;
                              }
 
                              if (G_LastChromeCastInfo && G_LastChromeCastInfo.volume_muted != data.volume_muted)
                              {
-                                audio[0].muted  = data.volume_muted;
+                                thisAVDev[0].muted  = data.volume_muted;
                              }
                          }
-
                          // --------------------------------------------
 
                          if ((! G_LastChromeCastInfo) || (data && G_LastChromeCastInfo.slinger_shuffle != data.slinger_shuffle))
@@ -660,7 +702,10 @@ function chromeCastInfo ()
 
                          // --------------------------------------------
 
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.media_metadata.album_art_url != data.media_metadata.album_art_url) )
+                         if ((! G_LastChromeCastInfo) ||
+                             (G_LastChromeCastInfo.media_metadata.album_art_url != data.media_metadata.album_art_url) ||
+                             (isVideo (data.content_type) != isVideo(G_LastChromeCastInfo.content_type))
+                             )
                          {
                              if (data.media_metadata.album_art_url)
                              {
@@ -669,8 +714,8 @@ function chromeCastInfo ()
                              }
                              else
                              {
-                                 $('#albumArtURL').prop('src', G_DefaultCoverArt);
-                                 $('#albumArtURLSml').prop('src', G_DefaultCoverArt);
+                                 $('#albumArtURL').prop('src', getDefaultCoverArt (data.content_type));
+                                 $('#albumArtURLSml').prop('src', getDefaultCoverArt (data.content_type));
                              }
                          }
 
@@ -722,7 +767,7 @@ function chromeCastInfo ()
                                               {
                                                   qbTable += `
 <tr class="dataRow selectItemHand" rowid="${idx}">
-    <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml" src="${queue[idx].metadata["album_art_url"] ? queue[idx].metadata["album_art_url"] : G_DefaultCoverArt }" style="height: 32px;"></td>
+    <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml" content_type="${queue[idx].metadata["content_type"]}" src="${queue[idx].metadata["album_art_url"] ? queue[idx].metadata["album_art_url"] : getDefaultCoverArt (queue[idx].metadata["content_type"]) }" style="height: 32px;"></td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["title"]}</td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["albumName"]}</td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["artist"]}</td>
@@ -746,7 +791,12 @@ function chromeCastInfo ()
              error: function(jqXHR, textStatus, errorThrown)
              {
                  // On error, log the error to console
-                 console.error(`Error: ${textStatus}, ${errorThrown}`);
+                 // console.error(`Error: ${textStatus}, ${errorThrown}`);
+                 if (ccReqNum % 2)
+                    $('#ccast_uuid-button .ui-selectmenu-text').css ("color", "red");
+                 else
+                    $('#ccast_uuid-button .ui-selectmenu-text').css ("color", "");
+
              }
            });
     return false;
@@ -822,9 +872,9 @@ function loadPlayList (thisObj, name)
                      // console.log(key, value);
                      for (let idx=0; idx < queue.length; idx++)
                      {
-                         qbTable += `
+                        qbTable += `
 <tr class="dataRow selectItemHand" rowid="${queue[idx].seq}">
-    <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml" src="${queue[idx].metadata["album_art_url"] ? queue[idx].metadata["album_art_url"] : G_DefaultCoverArt }" style="height: 32px;"></td>
+    <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml"  content_type="${queue[idx].metadata["content_type"]}" src="${queue[idx].metadata["album_art_url"] ? queue[idx].metadata["album_art_url"] : getDefaultCoverArt(queue[idx].metadata["content_type"]) }" style="height: 32px;"></td>
     <td>${queue[idx].metadata["title"]}</td>
     <td>${queue[idx].metadata["albumName"]}</td>
     <td>${queue[idx].metadata["artist"]}</td>
@@ -1403,8 +1453,7 @@ function LoadFolderArtAsImage (filelocation, type, htmlID, custClass="", custSty
               success: function(data)
               {
                   // console.log('art = ' + data["art_url"]);
-                  //debugger;
-                  $(htmlID).html(`<img class="selectItemHand ${custClass}" style="${custStyle}" onclick="ViewLargeArt(this);event.stopPropagation();" src="${data['art_url'] ? data['art_url'] : G_DefaultCoverArt }">`)
+                  $(htmlID).html(`<img class="selectItemHand ${custClass}" style="${custStyle}" onclick="ViewLargeArt(this);event.stopPropagation();" src="${data['art_url'] ? data['art_url'] : getDefaultCoverArt() }">`)
               },
               error: function(jqXHR, textStatus, errorThrown)
               {
@@ -1419,7 +1468,7 @@ function OnClick_RestartSong ()
     ccast_uuid = $('#ccast_uuid').val();
     if (isLocalPlayer(ccast_uuid))
     {
-        let audio = $("#LocalPlayerDevice");
+        let audio = $("#LocalAudioPlayerDevice");
         audio[0].currentTime = 0;
     }
     else
@@ -1466,7 +1515,7 @@ function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
                   try
                   {
                       let u = new URL (data['art_url']);
-                      $(htmlID).html(`<img class="selectItemHand albumArtURLSml" style="height: 24px;" onclick="ViewLargeArt(this);event.stopPropagation();" src="${data['art_url'] ? data['art_url'] : G_DefaultCoverArt }">`)
+                      $(htmlID).html(`<img class="selectItemHand albumArtURLSml" style="height: 24px;" onclick="ViewLargeArt(this);event.stopPropagation();" src="${data['art_url'] ? data['art_url'] : getDefaultCoverArt() }">`)
                   } catch {}
               },
               error: function(jqXHR, textStatus, errorThrown)
@@ -1576,14 +1625,26 @@ async function loadFileList (filelocation, type, basePath)
                  // Add into which list, queue, or playlist
                  let activeRightTab = $($("#tabsRight").find(".ui-tabs-panel")[$("#tabsRight").tabs("option", "active")]).attr('id');
 
-                 let dirImg   = `<i class="fa-regular fa-folder"></i>`
-                 let audioImg = `<i class="fa-solid fa-music"></i>`
+                 let dirImg     = `<i class="fa-regular fa-folder"></i>`
+                 let audioImg   = `<i class="fa-solid fa-music"></i>`
+                 let videoImg   = `<i class="fa-solid fa-video"></i>`
+                 let unknownImg = `<i class="fa-solid fa-circle-question"></i>`
 
                  for (idx = 0; idx < data.length; idx++)
                  {
+                     let icon = dirImg;
+                     if (! data[idx].isDirectory)
+                     {
+                         if (isVideo (data[idx].content_type))
+                             icon = videoImg;
+                         else if (isAudio (data[idx].content_type))
+                             icon = audioImg;
+                         else
+                             icon = unknownImg;
+                     }
                      flTable += `
 <tr class="selectItemHand FileList-DataRow">
-    <td onclick="OnClick_FileList(this, false, !${data[idx].isDirectory})" idx="${idx}" isDirectory="${data[idx].isDirectory}" filenameHash="${Sha256.hash(G_CurrentFileList[idx].full_path)}" class="FileList-Row"><span class="FileList-FileType" idx="${idx}">${data[idx].isDirectory ? dirImg : audioImg}</span>&nbsp;<span class="FileList-FileName" isDirectory="${data[idx].isDirectory}">${data[idx].filename}</span></td>
+    <td onclick="OnClick_FileList(this, false, !${data[idx].isDirectory})" idx="${idx}" isDirectory="${data[idx].isDirectory}" filenameHash="${Sha256.hash(G_CurrentFileList[idx].full_path)}" class="FileList-Row"><span class="FileList-FileType" idx="${idx}">${ icon }</span>&nbsp;<span class="FileList-FileName" isDirectory="${data[idx].isDirectory}">${data[idx].filename}</span></td>
 
     <!-- Queue / Playlist controls -->
     <td style="white-space:nowrap">
@@ -2193,7 +2254,7 @@ function runSearchQuery ()
                      else
                         metadata = results[idx].metadata;
 
-                     art_url  = G_DefaultCoverArt;
+                     art_url  = getDefaultCoverArt (metadata["content_type"]);
 
                      if (metadata["album_art_location"] != "")
                          art_url = `accessfile.py?type=${results[idx].type}&location=${encodeURI(metadata["album_art_location"])}`;
@@ -2378,7 +2439,8 @@ function showHideIconInfo (mode=G_ShowHideIconInfo)
 
 function playerControlsExpandContract()
 {
-    document.body.style.overflow = "hidden";
+    // document.body.style.overflow = "hidden";
+
     
     if ($('.overlay-containerSml').css('display') == 'none')
     {
@@ -2431,7 +2493,7 @@ function GetChromeCastDevices (forcedScan=false)
              heading: 'Info',
              text: `Issuing a forced Chrome Cast scan<br>Please Wait...`,
              icon: 'info',
-             hideAfter: 7000
+             hideAfter: 15000
          });
     }
 

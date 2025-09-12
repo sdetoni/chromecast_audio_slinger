@@ -48,9 +48,12 @@ var G_Local_Player_UniqueID           = "";
 var G_Generated_Local_Player_UniqueID = "";
 </script> 
 <div id="audio-player-container" style="display:hidden">
-  <audio id="LocalPlayerDevice" src="" playing_now="">
-</div> 
-<div id="playerView" class="rcorners1">    
+  <audio id="LocalAudioPlayerDevice"       src="" playing_now="">
+</div>
+<div id="playerView" class="rcorners1">
+    <div id="video-player-container" style="display:none; width:100%">
+        <video id="LocalVideoPlayerDevice"  src="" controls  style="width:100%;height:calc((9 / 16) * 100vw);max-height:calc(100vh - 169px);">
+    </div> 
     <div id="busy-transcoding" class="vfd-container"> 
         <div style="position: absolute; right: 59%; top:10%;">
                 <div class="vfd-vfd-waveform vfd-wave2">
@@ -105,7 +108,7 @@ var G_Generated_Local_Player_UniqueID = "";
                     <td class="playerTxt">
                         <span style="display:inline-block;">
                             <i id="playerControlsSmallBig" class="playerControls fa-solid fa-angles-up" onclick="changeViewSmallBig(! G_SmallBigViewMode)"></i>
-                        </span><u style="white-space:nowrap;padding-left: 10px;">Chrome Cast Device</u>
+                        </span><u style="white-space:nowrap;padding-left: 10px;">Casting Device</u>
                     </td>
                 </tr>
                     <tr><td>

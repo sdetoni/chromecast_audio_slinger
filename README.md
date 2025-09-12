@@ -1,10 +1,27 @@
 # Chrome Cast Audio Slinger : Written by Steven De Toni, 2024
 The application is suitable for NAS (Network Attached Storage) servers that will allow it to 
-cast audio files to Chrome Cast devices independantly of your phone, tablet, or P.C.
+cast audio files to Chrome Cast, DLNA, and Web Browser devices independently of your phone, tablet, or P.C.
 I has the ability to cast from remote CIFS/Windows file shares as well as local files.
 
-This service will run as a Daemon, monitoring Chrome Cast devices, and slinger audio files 
+This service will run as a Daemon, monitoring Chrome Cast devices, and slinger audio, video files 
 to devices from its pending audio queue.
+
+## Version 0.07 Work in progress:
+ * Bug fixes for device scanning and removal of devices once no longer on the network
+ * Added initial/preliminary DLNA support, will work with Kodi, but may not work with your T.V due to
+   likely requiring an valid HTTPS source (looking at you Samsung). This is still work in progress to get around
+   this limitation.
+ * Added limited video support, can play mp4, avi, mkv etc type movies, update your config to add this ability
+ * Added SMB metadata retrival limit to prevent large files taking along to cast, especially appropriate for video files
+ * New config settings:
+```
+    MATCH_MUSIC_TYPE=mkv::video/mkv
+    MATCH_MUSIC_TYPE=avi::video/avi
+    MATCH_MUSIC_TYPE=mp4::video/mp4
+    
+    # MAX 200 megs to download to extract metadata
+    SMB_MAX_METADATA_SCAN_SIZE=(1024*1024)*200       
+``` 
 
 ## Version 0.06 Work in progress:
  * Added in browser Config Editor
@@ -66,6 +83,10 @@ update to ip address of 0.0.0.0
     MATCH_MUSIC_TYPE=3gpp2::audio/aac
     MATCH_MUSIC_TYPE=m4a::audio/aac
     
+    MATCH_MUSIC_TYPE=mkv::video/mkv
+    MATCH_MUSIC_TYPE=avi::video/avi
+    MATCH_MUSIC_TYPE=mp4::video/mp4    
+    
     # dynamic transcoding
     MATCH_MUSIC_TYPE=dsf::audio/transcode
     MATCH_MUSIC_TYPE=wv::audio/transcode
@@ -122,6 +143,9 @@ update to ip address of 0.0.0.0
     SMB_MUSIC_UNCPATH=::\\192.168.20.14\MediaServer\Music
     SMB_MUSIC_UNCPATH=::\\192.168.20.23\ExtUSB-4TB\music
     FILE_MUSIC_UNCPATH=D:\music\
+    
+    # MAX 200 megs to download to extract metadata
+    SMB_MAX_METADATA_SCAN_SIZE=(1024*1024)*200       
 
     SEARCH_RESULT_LIMIT=1000
 

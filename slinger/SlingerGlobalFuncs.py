@@ -1,4 +1,5 @@
 import tempfile
+import mimetypes
 
 LOCAL_PLAYER  = "LOCAL_PLAYER"
 
@@ -26,6 +27,7 @@ import socket
 import base64
 import requests
 from slinger.ColourLogFormatter import ColouredLogFormatter
+from slinger.nanodlna import devices as dlna_dev
 
 AUDIO_TRANSCODE = 'audio/transcode'
 DB = slinger.SlingerDB.DB
@@ -119,6 +121,53 @@ def validateSMBFileAccessLocation (type, path):
                 return True
     return False
 
+# ==== DLNA Discovery ====
+
+def discover_dlna_av_transports ():
+    # foreach device discovered, create a uuid based upon its location
+    devices = dlna_dev.get_devices(host= get_host_ip(), timeout=5)
+    for dev in devices:
+        logging.info (f"Discovered DLNA device {dev['friendly_name']}")
+        dev["uuid"] = uuid.uuid5 (uuid.NAMESPACE_URL, dev["action_url"])
+    return devices
+
+DLNACacheTimeOut = None
+DLNACache        = []
+def threadDiscoverDLNAAVTransports (daemonMode = True):
+    global DLNACacheTimeOut, DLNACache
+    lastLen = 0
+    loop    = 0
+    if not daemonMode:
+        DLNACache = discover_dlna_av_transports()
+    else:
+        while True:
+            n = datetime.now()
+            if not DLNACacheTimeOut:
+                DLNACacheTimeOut = n
+            if DLNACacheTimeOut <= n or (DLNACache is None):
+                lastLen = 0
+                if DLNACache:
+                    lastLen = len(DLNACache)
+
+                DLNACache = discover_dlna_av_transports()
+
+            # check if detection succeeded, changed or nothing found.
+            # if changed then check more frequently.
+            t = GF.Config.getSettingValue ('slinger/CHROMECAST_CACHE_TIMEOUT')
+            DLNACacheTimeOut = datetime.now() + timedelta(seconds=t)
+            time.sleep(t)
+
+def getCachedDLNA (force=False, wait=False):
+        global DLNACacheTimeOut, DLNACache
+        if force:
+            t = threading.Thread(target=threadDiscoverDLNAAVTransports, kwargs={"daemonMode": False})
+            t.start()
+            if wait:
+                t.join()
+        return DLNACache
+
+# ==== Chrome Cast Discovery ====
+
 def discover_chromecasts():
     zconf = zeroconf.Zeroconf()
     browser = pychromecast.CastBrowser(pychromecast.SimpleCastListener(lambda uuid, service: print(browser.devices[uuid].friendly_name)), zconf)
@@ -134,28 +183,41 @@ def discover_chromecasts():
     return pychromecast.get_listed_chromecasts(friendly_names=[x.friendly_name for x in browser.devices.values()])
 
 ChromeCastCacheTimeOut = None
-ChromeCastCache        = None
-def getCachedChromeCast (force=False):
+ChromeCastCache        = []
+def threadDiscoverChromeCasts (daemonMode = True):
     global ChromeCastCacheTimeOut, ChromeCastCache
-    n = datetime.now()
-    if not ChromeCastCacheTimeOut:
-        ChromeCastCacheTimeOut = n
-    if force or ChromeCastCacheTimeOut <= n or not ChromeCastCache or len(ChromeCastCache[0]) <= 0:
-        #ChromeCastCache = pychromecast.get_chromecasts()
-        lastLen = 0;
-        if ChromeCastCache:
-            lastLen = len(ChromeCastCache)
-
+    lastLen = 0
+    loop    = 0
+    if not daemonMode:
         ChromeCastCache = discover_chromecasts()
+    else:
+        while True:
+            n = datetime.now()
+            if not ChromeCastCacheTimeOut:
+                ChromeCastCacheTimeOut = n
+            if ChromeCastCacheTimeOut <= n or (ChromeCastCache is None):
+                lastLen = 0
+                if ChromeCastCache:
+                    lastLen = len(ChromeCastCache)
 
-        # check if detection succeeded, changed or nothing found.
-        # if changed then check more frequently.
-        if len(ChromeCastCache) <= 0 or lastLen != len(ChromeCastCache):
-            ChromeCastCacheTimeOut = datetime.now() + timedelta(seconds=10)
-        else:
-            ChromeCastCacheTimeOut =  datetime.now() + timedelta(seconds=GF.Config.getSettingValue ('slinger/CHROMECAST_CACHE_TIMEOUT'))
+                ChromeCastCache = discover_chromecasts()
 
+            # check if detection succeeded, changed or nothing found.
+            # if changed then check more frequently.
+            t = GF.Config.getSettingValue ('slinger/CHROMECAST_CACHE_TIMEOUT')
+            ChromeCastCacheTimeOut = datetime.now() + timedelta(seconds=t)
+            time.sleep(t)
+
+def getCachedChromeCast(force=False, wait=False):
+    global ChromeCastCacheTimeOut, ChromeCastCache
+    if force:
+        t = threading.Thread(target=threadDiscoverChromeCasts, kwargs={"daemonMode": False})
+        t.start()
+        if wait:
+            t.join()
     return ChromeCastCache
+
+# =========================================================
 
 def getBaseLocationPath (location, type):
     if type == 'smb':
@@ -168,6 +230,7 @@ def getBaseLocationPath (location, type):
         return location.rsplit(os.sep, 1)[0] + os.sep
 
     return ''
+
 def decode_percent_u(encoded_str):
     # Decode the standard percent-encoded parts
     decoded_str = urllib.parse.unquote(encoded_str)
@@ -418,6 +481,8 @@ def getMediaMetaDataSMB (location, httpObj=None, smbConn=None):
         _, _, server, shareName, filePath = parseSMBConfigString(location)
 
         # defaults if it fails to parse ...
+        mime_type, encoding = mimetypes.guess_type(filePath)
+        metadata["content_type"] = mime_type
         metadata["title"]     = filePath.rsplit('\\', 1)[1]
         metadata["albumName"] = metadata["album_name"] = (filePath.rsplit('\\', 1)[0]).rsplit('\\', 1)[-1]
         metadata["artist"]    = metadata["albumArtist"] = metadata["album_artist"] = 'unknown'
@@ -441,12 +506,15 @@ def getMediaMetaDataSMB (location, httpObj=None, smbConn=None):
             conn = smbConn
         file_attr = conn.getAttributes(shareName, filePath)
 
-        fobj = io.BytesIO()
-        file_attributes, filesize = conn.retrieveFile(shareName, filePath, fobj)
-        fobj.seek(0)
+        maxScanSize = GF.Config.getSettingValue('slinger/SMB_MAX_METADATA_SCAN_SIZE', 524288000)
+        mi = {}
+        if file_attr.file_size <= maxScanSize:
+            fobj = io.BytesIO()
+            file_attributes, filesize = conn.retrieveFile(shareName, filePath, fobj)
+            fobj.seek(0)
 
-        mediaInfo = pymediainfo.MediaInfo.parse(fobj)
-        mi = mediaInfo.tracks[0].to_data()
+            mediaInfo = pymediainfo.MediaInfo.parse(fobj)
+            mi = mediaInfo.tracks[0].to_data()
 
         albumArtFilename = getFolderArtSMB(location, trimLeaf=True, smbConn=conn)
 
@@ -595,17 +663,40 @@ ChromeCastQueues[LOCAL_PLAYER].cast.queueParent(ChromeCastQueues[LOCAL_PLAYER])
 
 def queueParent(self, qp):
     self.qparent = qp
+
 def chromecastQueueProcessing ():
     global ChromeCastQueues, exitQueueProcessing, chromecastProcesSleepInt
 
+    # Preload the cache for casting objects
     while (not exitQueueProcessing):
         try:
+            detectedDevices = []
             for cc in getCachedChromeCast():
                 if not cc or isinstance(cc, pychromecast.discovery.CastBrowser): continue
-                if cc[0].uuid not in ChromeCastQueues:
-                    ChromeCastQueues[cc[0].uuid] = SlingerChromeCastQueue.SlingerChromeCastQueue (cc[0])
+                uuid = str(cc[0].uuid)
+                detectedDevices.append(uuid)
 
-                ChromeCastQueues[cc[0].uuid].processStatusEvent()
+                if uuid not in ChromeCastQueues.keys():
+                    ChromeCastQueues[uuid] = SlingerChromeCastQueue.SlingerChromeCastQueue (cc[0])
+                ChromeCastQueues[uuid].processStatusEvent()
+
+            for dlna in getCachedDLNA():
+                uuid = str(dlna["uuid"])
+                detectedDevices.append(uuid)
+                if uuid not in ChromeCastQueues.keys():
+                    ChromeCastQueues[uuid] = SlingerChromeCastQueue.SlingerChromeCastQueue(SlingerChromeCastQueue.SlingerDLNAPlayer(dlna))
+                    ChromeCastQueues[uuid].cast.queueParent(ChromeCastQueues[uuid])
+                ChromeCastQueues[uuid].processStatusEvent()
+
+            # purge chromecast devices that are no longer active
+            delList = []
+            for uuid in ChromeCastQueues.keys():
+                if re.match(f"^{LOCAL_PLAYER}", uuid):
+                    continue
+                if uuid not in detectedDevices:
+                    delList.append(uuid)
+            for uuid in delList:
+                del ChromeCastQueues[uuid]
         except Exception as e:
             logging.error(f"chromecastQueueProcessing : {e}")
             logging.error(traceback.format_exc())
@@ -627,11 +718,10 @@ def getChromecastQueueObj (ccast_uuid = None, ccast_ip=None):
     if ccast_uuid:
         lpuid = ccast_uuid.split('::')
         if ((len(lpuid) > 1) and (lpuid[0] == LOCAL_PLAYER) and (lpuid[1] != "")):
-            # create a new unqiue Local Player objects
+            # create a new unique Local Player objects
             ChromeCastQueues[ccast_uuid] = SlingerChromeCastQueue.SlingerChromeCastQueue(SlingerChromeCastQueue.SlingerLocalPlayer(ccast_uuid))
             ChromeCastQueues[ccast_uuid].cast.queueParent(ChromeCastQueues[ccast_uuid])
             return ChromeCastQueues[ccast_uuid]
-
     return None
 
 def GetTotalSeconds (timeDelta):
@@ -767,14 +857,12 @@ def scraperProcess ():
         scrapeProcesState['active'] = False
         scrapeProcesState['file_path'] = scrapeProcesState['processing_filename'] = ''
 
-
 def fileExistsFile(location):
     try:
         return os.path.exists(location)
     except:
         pass
     return False
-
 
 def fileExistsSMB(location, smbConn=None):
     if not validateSMBFileAccessLocation('smb', location):
@@ -1069,3 +1157,5 @@ def cronScraperProcessing ():
 
 threading.Thread(target=chromecastQueueProcessing).start()
 threading.Thread(target=cronScraperProcessing).start()
+threading.Thread(target=threadDiscoverDLNAAVTransports).start()
+threading.Thread(target=threadDiscoverChromeCasts).start()

@@ -106,6 +106,7 @@
 .evy	application/x-envoy
 .exe	application/octet-stream
 .f	text/plain
+.flac	audio/x-flac
 .f77	text/x-fortran
 .f90	text/plain
 .fdf	application/vnd.fdf
