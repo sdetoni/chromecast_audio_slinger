@@ -155,6 +155,39 @@ def cacheGetTranscode (location, ccast_uuid):
 
 # ------------------------------------------------------------------------------------------------------
 
+class readerToHTTP:
+    def __init__(self, chunk_size=4096, fileStartPos=0, readLen=-1, httpObj=None):
+        self.chunk_size   = chunk_size
+        self.httpObj      = httpObj
+        self.fileStartPos = fileStartPos
+        self.readLen      = readLen
+
+    def write(self, data):
+        if self.readLen == 0:
+            return
+
+        if self.fileStartPos > 0:
+            if len(data) <= self.fileStartPos:
+                self.fileStartPos -= len(data)
+                return
+            else:
+                data = data[self.fileStartPos:]
+                self.fileStartPos = 0
+
+        if self.readLen == 0:
+            return
+
+        if self.readLen > 0:
+            if len(data) > self.readLen:
+                data = data[:self.readLen]
+            self.readLen -= len(data)
+        self.httpObj.outputRaw(data)
+
+    def close(self):
+        pass
+
+# ------------------------------------------------------------------------------------------------------
+
 # NOTE! transcoding using name pipes DOES NOT work fully. The issue is not with the named pipes but how
 # ffmpeg reads and generates its files. Input files are not just streamed in, but have random I/O with in the file to read meta-data.
 # Output files from ffmpeg also have some level of re-write to the output file metadata (file size info etc). Thus, for a consistent trancoded output
@@ -334,7 +367,19 @@ def sendStandardFile (httpObj, location):
                                       'Content-Length': str(readLen)})
 
         # write output
-        httpObj.outputRaw(fObj.read(readLen))
+        chunkSize = 4096
+        while True:
+            chunk = fObj.read(chunkSize)
+            if not chunk:
+                break
+            httpObj.outputRaw(chunk)
+            readLen = readLen - len(chunk)
+            if readLen <= 0:
+                break
+            if chunkSize > readLen:
+                chunkSize = readLen
+
+#        httpObj.outputRaw(fObj.read(readLen))
     except Exception as e:
         httpObj.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
         logging.error(f'{e} Failed loading file @ {SGF.toASCII(postData["location"])}')
@@ -344,39 +389,6 @@ def sendStandardFile (httpObj, location):
             fObj.close()
         except:
             pass
-
-# ------------------------------------------------------------------------------------------------------
-
-class readerToHTTP:
-    def __init__(self, chunk_size=4096, fileStartPos=0, readLen=-1, httpObj=None):
-        self.chunk_size = chunk_size
-        self.httpObj      = httpObj
-        self.fileStartPos = fileStartPos
-        self.readLen      = readLen
-
-    def write(self, data):
-        if self.readLen == 0:
-            return
-
-        if self.fileStartPos > 0:
-            if len(data) <= self.fileStartPos:
-                self.fileStartPos -= len(data)
-                return
-            else:
-                data = data[self.fileStartPos:]
-                self.fileStartPos = 0
-
-        if self.readLen == 0:
-            return
-
-        if self.readLen > 0:
-            if len(data) > self.readLen:
-                data = data[:self.readLen]
-            self.readLen -= len(data)
-        self.httpObj.outputRaw(data)
-
-    def close(self):
-        pass
 
 # ------------------------------------------------------------------------------------------------------
 
@@ -415,7 +427,7 @@ try:
                 if fileEndPos > 0:
                     readLen = fileEndPos - fileStartPos
 
-                ccfilename = filePath.split(r'\\')[-1]
+                ccfilename = os.path.basename(filePath.split(r'\\')[-1])
                 self.do_HEAD(mimetype=self.isMimeType(filePath.split('.')[-1].lower()), turnOffCache=False, statusCode=scode,
                              closeHeader=True,
                              otherHeaderDict={'Content-Disposition': f'attachment; filename="{ccfilename.encode("utf-8")}"',

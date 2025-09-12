@@ -342,20 +342,20 @@ var G_DefaultCoverVideoArt = 'img/folder_video.png';
 
 function isVideo (mimeType)
 {
-    if ((mimeType != "") && (mimeType.split("/")[0].trim().toLowerCase() == "video"))
+    if ((typeof(mimeType) == "string") &&  (mimeType != "") && (mimeType.split("/")[0].trim().toLowerCase() == "video"))
         return true;
     return false
 }
 
 function isAudio (mimeType)
 {
-    if ((mimeType != "") && (mimeType.split("/")[0].trim().toLowerCase() == "audio"))
+    if ((typeof(mimeType) == "string")  && (mimeType != "") && (mimeType.split("/")[0].trim().toLowerCase() == "audio"))
         return true;
     return false
 }
 
 function getDefaultCoverArt (mimeType=null)
-{
+{   
     if (mimeType && isVideo (mimeType))
         return G_DefaultCoverVideoArt;
     else if (mimeType && isAudio (mimeType))
