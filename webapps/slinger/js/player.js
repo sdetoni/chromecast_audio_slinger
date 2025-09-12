@@ -434,6 +434,19 @@ function isLocalPlayer (ccast_uuid)
 // gather chromecast current status on selected device
 $( document ).ready(function()
 {
+
+function VideoEventHandler(e)
+{
+    if ( ((e.type === "pause") && (G_LastChromeCastInfo.playback_state == 'PLAYING'))  ||
+         ((e.type === "play") && (G_LastChromeCastInfo.playback_state == 'PAUSED')) )
+    {
+        chromeCastPlay('', $('#ccast_uuid').val()), $('#share_locs').find('option:selected').attr('type')
+    }
+}
+
+$('#LocalVideoPlayerDevice').on ("pause", VideoEventHandler);
+$('#LocalVideoPlayerDevice').on ("play", VideoEventHandler);
+
 setTimeout(metadataScraperInfo, 1000);
 
 var cciIntvalID = setInterval(chromeCastInfo, 1000);
@@ -527,9 +540,10 @@ function chromeCastInfo ()
                                          {
                                              thisAVDev[0].pause();
                                              thisAVDev[0].load();
-                                             thisAVDev[0].play();
                                              thisAVDev[0].loop = false;
                                          }
+
+                                         thisAVDev[0].play();
                                          thisAVDev[0].volume = data.volume_level;
                                          thisAVDev[0].muted  = data.volume_muted;
                                      }
