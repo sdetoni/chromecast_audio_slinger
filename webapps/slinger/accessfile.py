@@ -69,74 +69,116 @@ while SGF.CUR_CONCURRENT_ACCESSFILE_NO > SGF.MAX_CONCURRENT_ACCESSFILE_NO:
 
 logging.info(f"accessfile.py: CUR_CONCURRENT_ACCESSFILE_NO = {SGF.CUR_CONCURRENT_ACCESSFILE_NO} MAX_CONCURRENT_ACCESSFILE_NO = {SGF.MAX_CONCURRENT_ACCESSFILE_NO}")
 
-def cacheStoreTranscoding (transcodedData, fileExt, origLocation):
-    if len(transcodedData) <= 0:
-        return
 
-    cacheLoc = GF.Config.getSetting('slinger/TC_CACHE_LOCATION', '')
-    if not cacheLoc:
-        return
-    if not Path(cacheLoc).is_dir():
-        logging.error("Transcoding TC_CACHE_LOCATION is not a directory!")
-        logging.error(f"'{GF.Config.getSetting('slinger/TC_CACHE_LOCATION')}' is invalid!")
-        return
+def cleanupTempfiles(tmpTransCodeFile, tmpSrcLocationFile):
+    # clean up temp files...
+    if tmpTransCodeFile and os.path.exists(tmpTransCodeFile.name):
+        try:
+            tmpTransCodeFile.close()
+            os.unlink(tmpTransCodeFile.name)
+            tmpTransCodeFile = None
+        except Exception as e:
+            logging.error(f"Failed to remove temp transcoding file: {e}")
 
-    # parse and convert to into byte size
+    if tmpSrcLocationFile and os.path.exists(tmpSrcLocationFile.name):
+        try:
+            tmpSrcLocationFile.close()
+            os.unlink(tmpSrcLocationFile.name)
+            tmpSrcLocationFile = None
+        except Exception as e:
+            logging.info(f"Failed to SMB src transcoding file: {e}")
+
+def cacheStoreTranscoding (tmpTransCodeFile, tmpSrcLocationFile, fileExt, origLocation):
     try:
-        maxSizeCFG = GF.Config.getSetting('slinger/TC_CACHE_MAX_SIZE', '10MB')
-        match = re.compile(r"(\d+)\s*([A-Za-z]+)*").match(maxSizeCFG)
-        if not match:
-            raise Exception("Parse error")
-        cacheSize, cacheSizeUnit = match.groups()
-        if cacheSizeUnit.lower() == 'tb':
-            cacheSize = int(cacheSize) * (((1024*1024)*1024)*1024)
-        elif cacheSizeUnit.lower() == 'gb':
-            cacheSize = int(cacheSize) * ((1024*1024)*1024)
-        elif cacheSizeUnit.lower() == 'mb':
-            cacheSize = int(cacheSize) * (1024*1024)
-        elif cacheSizeUnit.lower() == 'bb':
-            cacheSize = int(cacheSize) * 1024
-    except:
-        cacheSize = 0
+        cacheLoc = GF.Config.getSetting('slinger/TC_CACHE_LOCATION', '')
+        if not cacheLoc:
+            return
+        if not Path(cacheLoc).is_dir():
+            logging.error("Transcoding TC_CACHE_LOCATION is not a directory!")
+            logging.error(f"'{GF.Config.getSetting('slinger/TC_CACHE_LOCATION')}' is invalid!")
+            return
 
-    if cacheSize <= 0:
-        logging.error(f"Unexpected value for setting TC_CACHE_MAX_SIZE: {maxSizeCFG}")
-        logging.error(f"Expected values for setting TC_CACHE_MAX_SIZE like 10MB 10TB 10MB 10KB etc")
-        logging.error(f"Aborted cache store of transcoding")
-        return
+        # parse and convert to into byte size
+        try:
+            maxSizeCFG = GF.Config.getSetting('slinger/TC_CACHE_MAX_SIZE', '10MB')
+            match = re.compile(r"(\d+)\s*([A-Za-z]+)*").match(maxSizeCFG)
+            if not match:
+                raise Exception("Parse error")
+            cacheSize, cacheSizeUnit = match.groups()
+            if cacheSizeUnit.lower() == 'tb':
+                cacheSize = int(cacheSize) * (((1024*1024)*1024)*1024)
+            elif cacheSizeUnit.lower() == 'gb':
+                cacheSize = int(cacheSize) * ((1024*1024)*1024)
+            elif cacheSizeUnit.lower() == 'mb':
+                cacheSize = int(cacheSize) * (1024*1024)
+            elif cacheSizeUnit.lower() == 'bb':
+                cacheSize = int(cacheSize) * 1024
+        except:
+            cacheSize = 0
 
-    logging.info(f"Transcoding Cache maxsize as : {maxSizeCFG} --> {cacheSize}")
+        if cacheSize <= 0:
+            logging.error(f"Unexpected value for setting TC_CACHE_MAX_SIZE: {maxSizeCFG}")
+            logging.error(f"Expected values for setting TC_CACHE_MAX_SIZE like 10MB 10TB 10MB 10KB etc")
+            logging.error(f"Aborted cache store of transcoding")
+            return
 
-    if len(transcodedData) > cacheSize:
-        logging.warning(f"Transcoding is not able to fix in current max cache size for: {origLocation}")
-        logging.warning(f"Transcoding size {len(transcodedData)} does not fit into {cacheSize}")
-        return
+        logging.info(f"Transcoding Cache maxsize as : {maxSizeCFG} --> {cacheSize}")
 
-    # read file location to determine used directory size, recursively
-    dirUsageSize = sum(f.stat().st_size for f in Path(cacheLoc).rglob('*') if f.is_file())
-    diskSizeInfo = shutil.disk_usage(cacheLoc)
-    if (cacheSize-(diskSizeInfo.free) >= 0):
-        logging.error(f"Cache max size exceeds the available disk size! disk size avail {diskSizeInfo.free} is less than cache max size {cacheSize}")
-        logging.error(f"Reduce cache size or free up disk!")
-        logging.error(f"Aborting storing this transcoding file!")
-        return
+        tmpFile = None
+        try:
+            tmpFile = open(tmpTransCodeFile.name, 'rb')
+            tmpFile.seek(0, io.SEEK_END)
+            fileSize = tmpFile.tell()
+            tmpFile.seek(0)
+            logging.info(f"Writing transcode output of {fileSize} bytes")
+        finally:
+            if tmpFile:
+                tmpFile.close()
 
-    if dirUsageSize + len(transcodedData) > cacheSize:
-        for file in sorted(glob.glob(cacheLoc + os.sep + '*'), key=os.path.getmtime):
-            os.unlink(file)
-            dirUsageSize = sum(f.stat().st_size for f in Path(cacheLoc).rglob('*') if f.is_file())
-            if dirUsageSize + len(transcodedData) < cacheSize:
-                break
 
-    cacheFilename     = hashlib.sha256(origLocation.encode()).hexdigest() + '.' + fileExt
-    cacheFullFilename = cacheLoc + os.sep + cacheFilename
-    with open(cacheFullFilename, "wb") as cf:
-        cf.write(transcodedData)
+        if fileSize > cacheSize:
+            logging.warning(f"Transcoding is not able to fix in current max cache size for: {origLocation}")
+            logging.warning(f"Transcoding size {fileSize} does not fit into {cacheSize}")
+            return
 
-    # set the creation & modification time
-    nowTime = time.time()
-    os.utime(cacheFullFilename, (nowTime, nowTime))
-    logging.info (f"Transcoding Cache wrote {origLocation} -> {cacheFullFilename} as {len(transcodedData)} bytes")
+        # read file location to determine used directory size, recursively
+        dirUsageSize = sum(f.stat().st_size for f in Path(cacheLoc).rglob('*') if f.is_file())
+        diskSizeInfo = shutil.disk_usage(cacheLoc)
+        if (cacheSize-(diskSizeInfo.free) >= 0):
+            logging.error(f"Cache max size exceeds the available disk size! disk size avail {diskSizeInfo.free} is less than cache max size {cacheSize}")
+            logging.error(f"Reduce cache size or free up disk!")
+            logging.error(f"Aborting storing this transcoding file!")
+            return
+
+        if dirUsageSize + fileSize > cacheSize:
+            for file in sorted(glob.glob(cacheLoc + os.sep + '*'), key=os.path.getmtime):
+                os.unlink(file)
+                dirUsageSize = sum(f.stat().st_size for f in Path(cacheLoc).rglob('*') if f.is_file())
+                if dirUsageSize + fileSize < cacheSize:
+                    break
+
+        cacheFilename     = hashlib.sha256(origLocation.encode()).hexdigest() + '.' + fileExt
+        cacheFullFilename = cacheLoc + os.sep + cacheFilename
+
+        cacheFile = tmpFile = None
+        try:
+            tmpFile = open(tmpTransCodeFile.name, 'rb')
+            cacheFile = open(cacheFullFilename, "wb")
+            cacheFile.write(tmpFile.read())
+        finally:
+            if tmpFile:
+                tmpFile.close()
+            if cacheFile:
+                cacheFile.close()
+
+        # set the creation & modification time
+        nowTime = time.time()
+        os.utime(cacheFullFilename, (nowTime, nowTime))
+        logging.info (f"Transcoding Cache wrote {origLocation} -> {cacheFullFilename} as {fileSize} bytes")
+    finally:
+        if GF.Config.getSetting('slinger/TC_CACHE_LOCATION', ''):
+            cleanupTempfiles(tmpTransCodeFile, tmpSrcLocationFile)
+
 
 def cacheGetTranscode (location, ccast_uuid):
     cacheLoc = GF.Config.getSetting('slinger/TC_CACHE_LOCATION', '')
@@ -181,25 +223,6 @@ def processTranscoding (httpObj, ccast_uuid, location, type):
 
     tmpTransCodeFile   = None
     tmpSrcLocationFile = None
-
-    def cleanupTempfiles ():
-        nonlocal tmpTransCodeFile, tmpSrcLocationFile
-        # clean up temp files...
-        if tmpTransCodeFile and os.path.exists(tmpTransCodeFile.name):
-            try:
-                tmpTransCodeFile.close()
-                os.unlink(tmpTransCodeFile.name)
-                tmpTransCodeFile = None
-            except Exception as e:
-                logging.error(f"Failed to remove temp transcoding file: {e}")
-
-        if tmpSrcLocationFile and os.path.exists(tmpSrcLocationFile.name):
-            try:
-                tmpSrcLocationFile.close()
-                os.unlink(tmpSrcLocationFile.name)
-                tmpSrcLocationFile = None
-            except Exception as e:
-                logging.info(f"Failed to SMB src transcoding file: {e}")
 
     try:
         logging.info("Starting Transcoding...")
@@ -274,27 +297,24 @@ def processTranscoding (httpObj, ccast_uuid, location, type):
             rtnCode = proc.wait()
             if rtnCode != 0:
                 logging.error(f"Exiting transcoding, return code: {rtnCode}")
+                cleanupTempfiles(tmpTransCodeFile, tmpSrcLocationFile)
                 return
 
             # clear trancoding process obj
             if cco:
                 cco.killTranscodingProc()
-
-            transcodedData = b''
-            with open(tmpTransCodeFile.name, 'rb') as file:
-                    transcodedData = file.read()
         except subprocess.CalledProcessError as e:
             logging.error(f"Exiting transcoding, process error : {e}")
+            cleanupTempfiles(tmpTransCodeFile, tmpSrcLocationFile)
             return
         finally:
             if cco:
                 if cco.transcodingProcess == proc:
                     cco.setTranscodingStatus('')
-            cleanupTempfiles()
 
         # output transcode data as .flac
         # store this file in the cache... if it has been defined.
-        threading.Thread(target=cacheStoreTranscoding, kwargs={'transcodedData':transcodedData, 'fileExt':tmpFileExt, 'origLocation':location}).start()
+        threading.Thread(target=cacheStoreTranscoding, kwargs={'tmpTransCodeFile':tmpTransCodeFile, 'tmpSrcLocationFile':tmpSrcLocationFile, 'fileExt':tmpFileExt, 'origLocation':location}).start()
 
         ext        = ccfilename.split('.')[-1].lower()
         ccfilename = re.sub(ext + '$', tmpFileExt, ccfilename)
@@ -302,10 +322,20 @@ def processTranscoding (httpObj, ccast_uuid, location, type):
                         closeHeader=True,
                         otherHeaderDict={'Content-Disposition': f'attachment; filename="{ccfilename}"'})
 
-        logging.info(f"Writing transcoded output of {len(transcodedData)} bytes")
-        httpObj.outputRaw (transcodedData)
+        tmpFile = None
+        try:
+            tmpFile = open(tmpTransCodeFile.name, 'rb')
+            tmpFile.seek(0, io.SEEK_END)
+            fileSize = tmpFile.tell()
+            tmpFile.seek(0)
+            logging.info(f"Writing transcode output of {fileSize} bytes")
+            httpObj.outputRaw (tmpFile.read())
+        finally:
+            if tmpFile:
+                tmpFile.close()
     finally:
-        cleanupTempfiles()
+        if not GF.Config.getSetting('slinger/TC_CACHE_LOCATION', ''):
+            cleanupTempfiles(tmpTransCodeFile, tmpSrcLocationFile)
 
 def sendStandardFile (httpObj, location, fileStartPos, fileEndPos):
     # send file to destination

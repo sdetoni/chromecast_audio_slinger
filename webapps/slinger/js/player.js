@@ -494,7 +494,7 @@ function chromeCastInfo ()
                          }
 
                          // -------- Local Player Driver/Actions --------
-                         if (data && isLocalPlayer(ccast_uuid))
+                         if (data && isLocalPlayer(ccast_uuid) && (data.playback_state != 'IDLE'))
                          {
                              let audio = $("#LocalAudioPlayerDevice");
                              let video = $("#LocalVideoPlayerDevice");
@@ -505,7 +505,9 @@ function chromeCastInfo ()
                              {
                                  thisAVDev = video
                                  thisAVID  = "#LocalVideoPlayerDevice";
-                                 $("#video-player-container").css("display","block");
+                                 $("#video-player-container").show(500, function() {
+                                     resizeFilePanels();
+                                 });
                              }
                              else
                              {
@@ -1514,6 +1516,28 @@ function OnClick_RestartSong ()
 
     return false;
 }
+
+function OnClick_Stop ()
+{
+    ccast_uuid = $('#ccast_uuid').val();
+    if (isLocalPlayer(ccast_uuid))
+    {
+        let audio = $("#LocalAudioPlayerDevice");
+        let video = $("#LocalVideoPlayerDevice");
+        audio[0].currentTime = 0;
+        video[0].currentTime = 0;
+
+        $("#video-player-container").hide(500, function() {
+            resizeFilePanels();
+        });
+        chromeCastBasicAction(ccast_uuid, 'stop', 0);
+    }
+    else
+        chromeCastBasicAction(ccast_uuid, 'stop', 0);
+
+    return false;
+}
+
 
 var G_RateLimitFileListFolderArtOp = 0;
 function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)

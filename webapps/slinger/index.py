@@ -162,7 +162,7 @@ var G_Generated_Local_Player_UniqueID = "";
                         <i id="plyrCntrlShuffle" class="playerControls fa-solid fa-shuffle" style="font-size: xx-large;" title="Shuffle On/Off" onclick="chromeCastShuffle($('#ccast_uuid').val())"><br><font style="display:none" class="showHelpText controlsIconFont">Shuffle On/Off</font></i>
                     </td>
                     <td>
-                        <i class="playerControls fa-regular fa-circle-stop" style="font-size: xx-large;" title="Stop Play" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'stop')"><br><font style="display:none" class="showHelpText controlsIconFont">Stop Play</font></i>
+                        <i class="playerControls fa-regular fa-circle-stop" style="font-size: xx-large;" title="Stop Play" onclick="OnClick_Stop()"><br><font style="display:none" class="showHelpText controlsIconFont">Stop Play</font></i>
                     </td>
                     <td>
                         <i id="plyrCntrlPlay" class="playerControls fa-regular fa-circle-play" style="font-size: xxx-large;" title="Play/Pause" onclick="chromeCastPlay('', $('#ccast_uuid').val()), $('#share_locs').find('option:selected').attr('type')")><br><font style="display:none" class="showHelpText controlsIconFont">Play/Pause</font></i>
