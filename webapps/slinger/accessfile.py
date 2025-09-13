@@ -44,8 +44,8 @@ if 'Range' in self.headers:
                 fileEndPos = int(bpos[1].strip())
         except:
             pass
-    logging.debug (f"Range HEADER: {self.headers['Range']}")  
-    logging.debug (f"Range fileStartPos {fileStartPos} fileEndPos {fileEndPos}")  
+    logging.info (f"Range HEADER: {self.headers['Range']}")  
+    logging.info (f"Range fileStartPos {fileStartPos} fileEndPos {fileEndPos}")  
 
 if not SGF.validateSMBFileAccessLocation(postData["type"].lower(), postData["location"]):
     output("no")
@@ -67,7 +67,7 @@ while SGF.CUR_CONCURRENT_ACCESSFILE_NO > SGF.MAX_CONCURRENT_ACCESSFILE_NO:
         exit(0)
     time.sleep(200)
 
-logging.info(f"accessfile.py: CUR_CONCURRENT_ACCESSFILE_NO = {SGF.CUR_CONCURRENT_ACCESSFILE_NO} MAX_CONCURRENT_ACCESSFILE_NO = {SGF.MAX_CONCURRENT_ACCESSFILE_NO}")
+logging.debug(f"accessfile.py: CUR_CONCURRENT_ACCESSFILE_NO = {SGF.CUR_CONCURRENT_ACCESSFILE_NO} MAX_CONCURRENT_ACCESSFILE_NO = {SGF.MAX_CONCURRENT_ACCESSFILE_NO}")
 
 
 def cleanupTempfiles(tmpTransCodeFile, tmpSrcLocationFile):
@@ -362,11 +362,11 @@ def sendStandardFile (httpObj, location, fileStartPos, fileEndPos):
         httpObj.do_HEAD(mimetype=httpObj.isMimeType(postData["location"]), turnOffCache=False, statusCode=scode, closeHeader=True,
                      otherHeaderDict={'Content-Disposition': f'attachment; filename="{os.path.basename(fObj.name).encode("utf-8")}"',
                                       'Content-Range': f'bytes {fileStartPos}-{readLen}/{fileSize}',
-                                      'Content-Length': str(readLen)})
+                                      'Content-Length': str(readLen+1)})
 
         logging.info(f"Transferring file @ :::: fileStartPos {fileStartPos}, fileEndPos {fileEndPos}, readLen {readLen} : filesize {fileSize} ")
         # write output
-        chunkSize = 4096
+        chunkSize = 65536
         actualReadlen = readLen+1
         while True:
             if chunkSize > actualReadlen:
@@ -430,7 +430,7 @@ try:
                              closeHeader=True,
                              otherHeaderDict={'Content-Disposition': f'attachment; filename="{ccfilename.encode("utf-8")}"',
                                               'Content-Range': f'bytes {fileStartPos}-{readLen}/{fileSize}',
-                                              'Content-Length': str(readLen)})
+                                              'Content-Length': str(readLen+1)})
                 
                 logging.info(f"Transferring SMB file @ fileStartPos {fileStartPos}, readLen {readLen} : filesize {fileSize} ")
                 smbReader = readerToHTTP(httpObj=self)
