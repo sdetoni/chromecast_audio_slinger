@@ -1519,21 +1519,30 @@ function OnClick_RestartSong ()
 
 function OnClick_Stop ()
 {
+    chromeCastBasicAction(ccast_uuid, 'stop', 0);
+
     ccast_uuid = $('#ccast_uuid').val();
     if (isLocalPlayer(ccast_uuid))
     {
         let audio = $("#LocalAudioPlayerDevice");
         let video = $("#LocalVideoPlayerDevice");
-        audio[0].currentTime = 0;
-        video[0].currentTime = 0;
+        audio[0].pause();
+        video[0].pause();
+        G_LastChromeCastInfo.playback_state = 'IDLE';
 
-        $("#video-player-container").hide(500, function() {
-            resizeFilePanels();
-        });
-        chromeCastBasicAction(ccast_uuid, 'stop', 0);
+        setTimeout(function () {
+            let audio = $("#LocalAudioPlayerDevice");
+            let video = $("#LocalVideoPlayerDevice");
+            audio[0].pause();
+            video[0].pause();
+            audio[0].currentTime = 0;
+            video[0].currentTime = 0;
+            G_LastChromeCastInfo.playback_state = 'IDLE';
+            $("#video-player-container").hide(500, function() {
+                resizeFilePanels();
+            });
+        }, 500);
     }
-    else
-        chromeCastBasicAction(ccast_uuid, 'stop', 0);
 
     return false;
 }

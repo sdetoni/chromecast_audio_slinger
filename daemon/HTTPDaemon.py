@@ -1572,9 +1572,10 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                             self.send_response(404)
                             self.output("<html><h1>I/O Error: 404</h1></html>")
                     except Exception as err:
-                        logging.error ('HTTPWebServer.do_GET (.py) (' + self.command + ') Exception in ' + filePath + ' :: ' + str(traceback.format_exc()))
-                        self.send_response(500)
-                        self.output("<html><h1>Internal Error: 500</h1></html>")
+                        if not re.search("'ConnectionAbortedError'$", str(err)):
+                            logging.error ('HTTPWebServer.do_GET (.py) (' + self.command + ') Exception in ' + filePath + ' :: ' + str(traceback.format_exc()))
+                            self    .send_response(500)
+                            self.output("<html><h1>Internal Error: 500</h1></html>")
                 elif (re.search('.ty$', fullAccessPath)): # run template *.ty files
                     try:
                         self.templateRunAbsPath(fullAccessPath, {})
