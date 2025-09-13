@@ -33,7 +33,7 @@ if not "ccast_uuid" in postData: postData["ccast_uuid"] = ''
 fileStartPos = 0
 fileEndPos   = -1
 # parse file position header: Range : bytes=131072-
-if 'Range' in self.headers:
+if 'Range' in self.headers:      
     pos   = self.headers['Range']
     parms = pos.split('=')
     if (len(parms) == 2) and (parms[0].lower() == 'bytes'):
@@ -44,6 +44,8 @@ if 'Range' in self.headers:
                 fileEndPos = int(bpos[1].strip())
         except:
             pass
+    logging.debug (f"Range HEADER: {self.headers['Range']}")  
+    logging.debug (f"Range fileStartPos {fileStartPos} fileEndPos {fileEndPos}")  
 
 if not SGF.validateSMBFileAccessLocation(postData["type"].lower(), postData["location"]):
     output("no")
@@ -173,7 +175,7 @@ class readerToHTTP:
 # ffmpeg reads and generates its files. Input files are not just streamed in, but have random I/O with in the file to read meta-data.
 # Output files from ffmpeg also have some level of re-write to the output file metadata (file size info etc). Thus, for a consistent trancoded output
 # temporary files are used.
-def processTranscoding (httpObj, ccast_uuid, location, type, fileStartPos, fileEndPos):
+def processTranscoding (httpObj, ccast_uuid, location, type):
     if not location:
         return
 
@@ -291,44 +293,23 @@ def processTranscoding (httpObj, ccast_uuid, location, type, fileStartPos, fileE
             cleanupTempfiles()
 
         # output transcode data as .flac
-        readLen  = len(transcodedData)-1
-        fileSize = len(transcodedData)
-#        scode = 200
-#        if fileStartPos > 0:
-#            scode = 206
-        scode = 206
-
-        if fileEndPos > 0:
-            readLen = fileEndPos - fileStartPos
-
         # store this file in the cache... if it has been defined.
         threading.Thread(target=cacheStoreTranscoding, kwargs={'transcodedData':transcodedData, 'fileExt':tmpFileExt, 'origLocation':location}).start()
 
         ext        = ccfilename.split('.')[-1].lower()
         ccfilename = re.sub(ext + '$', tmpFileExt, ccfilename)
-        httpObj.protocol_version = "HTTP/1.1"
-        httpObj.do_HEAD(mimetype=httpObj.isMimeType(ccfilename), turnOffCache=False, statusCode=scode,
+        httpObj.do_HEAD(mimetype=httpObj.isMimeType(ccfilename), turnOffCache=False, statusCode=200,
                         closeHeader=True,
-                        otherHeaderDict={'Content-Disposition': f'attachment; filename="{ccfilename}"',
-                                         'Content-Range': f'bytes {fileStartPos}-{readLen}/{fileSize}',
-                                         'Content-Length': str(readLen)})
-
-        if (fileStartPos > 0) or (readLen < fileSize):
-            transcodedData = transcodedData[fileStartPos:readLen]
+                        otherHeaderDict={'Content-Disposition': f'attachment; filename="{ccfilename}"'})
 
         logging.info(f"Writing transcoded output of {len(transcodedData)} bytes")
         httpObj.outputRaw (transcodedData)
-
     finally:
         cleanupTempfiles()
 
 def sendStandardFile (httpObj, location, fileStartPos, fileEndPos):
     # send file to destination
     try:
-#        scode = 200
-#        if fileStartPos > 0:
-#            scode = 206
-
         scode = 206
 
         # read file to send to chromecast
@@ -339,6 +320,7 @@ def sendStandardFile (httpObj, location, fileStartPos, fileEndPos):
 
         if fileEndPos > 0:
             readLen = fileEndPos - fileStartPos
+            
         fObj.seek(fileStartPos)
         try:
             logging.info(f'Sending file @ location={SGF.toASCII(location)} :: filesize={fileSize}')
@@ -352,17 +334,19 @@ def sendStandardFile (httpObj, location, fileStartPos, fileEndPos):
                                       'Content-Range': f'bytes {fileStartPos}-{readLen}/{fileSize}',
                                       'Content-Length': str(readLen)})
 
+        logging.info(f"Transferring file @ :::: fileStartPos {fileStartPos}, fileEndPos {fileEndPos}, readLen {readLen} : filesize {fileSize} ")
         # write output
         chunkSize = 4096
+        actualReadlen = readLen+1
         while True:
-            if chunkSize > readLen:
-                chunkSize = readLen
+            if chunkSize > actualReadlen:
+                chunkSize = actualReadlen
             chunk = fObj.read(chunkSize)
             if not chunk:
                 break
             httpObj.outputRaw(chunk)
-            readLen = readLen - len(chunk)
-            if readLen <= 0:
+            actualReadlen -= len(chunk)
+            if actualReadlen <= 0:
                 break
 
     except Exception as e:
@@ -383,7 +367,7 @@ try:
     if (SGF.getCastMimeType(postData["location"]).lower() == SGF.AUDIO_TRANSCODE) and postData["location"] != '':
         filename = cacheGetTranscode(postData["location"], ccast_uuid=postData["ccast_uuid"])
         if not filename:
-            processTranscoding(httpObj=self, ccast_uuid=postData["ccast_uuid"], location=postData["location"], type=postData["type"].lower(), fileStartPos=fileStartPos, fileEndPos=fileEndPos)
+            processTranscoding(httpObj=self, ccast_uuid=postData["ccast_uuid"], location=postData["location"], type=postData["type"].lower())
         else:
             sendStandardFile(httpObj=self, location=filename,fileStartPos=fileStartPos, fileEndPos=fileEndPos)
 
@@ -392,7 +376,6 @@ try:
         _, _, server, shareName, filePath = SGF.parseSMBConfigString(postData["location"])
         username, password = SGF.matchSMBCredentialsConfigString(postData["location"])
         try:
-            #conn = SMBConnection(username=username, password=password, my_name="", remote_name="", use_ntlm_v2=True)
             conn = SMBConnection(username=username, password=password, my_name="", remote_name="")
             assert conn.connect(server)
 
@@ -404,15 +387,12 @@ try:
                 except:
                     pass
 
-                readLen = file_attr.file_size - 1
+                readLen  = file_attr.file_size - 1
                 fileSize = file_attr.file_size
-#                scode = 200
-#                if fileStartPos > 0:
-#                    scode = 206
-                scode = 206
-
+                scode    = 206
+                    
                 if fileEndPos > 0:
-                    readLen = fileEndPos - fileStartPos
+                    readLen = fileEndPos - fileStartPos                
 
                 ccfilename = os.path.basename(filePath.split(r'\\')[-1])
                 self.protocol_version = "HTTP/1.1"
@@ -421,10 +401,10 @@ try:
                              otherHeaderDict={'Content-Disposition': f'attachment; filename="{ccfilename.encode("utf-8")}"',
                                               'Content-Range': f'bytes {fileStartPos}-{readLen}/{fileSize}',
                                               'Content-Length': str(readLen)})
-
-                logging.info(f"Transferring SMB file @ fileStartPos {fileStartPos}, readLen {readLen}... ")
+                
+                logging.info(f"Transferring SMB file @ fileStartPos {fileStartPos}, readLen {readLen} : filesize {fileSize} ")
                 smbReader = readerToHTTP(httpObj=self)
-                file_attributes, readFileSize = conn.retrieveFileFromOffset(shareName, filePath, smbReader, offset=fileStartPos, max_length=readLen)
+                file_attributes, readFileSize = conn.retrieveFileFromOffset(shareName, filePath, smbReader, offset=fileStartPos, max_length=readLen+1)
 
             except Exception as e:
                 self.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
