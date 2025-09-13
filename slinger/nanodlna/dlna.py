@@ -84,6 +84,21 @@ r"""<?xml version='1.0' encoding='utf-8'?>
   </s:Body>
 </s:Envelope>""",
 
+"action-Seek" : \
+r"""<?xml version="1.0" encoding="utf-8"?>
+<s:Envelope 
+   xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" 
+   s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+  <s:Body>
+    <u:Seek xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
+      <InstanceID>0</InstanceID>
+      <Unit>REL_TIME</Unit>
+      <Target>{target}</Target>
+    </u:Seek>
+  </s:Body>
+</s:Envelope>
+""",
+
 "control-SetVolume" : \
 r"""<?xml version="1.0" encoding="utf-8"?>
 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
@@ -380,6 +395,25 @@ def resume(device):
     ))
 
     send_dlna_action(device, None, "Play")
+
+def seek(device, pos_seconds):
+    pos_seconds = int(abs(pos_seconds))
+    secs = int(pos_seconds % 60)
+    pos_seconds -= secs
+    minsTotal = pos_seconds / 60
+    mins = int(minsTotal % 60)
+    minsTotal -= mins
+    hrs = int(minsTotal / 60)
+    target = f"{hrs}:{mins}:{secs}"
+
+    logging.debug("seek device: {}".format(
+        json.dumps({
+            "device": device,
+            "target": target
+        })
+    ))
+
+    send_dlna_action(device, {"target" : target }, "Seek")
 
 def pause(device):
     logging.debug("Pausing device: {}".format(

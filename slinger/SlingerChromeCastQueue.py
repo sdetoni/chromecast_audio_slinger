@@ -561,7 +561,8 @@ class SlingerDLNAPlayer:
             dlna.stop(self.qparent.cast.dlna_dev)
 
         def seek (self, pos):
-            pass
+            self.playback_state = 'IDLE'
+            dlna.seek(self.qparent.cast.dlna_dev, pos)
 
         def pause (self, *args, **kwargs):
             self.playback_state = 'PAUSED'
