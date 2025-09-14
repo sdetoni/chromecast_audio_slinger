@@ -1572,7 +1572,8 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                             self.send_response(404)
                             self.output("<html><h1>I/O Error: 404</h1></html>")
                     except Exception as err:
-                        if not re.search("'ConnectionAbortedError'$", str(err)):
+                        if ( (not re.search("'ConnectionAbortedError'$", str(err))) and
+                             (not re.search("'ConnectionResetError'$", str(err))) ):
                             logging.error ('HTTPWebServer.do_GET (.py) (' + self.command + ') Exception in ' + filePath + ' :: ' + str(traceback.format_exc()))
                             self    .send_response(500)
                             self.output("<html><h1>Internal Error: 500</h1></html>")
