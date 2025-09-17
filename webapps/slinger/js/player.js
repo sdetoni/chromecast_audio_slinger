@@ -2515,23 +2515,27 @@ function playerControlsExpandContract()
     
     if ($('.overlay-containerSml').css('display') == 'none')
     {
+         document.body.style.overflow = "hidden"
          $('#busy-transcoding').css('font-size', '2px');
          $(".overlay-containerBig").hide(500, function() {
             $('#playerControlsSmallBig').removeClass('fa-angles-up');
             $('#playerControlsSmallBig').addClass('fa-angles-down');
             $('#playerControlsSmallBig').addClass('controlEnabled');
             resizeFilePanels();
+            document.body.style.overflow = "";
          });
          $(".overlay-containerSml").show(500);
     }
     else
     {
+         document.body.style.overflow = "hidden";
          $(".overlay-containerBig").show(500, function() {
             $('#playerControlsSmallBig').addClass('fa-angles-up');
             $('#playerControlsSmallBig').removeClass('fa-angles-down');
             $('#playerControlsSmallBig').removeClass('controlEnabled');
             $('#busy-transcoding').css('font-size', '5px');
             resizeFilePanels();
+            document.body.style.overflow = "";
          });
          $(".overlay-containerSml").hide(500);
     }
