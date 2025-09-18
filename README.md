@@ -3,13 +3,20 @@ The application is suitable for NAS (Network Attached Storage) servers that will
 cast audio files to Chrome Cast, DLNA, and Web Browser devices independently of your phone, tablet, or P.C.
 I has the ability to cast from remote CIFS/Windows file shares as well as local files.
 
-This service will run as a Daemon, monitoring Chrome Cast devices, and slinger audio, video files 
-to devices from its pending audio queue.
+This service will run as a Daemon, monitoring Chrome Cast devices, and sling/cast audio, video files 
+to devices from its pending queue.
+
+## Version 0.075 Work in progress:
+ * Debugged HTTP Range requests further and hopefully fix it finally.
+ * Identified my DLNA issue with Metadata and Samsung T.Vs. Basically the dislike the source URL with ?query=1234 type 
+   parameters within the URL. So I have implemented a dynamically generated ID HASH that references the required metadata
+   in the Slinger DB and send the correct file to the DLNA device, thus getting around the complex query parameter issue
+   causing confusion.
 
 ## Version 0.07 Work in progress:
  * Bug fixes for device scanning and removal of devices once no longer on the network
  * Added initial/preliminary DLNA support, will work with Kodi, but may not work with your T.V due to
-   likely requiring an valid HTTPS source (looking at you Samsung). This is still work in progress to get around
+   likely requiring an valid url without parameters (looking at you Samsung). This is still work in progress to get around
    this limitation.
  * Added limited video support, can play mp4, avi, mkv etc type movies, update your config to add this ability
  * Added SMB metadata retrival limit to prevent large files taking along to cast, especially appropriate for video files

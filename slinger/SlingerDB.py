@@ -56,18 +56,30 @@ class SlingerDB (DBIO.DBIO):
         if not location:
             return None
         try:
-            self.sqlNoResults('delete from metadata_cache where id_hash = ? ',(hashlib.sha256(location.encode('utf-8')).hexdigest(),) )
-            self.sqlNoResults('insert into metadata_cache (id_hash, location, type, loaded, metadata) values (?, ?, ?, ?, ?)',(hashlib.sha256(location.encode('utf-8')).hexdigest(), location, type, datetime.datetime.now(), json.dumps(metadata, indent=4) ) )
+            self.sqlNoResults('delete from metadata_cache where id_hash = ? ',(self.GetIDHash(location),) )
+            self.sqlNoResults('insert into metadata_cache (id_hash, location, type, loaded, metadata) values (?, ?, ?, ?, ?)',(self.GetIDHash(location), location, type, datetime.datetime.now(), json.dumps(metadata, indent=4) ) )
             self.commit()
         except Exception as ex:
             logging.error('DBIO.StoreMetaDataCache failure ' + str(ex))
+        return None
+
+    def GetIDHash (self, location):
+        return hashlib.sha256(location.encode('utf-8')).hexdigest()
+
+    def GetCachedMetadataByIDHash (self, id_hash):
+        if not id_hash:
+            return None
+        try:
+            return self.sqlRtnResults('select * from metadata_cache where id_hash = ?', (id_hash,) )
+        except Exception as ex:
+            logging.error('DBIO.GetCachedMetadataByID failure ' + str(ex))
         return None
 
     def GetCachedMetadata (self, location, type):
         if not location:
             return None
         try:
-            rows = self.sqlRtnResults('select * from metadata_cache where id_hash = ? and type = ?', (hashlib.sha256(location.encode('utf-8')).hexdigest(), type) )
+            rows = self.sqlRtnResults('select * from metadata_cache where id_hash = ? and type = ?', (self.GetIDHash(location), type) )
             if len(rows) > 0:
                 return json.loads(rows[0]['metadata'])
         except Exception as ex:
@@ -138,7 +150,7 @@ class SlingerDB (DBIO.DBIO):
             return False
         try:
             rows = self.sqlRtnResults('select count(*) as numfnd from metadata_cache where id_hash = ? and type = ?',
-                                      (hashlib.sha256(location.encode('utf-8')).hexdigest(), type))
+                                      (self.GetIDHash(location), type))
             if len(rows) > 0 and rows[0]['numfnd'] > 0:
                 return True
         except Exception as ex:

@@ -7,6 +7,7 @@ import urllib
 import datetime
 import random
 import threading
+import pathlib
 import slinger.nanodlna.dlna as dlna
 
 TRANSCODING='transcoding'
@@ -553,7 +554,19 @@ class SlingerDLNAPlayer:
                 self.stop()
                 #files_urls= {"file_video" : args[0], "type_video" : args[1]}
                 #dlna.play (files_urls, self.qparent.cast.dlna_dev)
-                dlna.play(self.qparent.cast.dlna_dev, url=args[0], mime_type=args[1], title=kwargs["metadata"]["title"], creator=kwargs["metadata"]["artist"], album=kwargs["metadata"]["album_name"], art_url=kwargs["metadata"]["album_art_url"])
+                idHash = SGF.DB.GetIDHash(self.qparent.thisQueueItem.location)
+                md = SGF.DB.GetCachedMetadataByIDHash(idHash)
+                # parse 'http://192.168.20.16:8008/slinger/accessfile.py?type=file&location=D%3A%5Cmusic%5Csdm.wav&ccast_uuid=c37fc1cc-d384-5748-a1db-750f22c6d7c1
+                # into http://192.168.20.16:8008/slinger
+                # and build hased url as urls with ?parameters will fail the DLNA parsing on some devices, so encode them into a HASH ID type url like:
+                #    http://192.168.20.16:8008/slinger/DLHASH_d4e5991d75f6908206babd5a55f9695d99150e9f4f01b6630a442fa2e74c1551.flac
+                #    http://192.168.20.16:8008/slinger/DLHASH_ART_d4e5991d75f6908206babd5a55f9695d99150e9f4f01b6630a442fa2e74c1551.jpg
+                url     = f"{args[0].split('?')[0].rsplit('/', 1)[0]}/DLHASH_{idHash}{pathlib.Path(self.qparent.thisQueueItem.location).suffix}"
+                art_url = self.qparent.thisQueueItem.metadata["album_art_location"]
+                if art_url:
+                    art_url = f"{args[0].split('?')[0].rsplit('/', 1)[0]}/DLHASH_ART_{idHash}{pathlib.Path(art_url).suffix}"
+
+                dlna.play(self.qparent.cast.dlna_dev, url=url, mime_type=args[1], title=kwargs["metadata"]["title"], creator=kwargs["metadata"]["artist"], album=kwargs["metadata"]["album_name"], art_url=art_url)
                 self.playback_state = 'PLAYING'
 
         def stop (self, *args, **kwargs):
@@ -603,7 +616,7 @@ class SlingerDLNAPlayer:
                     "dlnaPlayStatus" : dlnaPlayStatus,
                     "dlnaDevStatus"  : dlnaDevStatus,
                     "duration"       : ((int(td[0]) * 60)*60) + (int(td[1])*60) + int(td[2]),
-                    "current_time"   : ((int(at[0]) * 60)*60) + (int(at[1])*60) + int(at[2])
+                    "current_time"   : ((int(at[0]) * 60)*60) + (int(at[1])*60) + int(at[2].split('.')[0])
                   }
 
                 # if not recently submitted queued item in the last 1 second (try and prevent race conditions), then allow it to continue

@@ -33,4 +33,5 @@
 #      pymatch,    .*, (override.py, new_override.py, re.IGNORECASE
 #
 debug, off
-regexp-redirect, .*, ^/$|^$, slinger\
+regexp, .*, DLHASH_ART_.*, accessfile.py
+regexp, .*, DLHASH_.*,     accessfile.py

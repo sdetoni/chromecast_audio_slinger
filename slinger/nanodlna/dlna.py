@@ -63,8 +63,8 @@ r"""<?xml version='1.0' encoding='utf-8'?>
 </s:Envelope>""",
 
 "action-SetAVTransportURI" : \
-r"""<?xml version='1.0' encoding='utf-8'?>
-<s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+r"""<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
   <s:Body>
     <u:SetAVTransportURI xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
       <InstanceID>0</InstanceID>
@@ -124,38 +124,38 @@ r"""<?xml version="1.0" encoding="utf-8"?>
 </s:Envelope>""",
 
 "metadata-audio" : \
-r'''<?xml version="1.0"?>
-<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/"
-           xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
-           xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">
-  <item id="0" parentID="-1" restricted="1">
-    <dc:title>{title}</dc:title>
-    <dc:creator>{creator}</dc:creator>
-    <upnp:class>object.item.audioItem.musicTrack</upnp:class>
-    <upnp:album>{album}</upnp:album>    
-    <res protocolInfo="http-get:*:{mime_type}:*">{audio_url}</res>
-    <upnp:albumArtURI>{art_url}</upnp:albumArtURI>    
-  </item>
+r'''<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/" xmlns:sec="http://www.sec.co.kr/" xmlns:pv="http://www.pv.com/pvns/">
+	<item id="0" parentID="0" restricted="1">
+		<upnp:class>object.item.audioItem.musicTrack</upnp:class>
+		<dc:title>{title}</dc:title>
+		<dc:creator>{creator}</dc:creator>
+		<upnp:artist>{artist}</upnp:artist>
+		<upnp:albumArtURI>{art_url}</upnp:albumArtURI>
+		<dc:date>{date}</dc:date>
+		<upnp:album>{album}</upnp:album>
+		<upnp:originalTrackNumber>{trackNo}</upnp:originalTrackNumber>
+		<res protocolInfo="http-get:*:{mime_type}:*">{audio_url}</res>
+	</item>
 </DIDL-Lite>
 ''',
 
 "metadata-video" : \
-r"""<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/"
-           xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/"
-           xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">
-  <item id="0" parentID="0" restricted="1">
-    <dc:title>{title}</dc:title>
-    <dc:creator>{creator}</dc:creator>
-    <upnp:class>object.item.videoItem.movie</upnp:class>
-    <res protocolInfo="http-get:*:{mime_type}:*">{video_url}</res>
-    <upnp:genre></upnp:genre>
-    <upnp:albumArtURI>{art_url}</upnp:albumArtURI>
-  </item>
+r"""<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/" xmlns:sec="http://www.sec.co.kr/" xmlns:pv="http://www.pv.com/pvns/">
+	<item id="0" parentID="0" restricted="1">
+		<upnp:class>object.item.videoItem.movie</upnp:class>
+		<dc:title>{title}</dc:title>
+		<dc:creator>{creator}</dc:creator>
+		<upnp:genre>{genre}</upnp:genre>
+        <upnp:actor>{actor}</upnp:actor>
+        <upnp:director>{director}</upnp:director>
+    	<upnp:albumArtURI>{art_url}</upnp:albumArtURI>
+		<dc:date>{date}</dc:date>
+		<res protocolInfo="http-get:*:{mime_type}:*">{video_url}</res>
+	</item>
 </DIDL-Lite>
 """
 
 }
-
 
 #==================================================================
 
@@ -357,28 +357,38 @@ def get_play_status(device):
 #==================================================================
 
 def play(device, url, mime_type, title="", creator="", album="", art_url=""):
+    # art url dodgy with parameters!
+    #url = "http://192.168.20.16:8008/slinger/a.flac"
+    #art_url = ""
 
-    # url = "https://download.samplelib.com/wav/sample-12s.wav"
-    # HTTPS seems to only work on samsung T.V...
-
-    play_data = {"audio_url":  xmlescape(url),
-                 "video_url":  xmlescape(url),
+    play_data = {"audio_url":  (url),
+                 "video_url":  (url),
                  "type_video": mime_type,
                  "title":      title,
                  "creator":    creator,
+                 "artist":     creator,
                  "album":      album,
-                 "art_url":    xmlescape(art_url),
+                 "date":       "",
+                 "trackNo":    0,
+                 "genre":      "",
+                 "actor":      "",
+                 "director":   "",
+                 "art_url":    (art_url),
                  "mime_type":  mime_type,
                  "metadata":   ""}
 
     if mime_type.split('/')[0].strip().lower() in ('audio',):
         audio_metadata = ActionXMLS["metadata-audio"]
         audio_metadata = audio_metadata.format(**play_data)
-        play_data["metadata"] = audio_metadata
+        play_data["metadata"] = xmlescape(audio_metadata)
     if mime_type.split('/')[0].strip().lower() in ('video',):
-        audio_metadata = ActionXMLS["metadata-video"]
-        audio_metadata = audio_metadata.format(**play_data)
-        play_data["metadata"] = audio_metadata
+        video_metadata = ActionXMLS["metadata-video"]
+        video_metadata = video_metadata.format(**play_data)
+        play_data["metadata"] = xmlescape(video_metadata)
+
+    play_data["audio_url"] = xmlescape(url)
+    play_data["video_url"] = xmlescape(url)
+    play_data["art_url"]   = xmlescape(art_url)
 
     logging.debug("Created video data: {}".format(json.dumps(play_data)))
 

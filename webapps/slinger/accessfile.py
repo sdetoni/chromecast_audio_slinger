@@ -7,10 +7,10 @@ import tempfile
 import time
 import subprocess
 import threading
+import json
 import daemon.GlobalFuncs as GF
 from pyffmpeg import FFmpeg
 from smb.SMBConnection import SMBConnection
-
 
 import slinger.SlingerGlobalFuncs     as SGF
 from pathlib import Path
@@ -23,6 +23,32 @@ postData = self.getCGIParametersFormData ()
 if not "type"       in postData: postData["type"]       = ''
 if not "location"   in postData: postData["location"]   = ''
 if not "ccast_uuid" in postData: postData["ccast_uuid"] = ''
+
+checkHashDL = self.path.split(self.queryBasePath)
+matchIDHash = re.match(r'(DLHASH_ART_|DLHASH_)(.*)\..*',checkHashDL[1])
+if matchIDHash:
+    hashID = matchIDHash.group(2)
+    metaData = SGF.DB.GetCachedMetadataByIDHash (hashID)
+    if not metaData:
+        output("fault, no match")
+        logging.error(f"Failed to match metadata {matchIDHash} from {checkHashDL}")
+        exit(0)
+    if len(metaData) > 1:
+        output(f"fault, matched {len(metaData)} rows, expect only 1")
+        logging.error(f"Failed to match metadata {matchIDHash} from {checkHashDL}")
+        exit(0)
+    hashType = matchIDHash.group(1)
+    if hashType == 'DLHASH_':
+        postData["type"]     = metaData[0]["type"]
+        postData["location"] = metaData[0]["location"]
+    elif hashType == 'DLHASH_ART_':
+        metadata2 = json.loads(metaData[0]["metadata"])
+        postData["type"]     = metadata2["album_art_location_type"]
+        postData["location"] =  metadata2["album_art_location"]
+    else:
+        output(f"fault, unknown hash type {hashType}")
+        logging.error(f"Failed to match metadata {matchIDHash} from {checkHashDL}")
+        exit(0)
 
 # dump headers
 #logging.error ("*************************")
@@ -349,7 +375,9 @@ def sendStandardFile (httpObj, location, fileStartPos, fileEndPos):
         readLen = fileSize-1
 
         if fileEndPos > 0:
-            readLen = fileEndPos - fileStartPos
+            readLen = (fileEndPos - fileStartPos)-1
+        elif fileEndPos < 0 and fileStartPos > 0:
+            readLen = (fileSize - fileStartPos)-1
             
         fObj.seek(fileStartPos)
         try:
@@ -361,28 +389,29 @@ def sendStandardFile (httpObj, location, fileStartPos, fileEndPos):
         httpObj.protocol_version = "HTTP/1.1"
         httpObj.do_HEAD(mimetype=httpObj.isMimeType(postData["location"]), turnOffCache=False, statusCode=scode, closeHeader=True,
                      otherHeaderDict={'Content-Disposition': f'attachment; filename="{os.path.basename(fObj.name).encode("utf-8")}"',
-                                      'Content-Range': f'bytes {fileStartPos}-{readLen}/{fileSize}',
+                                      'Content-Range': f'bytes {fileStartPos}-{fileStartPos + readLen}/{fileSize}',
+                                      'Connection': 'close',
                                       'Content-Length': str(readLen+1)})
 
         logging.info(f"Transferring file @ :::: fileStartPos {fileStartPos}, fileEndPos {fileEndPos}, readLen {readLen} : filesize {fileSize} ")
+        logging.info(f"Transferring SMB file @ fileStartPos {fileStartPos} - {fileStartPos + readLen}, readLen {readLen} : filesize {fileSize} ")
         # write output
-        chunkSize = 65536
-        actualReadlen = readLen+1
+        chunkSize     = 65536
+        actualReadLen = readLen+1
         while True:
-            if chunkSize > actualReadlen:
-                chunkSize = actualReadlen
+            if chunkSize > actualReadLen:
+                chunkSize = actualReadLen
             chunk = fObj.read(chunkSize)
             if not chunk:
                 break
             httpObj.outputRaw(chunk)
-            actualReadlen -= len(chunk)
-            if actualReadlen <= 0:
+            actualReadLen -= len(chunk)
+            if actualReadLen <= 0:
                 break
 
     except Exception as e:
         httpObj.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
         logging.error(f'{e} Failed loading file @ {SGF.toASCII(postData["location"])}')
-        output(e)
     finally:
         try:
             fObj.close()
@@ -422,28 +451,29 @@ try:
                 scode    = 206
                     
                 if fileEndPos > 0:
-                    readLen = fileEndPos - fileStartPos                
+                    readLen = (fileEndPos - fileStartPos)-1
+                elif fileEndPos < 0 and fileStartPos > 0:
+                    readLen = (fileSize - fileStartPos)-1
 
                 ccfilename = os.path.basename(filePath.split(r'\\')[-1])
                 self.protocol_version = "HTTP/1.1"
                 self.do_HEAD(mimetype=self.isMimeType(filePath.split('.')[-1].lower()), turnOffCache=False, statusCode=scode,
                              closeHeader=True,
                              otherHeaderDict={'Content-Disposition': f'attachment; filename="{ccfilename.encode("utf-8")}"',
-                                              'Content-Range': f'bytes {fileStartPos}-{readLen}/{fileSize}',
+                                              'Content-Range': f'bytes {fileStartPos}-{fileStartPos+readLen}/{fileSize}',
+                                              'Connection': 'close',
                                               'Content-Length': str(readLen+1)})
                 
-                logging.info(f"Transferring SMB file @ fileStartPos {fileStartPos}, readLen {readLen} : filesize {fileSize} ")
+                logging.info(f"Transferring SMB file @ fileStartPos {fileStartPos} - {fileStartPos+readLen}, readLen {readLen} : filesize {fileSize} ")
                 smbReader = readerToHTTP(httpObj=self)
                 file_attributes, readFileSize = conn.retrieveFileFromOffset(shareName, filePath, smbReader, offset=fileStartPos, max_length=readLen+1)
 
             except Exception as e:
                 self.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
                 logging.error(f"{e} [2] Failed loading file @ {server}\\{shareName}\\{filePath}")
-                output(str(e))
         except Exception as e:
             self.do_HEAD(mimetype='application/octet-stream', turnOffCache=False, statusCode=404, closeHeader=True)
             logging.error(f"{e} [1] Failed loading file @ {server}\\{shareName}\\{filePath}")
-            output(str(e))
         finally:
             conn.close()
     ########## Local File System Send File ##########

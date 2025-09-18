@@ -1571,6 +1571,8 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                             logging.error ('HTTPWebServer.do_GET (.py) (' + self.command + ') Render page ' + filePath + ' not found! Accessing : ' + fullAccessPath)
                             self.send_response(404)
                             self.output("<html><h1>I/O Error: 404</h1></html>")
+                    except (ConnectionAbortedError, ConnectionResetError):
+                        pass
                     except Exception as err:
                         if ( (not re.search("'ConnectionAbortedError'$", str(err))) and
                              (not re.search("'ConnectionResetError'$", str(err))) ):
@@ -1600,27 +1602,96 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                         fullAccessPath = defaultsAccessPath + os.path.sep + self.defaultRunFiles[defaultsIdx]
                         continue
 
+                    file = None
                     try:
+                        scode        = 200
+                        fileStartPos = 0
+                        fileEndPos   = -1
+                        # parse file position header: Range : bytes=131072-
+                        if 'Range' in self.headers:
+                            scode = 206
+                            pos   = self.headers['Range']
+                            parms = pos.split('=')
+                            if (len(parms) == 2) and (parms[0].lower() == 'bytes'):
+                                bpos = parms[1].split('-')
+                                try:
+                                    fileStartPos = int(bpos[0])
+                                    if len(bpos) == 2 and bpos[1].strip() != '':
+                                        fileEndPos = int(bpos[1].strip())
+                                except:
+                                    pass
+
                         # determine if fullAccessPath is pointing to a standard file, if so, load it and send it out...
-                        file = open(fullAccessPath, 'rb')
-                        self.send_response(200)
-                        self.send_header('Content-type', self.isMimeType (fullAccessPath));
-                        self.end_headers()
-                        self.wfile.write(file.read())
+                        try:
+                            file = open(fullAccessPath, 'rb')
+                        except IOError:
+                            if defaultsRetry:
+                                continue
+                            logging.error('HTTPWebServer.do_GET (' + self.command + ') File ' + filePath + ' not found/access denied! Accessing : ' + fullAccessPath)
+                            self.send_response(404)
+                            self.output("<html><h1>I/O Error: 404</h1></html>")
+                            break
+
+                        if scode == 200:
+                            # if no Range header, then send as a normal file ...
+                            self.send_response(scode)
+                            self.send_header('Content-type', self.isMimeType (fullAccessPath))
+                            self.end_headers()
+                            self.wfile.write(file.read())
+                        else:
+                            # Send as http1.1 partial file 206 status
+                            file.seek(0, io.SEEK_END)
+                            fileSize = file.tell()
+                            readLen = fileSize - 1
+                            if fileEndPos > 0:
+                                readLen = (fileEndPos - fileStartPos) - 1
+                            elif fileEndPos < 0 and fileStartPos > 0:
+                                readLen = (fileSize - fileStartPos) - 1
+                            file.seek(fileStartPos)
+
+                            self.protocol_version = "HTTP/1.1"
+                            self.do_HEAD(mimetype=self.isMimeType(fullAccessPath), statusCode=scode, turnOffCache=False, closeHeader=True,
+                                         otherHeaderDict={'Content-Range': f'bytes {fileStartPos}-{fileStartPos+readLen}/{fileSize}',
+                                                          'Connection': 'close',
+                                                          'Content-Length': str(readLen + 1)})
+                            logging.debug(f"HTTPWebServer.do_GET file @ :: fileStartPos {fileStartPos} - {fileStartPos + readLen}, readLen {readLen} : filesize {fileSize}")
+                            # write output
+                            chunkSize = 65536
+                            actualReadLen = readLen + 1
+                            while True:
+                                if chunkSize > actualReadLen:
+                                    chunkSize = actualReadLen
+                                chunk = file.read(chunkSize)
+                                if not chunk:
+                                    break
+                                self.wfile.write(chunk)
+                                actualReadLen -= len(chunk)
+                                if actualReadLen <= 0:
+                                    break
+
+                            self.send_response(scode)
+                            self.send_header('Content-type', self.isMimeType (fullAccessPath));
+                            self.end_headers()
+                            self.wfile.write(file.read())
                         file.close()
-                    except IOError:
-                        if defaultsRetry:
-                            continue
+                        file = None
+                    finally:
+                        try:
+                            if file:
+                                file.close()
+                        except:
+                            pass
 
-                        logging.error ('HTTPWebServer.do_GET (' + self.command + ') File ' + filePath + ' not found/access denied! Accessing : ' + fullAccessPath)
-                        self.send_response(404)
-                        self.output("<html><h1>I/O Error: 404</h1></html>")
-
-                # retry file execution for default files...
+                        # retry file execution for default files...
                 if defaultsRetry:
                     continue
 
                 break # exit loop
+        except (ConnectionAbortedError, ConnectionResetError):
+            pass
+        except IOError as ioerr:
+            logging.error(f"HTTPWebServer.do_GET Unknown IO Error: {ioerr}")
+            logging.error(f"HTTPWebServer.do_GET @ file {fullAccessPath}")
         finally:
             self.rfile.flush()
             self.wfile.flush()
