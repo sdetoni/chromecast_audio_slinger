@@ -41,6 +41,7 @@ output ("""
 output (f"""
 <script>
 var G_OS_FileSeparator                = "\\{os.sep}";
+var G_SMB_FileSeparator               = '\\\\';
 var G_LoadFileFolderArt               = {str(GF.Config.getSettingBool('slinger/LOAD_FILE_LIST_FOLDER_ART_ICONS', 'true')).lower()};
 var G_DisableSongSeek                 = {str(GF.Config.getSettingBool('slinger/DISABLE_SONG_SEEK', 'true')).lower()};
 var G_Local_Player                    = "{SGF.LOCAL_PLAYER}";

@@ -180,10 +180,10 @@ function FolderLoadLargeArt (location, type)
                     for (idx = 0; idx < data.length; idx++)
                     {
                         picHTML += `
-<div class="AlbumArtWork slider-fade">
+<div class="AlbumArtWork slider-fade" style="overflow:auto">
   <div class="slider-numbertext playerTxt">${idx+1} / ${data.length}</div>
-  <img onclick="\$(this).parent().parent().parent().dialog('close');" src="${data[idx]['src']}" style="width:100%">
-  <div class="text">${data[idx]['filename']}</div>
+  <img id="AlbumArtWork_Img_${idx+1}" onclick="\$(this).parent().parent().parent().dialog('close');" src="${data[idx]['src']}" style="width:100%">
+  <div class="text selectItemHand slider-title " onclick="ArtworkGotoFolder('${  (data[idx]['full_path']).replaceAll('\\', '\\\\') }', '${ data[idx]['type'] }' ); $(this).parent().parent().parent().dialog('close');">${data[idx]['filename']}</div>
 </div>
 `;
                     }
@@ -192,7 +192,12 @@ function FolderLoadLargeArt (location, type)
 <a class="slider-prev playerTxt" onclick="G_ArtWorkSlider.incDecSlide(-1)">❮</a>
 <a class="slider-next playerTxt" onclick="G_ArtWorkSlider.incDecSlide(1)">❯</a>
 </div>
-<div style="text-align:center">
+
+<div style="text-align:center; position:relative;">
+    <input class="slider-zoom" style="width:100%; outline: none;" type="range" id="zoomSlider" min="0.1" max="5" step="0.1" value="1" oninput="$('#AlbumArtWork_Img_'+G_ArtWorkSlider.slideIndex).css('transform', 'scale(' + this.value + ')')">
+</div>
+
+<div style="text-align:center; position:relative">
 `;
                     for (idx = 0; idx < data.length; idx++)
                     {
@@ -1245,12 +1250,9 @@ function ShowIsFavourite (ccinfo=null)
            });
 }
 
-function SearchGotoFolder(idx)
+function GotoFolderLocation (fldrLocation)
 {
-    let obj = G_CurrentSearchList[idx]
     $('#tabFileBrowserSelect').click();
-    // get file folder location (minus the filename)
-    let fldrLocation = obj.location.split(G_OS_FileSeparator).slice(0,-1).join(G_OS_FileSeparator);
     let type = $('#share_locs').find('option:selected').attr('type');
     let base = $('#share_locs').val();
     $('#share_locs option').each(function (index)
@@ -1259,12 +1261,31 @@ function SearchGotoFolder(idx)
         {
             type = $(this).attr('type')
             base = $(this).val();
+
+            console.log (`type:${type} Goto:${base}`);
             $('#share_locs').val($(this).val())
             $('#share_locs').selectmenu("refresh");
         }
     });
     loadFileList (fldrLocation, type, base);
     return false;
+}
+
+function ArtworkGotoFolder(location, type)
+{
+    let fileSep = G_OS_FileSeparator;
+    if (type == 'smb')
+        fileSep = G_SMB_FileSeparator; // '\\'
+    return GotoFolderLocation(location.split(fileSep).slice(0,-1).join(fileSep));
+}
+
+function SearchGotoFolder(idx)
+{
+    let obj = G_CurrentSearchList[idx]
+    let fileSep = G_OS_FileSeparator;
+    if (obj.type == 'smb')
+        fileSep = G_SMB_FileSeparator; // '\\'
+    return GotoFolderLocation(obj.location.split(fileSep).slice(0,-1).join(fileSep));
 }
 
 function ImportSpotifyPlayList (spotifyURL, thisObj=null)
@@ -1438,7 +1459,7 @@ function OnClick_FileListParent (thisObj)
     let type = $('#share_locs').find('option:selected').attr('type')
     let fileSep = G_OS_FileSeparator;
     if (type == 'smb')
-        fileSep = '\\'
+        fileSep = G_SMB_FileSeparator; // '\\'
 
     let p  =  decodeURI($(thisObj).attr('filelocationParent'));
     let fp = p.split (fileSep);
@@ -2331,7 +2352,7 @@ function runSearchQuery ()
                          art_url = `accessfile.py?type=${results[idx].type}&location=${encodeURI(metadata["album_art_location"])}`;
 
                      srTable += `
-<tr class="dataRow songListRow selectItemHand" idx="{$idx}">
+<tr class="dataRow songListRow selectItemHand" idx="${idx}">
     <td style="width:100%;display:flex">
                 <img onclick="ViewLargeArt(this);" class="albumArtURLSml" src="${art_url}" style="height: 32px">
                 <span style="padding-left:5px" onclick="OnClick_SearchList(${idx}, true)" class="songData">${metadata["title"]}</span>

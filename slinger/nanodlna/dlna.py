@@ -86,9 +86,7 @@ r"""<?xml version='1.0' encoding='utf-8'?>
 
 "action-Seek" : \
 r"""<?xml version="1.0" encoding="utf-8"?>
-<s:Envelope 
-   xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" 
-   s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+<s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
   <s:Body>
     <u:Seek xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
       <InstanceID>0</InstanceID>
@@ -414,7 +412,7 @@ def seek(device, pos_seconds):
     mins = int(minsTotal % 60)
     minsTotal -= mins
     hrs = int(minsTotal / 60)
-    target = f"{hrs}:{mins}:{secs}"
+    target = f"{hrs:02d}:{mins:02d}:{secs:02d}"
 
     logging.debug("seek device: {}".format(
         json.dumps({

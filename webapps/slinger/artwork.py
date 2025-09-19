@@ -43,12 +43,18 @@ try:
         loaded = False
         for name in GF.Config.getSettingList('slinger/ALBUM_ART_FILENAME'):
             if md['filename'].lower() == name.lower():
-                coverImgDLS.append({'filename' : md['filename'], 'src' : SGF.makeDownloadURL(self, md['type'], md['full_path']) })
+                coverImgDLS.append({'filename' : md['filename'],
+                                    'src'      : SGF.makeDownloadURL(self, md['type'], md['full_path']),
+                                    'type'     : md['type'],
+                                    'full_path': md['full_path']})
                 loaded = True
                 break
 
         if not loaded:
-            otherImgDLS.append({'filename' : md['filename'], 'src' : SGF.makeDownloadURL(self, md['type'], md['full_path']) })
+            otherImgDLS.append({'filename' : md['filename'],
+                                'src'      : SGF.makeDownloadURL(self, md['type'], md['full_path']),
+                                'type'     : md['type'],
+                                'full_path': md['full_path']})
 
     output(json.dumps(coverImgDLS + otherImgDLS, default=lambda o: o.__dict__, indent=4))
 finally:

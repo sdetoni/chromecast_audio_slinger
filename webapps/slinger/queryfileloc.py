@@ -5,6 +5,7 @@ from smb.SMBConnection import SMBConnection
 import smb
 import json
 import os
+import pathlib
 
 self = eval('self'); output = self.output
 postData = self.getCGIParametersFormData ()
