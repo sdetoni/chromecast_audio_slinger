@@ -36,19 +36,28 @@ class Slider
             dots[i].className = dots[i].className.replace(" slider-active", "");
 
         slides[this.slideIndex-1].style.display = "block";
-
-        dots[this.slideIndex-1].className += " slider-active";
+        dots[this.slideIndex-1].className       += " slider-active";
 
         let imgs = slides[this.slideIndex-1].getElementsByTagName("img")
         for (i = 0; i < imgs.length; i++)
             imgs[i].style.transform = "none";
+
+        let numberText = document.getElementsByClassName("slider-numbertext");
+        for (i = 0; i < imgs.length; i++)
+            numberText[i].style.position = "none";
+
+        let titleText = document.getElementsByClassName("slider-title");
+        for (i = 0; i < imgs.length; i++)
+            titleText[i].style.position = "none";
+
+        titleText[this.slideIndex-1].style.position = "relative";
+        numberText[this.slideIndex-1].style.position = "relative";
 
         let zoomers = document.getElementsByClassName("slider-zoom")
         for (i = 0; i < zoomers.length; i++)
         {
             zoomers[i].value = "1";
             zoomers[i].change();
-            // zoomers[i].dispatchEvent(new Event("change"););
         }
     }
 }

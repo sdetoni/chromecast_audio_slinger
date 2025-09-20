@@ -85,7 +85,7 @@ r"""<?xml version='1.0' encoding='utf-8'?>
 </s:Envelope>""",
 
 "action-Seek" : \
-r"""<?xml version="1.0" encoding="utf-8"?>
+r"""<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <s:Envelope s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:s="http://schemas.xmlsoap.org/soap/envelope/">
   <s:Body>
     <u:Seek xmlns:u="urn:schemas-upnp-org:service:AVTransport:1">
@@ -94,8 +94,7 @@ r"""<?xml version="1.0" encoding="utf-8"?>
       <Target>{target}</Target>
     </u:Seek>
   </s:Body>
-</s:Envelope>
-""",
+</s:Envelope>""",
 
 "control-SetVolume" : \
 r"""<?xml version="1.0" encoding="utf-8"?>
@@ -134,8 +133,7 @@ r'''<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:upnp="
 		<upnp:originalTrackNumber>{trackNo}</upnp:originalTrackNumber>
 		<res protocolInfo="http-get:*:{mime_type}:*">{audio_url}</res>
 	</item>
-</DIDL-Lite>
-''',
+</DIDL-Lite>''',
 
 "metadata-video" : \
 r"""<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dlna="urn:schemas-dlna-org:metadata-1-0/" xmlns:sec="http://www.sec.co.kr/" xmlns:pv="http://www.pv.com/pvns/">
@@ -150,8 +148,7 @@ r"""<DIDL-Lite xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/" xmlns:upnp="
 		<dc:date>{date}</dc:date>
 		<res protocolInfo="http-get:*:{mime_type}:*">{video_url}</res>
 	</item>
-</DIDL-Lite>
-"""
+</DIDL-Lite>"""
 
 }
 
@@ -201,9 +198,10 @@ def send_dlna_action(device, data, action):
     action_data = action_data.encode("UTF-8")
 
     headers = {
-        "Content-Type": "text/xml; charset=\"utf-8\"",
+        "Content-type": "text/xml; charset=utf-8",
         "Content-Length": "{0}".format(len(action_data)),
         "Connection": "close",
+        "user-Agent": "Android/15 UPnP/1.0 BubbleUPnP/3.4.12",
         "SOAPACTION": "\"{0}#{1}\"".format(device["st"], action)
     }
 

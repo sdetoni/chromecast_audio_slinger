@@ -182,8 +182,8 @@ function FolderLoadLargeArt (location, type)
                         picHTML += `
 <div class="AlbumArtWork slider-fade" style="overflow:auto">
   <div class="slider-numbertext playerTxt">${idx+1} / ${data.length}</div>
-  <img id="AlbumArtWork_Img_${idx+1}" onclick="\$(this).parent().parent().parent().dialog('close');" src="${data[idx]['src']}" style="width:100%">
-  <div class="text selectItemHand slider-title " onclick="ArtworkGotoFolder('${  (data[idx]['full_path']).replaceAll('\\', '\\\\') }', '${ data[idx]['type'] }' ); $(this).parent().parent().parent().dialog('close');">${data[idx]['filename']}</div>
+  <img id="AlbumArtWork_Img_${idx+1}" onclick="\$(this).parent().parent().parent().dialog('close');" style="transform-origin: top left; width: -webkit-fill-available;" src="${data[idx]['src']}" style="width:100%">
+  <div class="text selectItemHand slider-title playerTxt" onclick="ArtworkGotoFolder('${  (data[idx]['full_path']).replaceAll('\\', '\\\\') }', '${ data[idx]['type'] }' ); $(this).parent().parent().parent().dialog('close');">${data[idx]['filename']}</div>
 </div>
 `;
                     }
