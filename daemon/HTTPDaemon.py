@@ -71,10 +71,10 @@ class TemplateLoad ():
     # Tokens ID
     T_STRING,          T_BLOCK_CODE,         T_PYBLOCK_CODE,      T_COMMENTBLOCK_CODE,  T_VERBATIMBLOCK_CODE, T_OPEN_CMDBLOCK, T_CLOSE_CMDBLOCK, T_OPEN_VARBLOCK, T_CLOSE_VARBLOCK, \
     T_OPEN_PYBLOCK,    T_CLOSE_PYBLOCK,      T_OPEN_COMMENTBLOCK, T_CLOSE_COMMENTBLOCK, T_OPEN_VERBATIMBLOCK, T_CLOSE_VERBATIMBLOCK, \
-    T_OPER_IF,         T_OPER_ELIF,          T_OPER_ELSE,         T_OPER_ENDIF,         T_OPER_BLOCK,    T_OPER_ENDBLOCK,  T_OPER_INCLUDE,  T_OPER_EXTENDS, \
+    T_OPER_IF,         T_OPER_ELIF,          T_OPER_ELSE,         T_OPER_ENDIF,         T_OPER_BLOCK,         T_OPER_ENDBLOCK,  T_OPER_INCLUDE,  T_OPER_EXTENDS, \
     T_OPER_AUTOESCAPE, T_OPER_ENDAUTOESCAPE, T_OPER_AUTOTRIM,     T_OPER_ENDAUTOTRIM, \
     T_OPER_FOR,        T_OPER_ENDFOR,        T_OPER_WHILE,        T_OPER_ENDWHILE, \
-    T_OPER_CYCLE,      T_OPER_CYCLERESET,    T_OPER_TAG = range (34)
+    T_OPER_CYCLE,      T_OPER_CYCLERESET,    T_OPER_TAG,          T_OPER_RELFILENAME, T_OPER_FILENAME = range (36)
 
     # Token info
     tokens = {T_STRING:               {"tok":"[HTML_CODE]",         "match":None,                     "depd":None},
@@ -102,6 +102,8 @@ class TemplateLoad ():
               T_OPER_ENDBLOCK:        {"tok":"endblock",            "match":None,                     "depd":None},
               T_OPER_INCLUDE:         {"tok":"include",             "match":(T_BLOCK_CODE,),          "depd":None},
               T_OPER_EXTENDS:         {"tok":"extends",             "match":(T_BLOCK_CODE,),          "depd":None},
+              T_OPER_RELFILENAME:     {"tok":"rel_filename",        "match": None,                    "depd":None},
+              T_OPER_FILENAME:        {"tok":"filename",            "match": None,                    "depd":None},
 
               T_OPER_AUTOTRIM:        {"tok":"autotrim",            "match":(T_BLOCK_CODE,),          "depd":(T_OPER_ENDAUTOTRIM,)},
               T_OPER_ENDAUTOTRIM:     {"tok":"endautotrim",         "match":(T_BLOCK_CODE,),          "depd":None},
@@ -524,6 +526,15 @@ class TemplateLoad ():
                  code += (indent * (depth-1)) + defName + "(" + str(self._scanBoolParam(l.codeBlockParentLexItem.data.strip(), True)) + ")" + self._genCodeComment(l)
             elif l.type == self.T_OPER_BLOCK:
                 code +=  dstr + "if ('" + l.data.strip() + "' in locals()) or ('" + l.data.strip() + "' in globals()):" + self._genCodeComment (l)
+            elif l.type == self.T_OPER_FILENAME:
+                code += dstr + "output(r'''" + self.filename + "''')" + self._genCodeComment (l)
+            elif l.type == self.T_OPER_RELFILENAME:
+                relPath = self.filename.split( os.path.abspath(self.homeDir) )
+                if len(relPath) > 1:
+                    relPath = relPath[1]
+                else:
+                    relPath = relPath[0]
+                code += dstr + "output(r'''" +  relPath + "''')" + self._genCodeComment (l)
             elif l.type == self.T_OPER_CYCLE:
                 code += dstr + "_CYCLE_LIST = ("+l.data.strip() + ")" + self._genCodeComment (l)
                 code += dstr + (outStr % "_CYCLE_LIST[_CYCLE % len(_CYCLE_LIST)]") + self._genCodeComment(l)
@@ -537,7 +548,7 @@ class TemplateLoad ():
             elif l.type == self.T_VERBATIMBLOCK_CODE:
                 varName = "s" + str(l.lineNo) + "_" + str(l.charPos)
                 codeVarDict[varName] = l.data
-                code += dstr + ('output(str(%s))' % varName) + self._genCodeComment (l)
+                code += dstr + ('output(%s)' % varName) + self._genCodeComment (l)
             elif l.type == self.T_COMMENTBLOCK_CODE:
                 pass
             else:
@@ -611,8 +622,8 @@ class TemplateLoad ():
             try:
                 logging.info("TemplateLoad._parseFile : loading file ->" + self.filename + "<-")
                 fn = self.getSafeTEMPLATEPath(self.filename)
-                f  = open(fn, 'r')
-                self.src = str(f.read())
+                f  = open(fn, mode='r', encoding="utf-8")
+                self.src = f.read()
                 f.close()
                 self.chkFileChanges[fn] = os.path.getmtime(fn)
                 self.lastCheckFileChanged = datetime.datetime.now()

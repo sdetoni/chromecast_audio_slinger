@@ -41,6 +41,7 @@ def backgroundProcess ():
             continue
 
         if postData["directory_load"] == 'true':
+            queueFileList = []
             if postData["type"] == 'smb':
                 queueFileList = SGF.loadDirectoryQueueSMB(location=loc, maxDepth=int(postData["max_recurse_depth"]), maxQueueLen=int(postData["max_queue_len"]))
             elif postData["type"] == 'file':

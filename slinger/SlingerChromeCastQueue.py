@@ -253,7 +253,7 @@ class SlingerChromeCastQueue:
             # It is used to broadcast additional player states
             # beyond the four main ones, namely
             # IDLE, PLAYING, PAUSED, and BUFFERING.
-            # Currently it is used only to signal the initial loading of a media item.
+            # Currently, it is used only to signal the initial loading of a media item.
             # In that case MediaStatus#playerState is IDLE,
             # but ExtendedMediaStatus#playerState is LOADING.
 
@@ -363,6 +363,7 @@ class SlingerChromeCastQueue:
         # do not HTTPS download link as the cert is likely self-signed in this type application!
         downloadURL = SGF.makeDownloadURL(httpObj=httpObj, type=type, location=location, chromecastHTTPDownland=True, ccast_uuid=str(self.cast.uuid))
 
+        metadata = None
         if type == 'smb':
             metadata = SGF.getMediaMetaDataSMB(location, httpObj=httpObj)
         elif type == 'file':
@@ -385,6 +386,7 @@ class SlingerChromeCastQueue:
             self.processStatusEvent(wakeNow=True)
         else:
             self.appendQueueMediaItem(location=location, type=type, downloadURL=downloadURL, mimeType=SGF.getCastMimeType(location), metadata=metadata)
+        return True
 
     # mode : 'replace', 'append' playlist into queue
     def loadPlaylist (self, httpObj, playListName, mode):
