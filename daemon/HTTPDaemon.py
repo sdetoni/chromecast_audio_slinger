@@ -311,7 +311,7 @@ class TemplateLoad ():
                                     # new included src +
                                     # advance past the close %} tag so to replace the tag with the include src
                                     self.src = self.src[:tokenStartPos] + \
-                                               open(incFilename).read() + \
+                                               open(incFilename, mode='r', encoding='utf-8').read() + \
                                                self.src[self.srcLexPos +len(lexCloseDict):]
 
                                     self.chkFileChanges[incFilename] = os.path.getmtime(incFilename)
@@ -622,7 +622,7 @@ class TemplateLoad ():
             try:
                 logging.info("TemplateLoad._parseFile : loading file ->" + self.filename + "<-")
                 fn = self.getSafeTEMPLATEPath(self.filename)
-                f  = open(fn, mode='r', encoding="utf-8")
+                f  = open(fn, mode='r', encoding='utf-8')
                 self.src = f.read()
                 f.close()
                 self.chkFileChanges[fn] = os.path.getmtime(fn)
@@ -888,7 +888,7 @@ class MappingRules():
 
         self.rules    = []
         self.debug    = False
-        mrf           = open (self.filepath)
+        mrf           = open (self.filepath, mode='r', encoding='utf-8')
         try:
             for line in mrf.readlines():
                 line = line.replace('\t', ' ').strip()
@@ -938,7 +938,7 @@ class MappingRules():
                         else:
                             self.debug = False
                         continue
-                logging.error("MappingRules: Malformed mapping rule : ->" + line + "<-")
+                logging.error(f"MappingRules: Malformed mapping rule : ->{line}<-")
             # end for
         except Exception as inst:
             logging.error('MappingRules: Failed loading mapping rules file ' + self.filepath + ' ' + str(traceback.format_exc()))
@@ -1066,14 +1066,14 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
 
             # Load the mimetypes
             try:
-               file = open (HTTPWebServer.mimeTypeFilename)
+               file = open (HTTPWebServer.mimeTypeFilename, mode='r', encoding='utf-8')
                for line in file.readlines():
                     line = line.replace('\t', ' ')
                     s = line.split(' ');
                     if (len(s) > 1):
                         HTTPWebServer.mimeDict[s[0].strip().lower()] = s[1].strip()
             except IOError:
-                logging.error ('HTTPWebServer.__init__ Mime File ' + HTTPWebServer.mimeTypeFilename + ' not found!')
+                logging.error (f"HTTPWebServer.__init__ Mime File '{HTTPWebServer.mimeTypeFilename}' not found!")
             HTTPWebServer.classInit = True
         else:
             logging.debug("Bypass HTTPWebServer.__init__ MyHTTPWebServer")
@@ -1385,6 +1385,8 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                 return s
             self.output(s)
             return True
+        if rtnStr:
+            return ''
         return False
 
     # returns true/false if successful output, runs via relative directory within the self.path
@@ -1395,7 +1397,7 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
         fullAccessPath  = os.path.abspath(self.homeDir + filePath)
         fp              = os.path.dirname(fullAccessPath) + os.path.sep + templateName
         if not fp.startswith(os.path.abspath(self.homeDir)+ os.path.sep):
-            logging.error('HTTPWebServer.templateRunRelPath (' + self.command + ') failed access request at path: >' + filePath +  '<  to file  >' + fp + '<')
+            logging.error(f"HTTPWebServer.templateRunRelPath ({self.command}) failed access request at path: '{filePath}' --to file--> '{fp}'")
             return None
         return self.templateRunAbsPath (fp, userVarsDict, checkFileChangedSecs, rtnStr)
 
@@ -1410,7 +1412,7 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
         else:
             fp = os.path.dirname(os.path.abspath(fullAccessPath)) + os.path.sep + '_templates_' + os.path.sep + templateName
         if not fp.startswith(os.path.abspath(self.homeDir)+ os.path.sep):
-            logging.error('HTTPWebServer.templateRun (' + self.command + ') failed access request at path: >' + filePath +  '<  to file  >' + fp + '<')
+            logging.error(f"HTTPWebServer.templateRun ({self.command}) failed access request at path: '{filePath}' --to file--> '{fp}'")
             return None
         return self.templateRunAbsPath (fp, userVarsDict, checkFileChangedSecs, rtnStr)
 
@@ -1429,7 +1431,7 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             self.wfile.write(r)
         except Exception as e:
-            logging.error('HTTPWebServer.outputRaw failed outputRaw() at path: >' + self.path + '< ' + str(e))
+            logging.error(f"HTTPWebServer.outputRaw failed outputRaw() at path: '{self.path}' {str(e)}")
             raise e
 
     def isMimeType (self, filePath):
@@ -1500,12 +1502,12 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
         if mprFile:
             # determine if mapping in the cache dict
             if mprFile in self.mappingCacheDict:
-                logging.debug("HTTPWebServer.do_GET cached load mapping rules file '" + mprFile + "'")
+                logging.debug(f"HTTPWebServer.do_GET cached load mapping rules file '{mprFile}'")
                 self.mappingCacheDict[mprFile].checkCache()
                 return self.mappingCacheDict[mprFile]
             else:
                 # reuse the previous loaded version
-                logging.info("HTTPWebServer.do_GET loading mapping rules file '" + mprFile + "'")
+                logging.info(f"HTTPWebServer.do_GET loading mapping rules file '{mprFile}'")
                 mr = MappingRules (mprFile)
                 self.mappingCacheDict[mprFile] = mr
                 return mr
@@ -1529,7 +1531,7 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
             fullAccessPath = self.getSafeHTMLPath(filePath, '')
 
             if not fullAccessPath:
-                logging.error('HTTPWebServer.do_GET (' + self.command + ') failed access request at path: >' + filePath +  '<  to file  >' + os.path.abspath(self.homeDir + os.path.sep + filePath) + '<')
+                logging.error(f"HTTPWebServer.do_GET ({self.command}) failed access request at path: '{filePath}' --to file--> '{os.path.abspath(self.homeDir + os.path.sep + filePath)}'")
                 self.send_response(404)
                 self.output("<html><h1>Access Denied: 404</h1></html>")
                 return
@@ -1566,44 +1568,30 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
             defaultsAccessPath = fullAccessPath
             defaultsIdx        = -1
             while (True):
-                defaultsRetry = False
-                if (re.search('.py$', fullAccessPath)): # run python *.py files
+                defaultsRetry   = False
+                isFile          = os.path.isfile(fullAccessPath)
+                isPythonFile    = re.search('.py$', fullAccessPath)
+                isTemplateFile  = re.search('.ty$', fullAccessPath)
+                if (isPythonFile or isTemplateFile) and isFile: # run python *.py files
+                    execType = 'unknown'
                     try:
-                        self.execfile(fullAccessPath)
+                        if isPythonFile:
+                            execType = '.py'
+                            self.execfile(fullAccessPath)
+                        elif isTemplateFile:
+                            execType = '.ty'
+                            self.templateRunAbsPath(fullAccessPath, {})
                     except SystemExit as se:
                         if se.code != 0:
-                            logging.error ('HTTPWebServer.do_GET (.py) (' + self.command + ') Abnormal page exit ' + str(se))
-                    except IOError:
-                        if (defaultsIdx < len(self.defaultRunFiles)-1) and os.path.isdir(defaultsAccessPath):
-                            defaultsRetry  = True
-                            defaultsIdx   += 1
-                            fullAccessPath = defaultsAccessPath + os.path.sep + self.defaultRunFiles[defaultsIdx]
-                        else:
-                            logging.error ('HTTPWebServer.do_GET (.py) (' + self.command + ') Render page ' + filePath + ' not found! Accessing : ' + fullAccessPath)
-                            self.send_response(404)
-                            self.output("<html><h1>I/O Error: 404</h1></html>")
+                            logging.error (f"HTTPWebServer.do_GET ({execType}) ({self.command}) Abnormal page exit {str(se)}")
                     except (ConnectionAbortedError, ConnectionResetError):
                         pass
                     except Exception as err:
                         if ( (not re.search("'ConnectionAbortedError'$", str(err))) and
-                             (not re.search("'ConnectionResetError'$", str(err))) ):
-                            logging.error ('HTTPWebServer.do_GET (.py) (' + self.command + ') Exception in ' + filePath + ' :: ' + str(traceback.format_exc()))
+                             (not re.search("'ConnectionResetError'$",   str(err))) ):
+                            logging.error (f"HTTPWebServer.do_GET ({execType}) ({self.command}) Exception in '{filePath}' :: { str(traceback.format_exc())}")
                             self    .send_response(500)
                             self.output("<html><h1>Internal Error: 500</h1></html>")
-                elif (re.search('.ty$', fullAccessPath)): # run template *.ty files
-                    try:
-                        self.templateRunAbsPath(fullAccessPath, {})
-                    except SystemExit as se:
-                        if se.code != 0:
-                            logging.error ('HTTPWebServer.do_GET (.ty) (' + self.command + ') Abnormal page exit ' + str(se))
-                    except IOError:
-                        logging.error ('HTTPWebServer.do_GET (.ty) (' + self.command + ') Render page ' + filePath + ' not found! Accessing : ' + fullAccessPath)
-                        self.send_response(404)
-                        self.output("<html><h1>I/O Error: 404</h1></html>")
-                    except Exception as err:
-                        logging.error ('HTTPWebServer.do_GET (.ty)(' + self.command + ') Exception in ' + filePath + ' :: ' + str(traceback.format_exc()))
-                        self.send_response(500)
-                        self.output("<html><h1>Internal Error: 500</h1></html>")
                 else:
                     # -------- Default File/Scripts to run ---------
                     # test if file is of type directory, if so then process default files to run
@@ -1613,6 +1601,7 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                         fullAccessPath = defaultsAccessPath + os.path.sep + self.defaultRunFiles[defaultsIdx]
                         continue
 
+                    # -------- Read File as Binary and send it to the Client with option to read in range/segmented mode -------
                     file = None
                     try:
                         scode        = 200
@@ -1638,7 +1627,7 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                         except IOError:
                             if defaultsRetry:
                                 continue
-                            logging.error('HTTPWebServer.do_GET (' + self.command + ') File ' + filePath + ' not found/access denied! Accessing : ' + fullAccessPath)
+                            logging.error(f"HTTPWebServer.do_GET ({self.command}) File '{filePath}' not found/access denied! Accessing : '{fullAccessPath}'")
                             self.send_response(404)
                             self.output("<html><h1>I/O Error: 404</h1></html>")
                             break
@@ -1681,7 +1670,7 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                                     break
 
                             self.send_response(scode)
-                            self.send_header('Content-type', self.isMimeType (fullAccessPath));
+                            self.send_header('Content-type', self.isMimeType (fullAccessPath))
                             self.end_headers()
                             self.wfile.write(file.read())
                         file.close()
@@ -1693,7 +1682,7 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                         except:
                             pass
 
-                        # retry file execution for default files...
+                # retry file execution for default files...
                 if defaultsRetry:
                     continue
 
@@ -1741,7 +1730,7 @@ class HTTPInstances (threading.Thread):
 
         handler = httpdConstructorLoader (host_name, port_number, serve_via_ssl, ssl_server_pem, home_dir, home_scriptname, mimetypes_filename)
 
-        logging.info ('HTTPInstances.init port:' + str(port_number));
+        logging.info (f'HTTPInstances.init port: {str(port_number)}');
 
         gotSocketCount = 30
         while (gotSocketCount > 0):
@@ -1767,7 +1756,7 @@ class HTTPInstances (threading.Thread):
             self.protocol     = 'http'
 
     def run(self):
-        logging.info ('HTTPInstances.run Starts - ' + self.protocol + '://' + (self.host_name if self.host_name != '0.0.0.0' else socket.gethostname()) + ':' + str(self.port_number))
+        logging.info (f"HTTPInstances.run Starts - {self.protocol}://{(self.host_name if self.host_name != '0.0.0.0' else socket.gethostname())}:{str(self.port_number)}")
         try:
             self.HTTPDaemon.serve_forever()
         except KeyboardInterrupt:
