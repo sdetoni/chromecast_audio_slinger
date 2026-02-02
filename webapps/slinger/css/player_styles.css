@@ -68,6 +68,18 @@ a:hover, a:focus {
   padding: 5px;
 }
 
+.cntrlActive {
+    color: #0a0 !important;
+}
+
+.cntrlPaused {
+    color: #eb9a43 !important;
+}
+
+.cntrlInactive {
+    color: #aaa !important;
+}
+
 .rcorners3 {
     border-radius: 3px;
     padding: 5px;

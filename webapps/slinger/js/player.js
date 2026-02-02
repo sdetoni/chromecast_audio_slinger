@@ -593,11 +593,67 @@ function chromeCastInfo ()
                          {
                              if (data.slinger_shuffle)
                              {
-                                 $('#plyrCntrlShuffle').css('color', '#0a0 !important');
+                                 $('#plyrCntrlShuffle').removeClass('cntrlInactive').addClass('cntrlActive');
                              }
                              else if (! data.slinger_shuffle)
                              {
-                                 $('#plyrCntrlShuffle').css('color', '');
+                                 $('#plyrCntrlShuffle').removeClass('cntrlActive').addClass('cntrlInactive');
+                             }
+                         }
+
+                         if ((! G_LastChromeCastInfo) || data)
+                         {
+                             let currentFileListPath = decodeURIComponent($('#fileListCurrentLocation').attr('filelocationparent')).toLocaleLowerCase();
+
+                             if (data.slinger_metadata_shuffle_location != '' && data.slinger_metadata_shuffle_location.toLocaleLowerCase() != currentFileListPath)
+                             {
+                                 if ($('#metaDataShuffle').hasClass('cntrlActive'))
+                                 {
+                                     $('#metaDataShuffle').removeClass('cntrlActive').addClass('cntrlInactive');
+                                     $('#shuffleMetaFileType').selectmenu( "enable");
+                                     $('#shuffleMetaFileType').prop("selectedIndex", 0).change();
+                                     $('#shuffleMetaFileType').selectmenu('refresh');
+                                 }
+                             }
+                             else
+                             {
+                                 if (data.slinger_metadata_shuffle && (! $('#metaDataShuffle').hasClass('cntrlActive')) )
+                                 {
+                                      $('#metaDataShuffle').removeClass('cntrlInactive').addClass('cntrlActive');
+                                      $('#shuffleMetaFileType').val(data.slinger_metadata_shuffle_type).change();
+                                      $('#shuffleMetaFileType').selectmenu( "disable");
+                                      $('#shuffleMetaFileType').selectmenu('refresh');
+                                 }
+                                 else if ((! data.slinger_metadata_shuffle) && (! $('#metaDataShuffle').hasClass('cntrlInactive')) )
+                                 {
+                                     $('#metaDataShuffle').removeClass('cntrlActive').addClass('cntrlInactive');
+                                     $('#shuffleMetaFileType').selectmenu( "enable");
+                                 }
+                             }
+
+                             // show/update the current metadata shuffle info/path
+                             if ((data.slinger_metadata_shuffle+"" != $('#metaDataShuffleActiveDot').attr('shuffle_active')) ||
+                                 ($('#metaDataShuffleActivePath').attr('shuffle_fullpath') != data.slinger_metadata_shuffle_location))
+                             {
+                                 let d = data.slinger_metadata_shuffle_location.substring(0, 28);
+                                 if (data.slinger_metadata_shuffle_location.length > 28)
+                                 {
+                                    d += '...';
+                                 }
+
+                                 $('#metaDataShuffleActivePath').html(d);
+                                 $('#metaDataShuffleActivePath').attr('shuffle_fullpath', data.slinger_metadata_shuffle_location);
+
+                                 if (data.slinger_metadata_shuffle)
+                                 {
+                                     $('#metaDataShuffleActiveDot').css ('display', '');
+                                     $('#metaDataShuffleActiveDot').attr('title', `${data.slinger_metadata_shuffle_location}\nClick to stop metadata shuffle!`);
+                                 }
+                                 else
+                                 {
+                                     $('#metaDataShuffleActiveDot').css ('display', 'none');
+                                 }
+                                 $('#metaDataShuffleActiveDot').attr('shuffle_active', data.slinger_metadata_shuffle)
                              }
                          }
 
@@ -651,19 +707,20 @@ function chromeCastInfo ()
                          {
                              if (data.playback_state.toLowerCase() == 'playing')
                              {
-                                 $('#plyrCntrlPlay').css('color', '#eb9a43');
+                                 $('#plyrCntrlPlay').removeClass('cntrlActive').removeClass('cntrlInactive').addClass('cntrlPaused');
                                  $('#plyrCntrlPlay').removeClass('fa-circle-play');
                                  $('#plyrCntrlPlay').addClass('fa-circle-pause');
                              }
                              else if ((data.playback_state.toLowerCase() == 'idle') || (data.playback_state.toLowerCase() == 'paused'))
                              {
-                                 $('#plyrCntrlPlay').css('color', '#0a0');
+                                 $('#plyrCntrlPlay').removeClass('cntrlPaused').removeClass('cntrlInactive').addClass('cntrlActive');
+                                 $('#plyrCntrlPlay').addClass('cntrlActivated');
                                  $('#plyrCntrlPlay').removeClass('fa-circle-pause');
                                  $('#plyrCntrlPlay').addClass('fa-circle-play');
                              }
                              else if (data.playback_state.toLowerCase() == 'unknown')
                              {
-                                 $('#plyrCntrlPlay').css('color', '#aaa');
+                                 $('#plyrCntrlPlay').removeClass('cntrlActive').removeClass('cntrlPaused').addClass('cntrlInactive');
                                  $('#plyrCntrlPlay').removeClass('fa-circle-pause');
                                  $('#plyrCntrlPlay').addClass('fa-circle-play');
                              }
@@ -736,8 +793,10 @@ function chromeCastInfo ()
                          {
                              if (data.media_metadata.album_art_url)
                              {
-                                 $('#albumArtURL').prop('src', data.media_metadata.album_art_url);
-                                 $('#albumArtURLSml').prop('src', data.media_metadata.album_art_url);
+                                 let safeURLPath = new URL (data.media_metadata.album_art_url);
+                                 artURLPath = safeURLPath.pathname + safeURLPath.search;
+                                 $('#albumArtURL').prop('src', artURLPath);
+                                 $('#albumArtURLSml').prop('src', artURLPath);
                              }
                              else
                              {
@@ -1429,6 +1488,28 @@ function chromeCastShuffle (ccast_uuid)
     chromeCastBasicAction (ccast_uuid, 'shuffle', val1);
 }
 
+function chromeCastMetaDataShuffle (ccast_uuid, active=null)
+{
+    let val1                = 'true';
+    let currentFileListPath = decodeURIComponent($('#fileListCurrentLocation').attr('filelocationparent')).toLocaleLowerCase();
+
+    if (G_LastChromeCastInfo
+        && G_LastChromeCastInfo.slinger_metadata_shuffle
+        && (G_LastChromeCastInfo.slinger_metadata_shuffle_location.toLocaleLowerCase() == currentFileListPath)
+       )
+    {
+        val1 = 'false';
+    }
+
+    // override the active state
+    if (active != null)
+    {
+        val1 = (active == true) + "";
+    }
+
+    chromeCastBasicAction (ccast_uuid, 'metadata_shuffle', val1, $('#shuffleMetaFileType').val(), currentFileListPath );
+}
+
 function chromeCastMute (ccast_uuid)
 {
     let val1   = 'true';
@@ -1437,14 +1518,16 @@ function chromeCastMute (ccast_uuid)
     chromeCastBasicAction (ccast_uuid, 'mute', val1);
 }
 
-function chromeCastBasicAction (ccast_uuid, action, val1='')
+function chromeCastBasicAction (ccast_uuid, action, val1='', val2='', val3='' )
 {
     $.ajax ({url: `castcontroller.py`,
              type: "POST",
              data : {
                 "ccast_uuid" : ccast_uuid,
                 "action"     : action,
-                "val1"       : val1
+                "val1"       : val1,
+                "val2"       : val2,
+                "val3"       : val3
              },
              success: function(result)
              {
@@ -1540,7 +1623,7 @@ function OnClick_RestartSong ()
 
 function OnClick_Stop ()
 {
-    chromeCastBasicAction(ccast_uuid, 'stop', 0);
+    chromeCastBasicAction (ccast_uuid, 'stop', 0);
 
     ccast_uuid = $('#ccast_uuid').val();
     if (isLocalPlayer(ccast_uuid))
@@ -1549,16 +1632,16 @@ function OnClick_Stop ()
         let video = $("#LocalVideoPlayerDevice");
         audio[0].pause();
         video[0].pause();
-        G_LastChromeCastInfo.playback_state = 'IDLE';
 
-        setTimeout(function () {
+        setTimeout(function ()
+        {
             let audio = $("#LocalAudioPlayerDevice");
             let video = $("#LocalVideoPlayerDevice");
             audio[0].pause();
             video[0].pause();
             audio[0].currentTime = 0;
             video[0].currentTime = 0;
-            G_LastChromeCastInfo.playback_state = 'IDLE';
+            G_LastChromeCastInfo = null; // reset/refresh player control panel playing state
             $("#video-player-container").hide(500, function() {
                 resizeFilePanels();
             });
@@ -1682,7 +1765,7 @@ async function loadFileList (filelocation, type, basePath)
                  // fileBrowser
                  let flTable = `\n`;
                  flTable += `
-<table border=0 class="selectItemHand rcorners3" style="width:100%;" onclick="OnClick_FileListParent(this)" filelocationParent="${encodeURI(filelocation)}"><tr>
+<table id="fileListCurrentLocation" border=0 class="selectItemHand rcorners3" style="width:100%;" onclick="OnClick_FileListParent(this)" filelocationParent="${encodeURI(filelocation)}"><tr>
 <td style="padding-right: 5px;">
     <i id="fileListParent" class="${parentDisabled} fa-solid fa-angles-left selectItemHand"></i>
     <br><font style="display:none; white-space:nowrap" class="showHelpText controlsIconFont">Parent Folder</font>
@@ -1850,6 +1933,7 @@ $( document ).ready(function()
     $('#share_locs').on('selectmenuchange', function() {
         $("#share_locs").trigger("change");
     });
+
 
     $('#tabsLeft').tabs();
     $('#tabsRight').tabs();

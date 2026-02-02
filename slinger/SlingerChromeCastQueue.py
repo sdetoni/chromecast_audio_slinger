@@ -1,4 +1,5 @@
 import copy
+import json
 import time
 import daemon.GlobalFuncs as GF
 import slinger.SlingerGlobalFuncs as SGF
@@ -20,7 +21,66 @@ class SlingerQueueItem:
         self.mimeType    = mimeType
         self.metadata    = metadata
 
+class SlingerMetadataShuffler:
+
+    def __init__(self, location, matchType, httpObj, chromeCastObj):
+        self.location           = location
+        self.matchType          = matchType
+        self.loadedList         = None
+        self.chromeCastObj      = chromeCastObj
+
+        # note: do not save the httpObj as this will likely cause a memory leak
+        self.http_queryBasePath = httpObj.queryBasePath
+        self.http_protocol      = httpObj.protocol
+        self.http_hostnamePort  = httpObj.headers['HOST']
+        self.loadList()
+
+    def loadList (self):
+        self.loadedList = SGF.DB.GetListFromLoc(location=self.location, matchType=self.matchType)
+        logging.info(f"SlingerMetadataShuffler:: loaded items {len(self.loadedList) if self.loadedList else 0} from {self.location.encode('utf-8')} of type '{self.matchType}'")
+
+    def getNext (self):
+        logging.info(f"SlingerMetadataShuffler:: getNext() current size before rnd selection {len(self.loadedList)}")
+        if len(self.loadedList) <= 0:
+            self.loadList()
+            if len(self.loadedList) <= 0:
+                return False, None
+
+        return True, self.loadedList.pop(random.randrange(len(self.loadedList)))
+
+    def loadNext (self):
+        ok, item = self.getNext()
+        if not ok:
+            logging.info(f"SlingerMetadataShuffler:: loadNext() failed to load the next item!")
+            return False
+
+        # do not HTTPS download link as the cert is likely self-signed in this type application!
+        downloadURL = SGF.makeDownloadURLNoHTTPObj(httpProto              = self.http_protocol,
+                                                   hostnamePort           = self.http_hostnamePort,
+                                                   queryBasePath          = self.http_queryBasePath,
+                                                   type                   = item['type'],
+                                                   location               = item['location'],
+                                                   chromecastHTTPDownland = True,
+                                                   ccast_uuid             = str(self.chromeCastObj.cast.uuid))
+
+        self.chromeCastObj.queue.insert(0, SlingerQueueItem(location    = item['location'],
+                                                            type        = item['type'],
+                                                            downloadURL = downloadURL,
+                                                            mimeType    = SGF.getCastMimeType(item['location']),
+                                                            metadata    = json.loads(item['metadata'])))
+        return True
+
 # ===========================================================================================
+
+"""
+Notes about SlingerChromeCastQueue
+
+SlingerChromeCastQueue is the main Class for handling device control, and contains real ChromeCast device handler/object
+
+SlingerLocalPlayer, SlingerDLNAPlayer : Contains a Fake MediaController (Chromecast device), but is linked to the SlingerChromeCastQueue object
+by the call of queueParent(), then the references that object as a proxy function call handler, and able to add/fake that device's media calls.
+"""
+
 
 class SlingerChromeCastQueue:
     def __init__(self, cast, playListName='', httpObj=None):
@@ -30,9 +90,14 @@ class SlingerChromeCastQueue:
         self.lastUpated        = datetime.datetime.now()
         self.playMode          = 'auto'
         self.comms_state       = 'OK'
-        self.shuffleActive     = False
-        self.playing_uuid      = None
 
+        self.shuffleActive           = False
+        self.metadataShuffleActive   = False
+        self.metadataShuffleType     = 'audio'
+        self.metadataShuffleLocation = ''
+        self.metadataShufflerObj     = None
+
+        self.playing_uuid      = None
         self.playerStatus      = None
         self.chromeCastStatus  = {}
         self.completeStatus    = None
@@ -66,6 +131,17 @@ class SlingerChromeCastQueue:
         del self.queue[idx]
         self.queue.insert(0,saveIdx )
         return True
+
+    def _prepNextMetadataShuffleItem (self):
+        # load the next random track into the queue from metadata settings stored in the database
+        if self.metadataShuffleActive and self.shuffleActive and self.metadataShufflerObj and len(self.queue) <= 0:
+            if not self.metadataShufflerObj.loadNext():
+                logging.info ("Failed to load next item, shutting down metadata shuffle!")
+                # failed loading list, give up and disable the shuffle mode
+                self.metadataShuffleActive   = False
+                self.metadataShuffleLocation = ''
+                self.metadataShufflerObj     = None
+                self.processStatusEvent(wakeNow=True)
 
     def _prepNextQueueItem (self):
         if not self.shuffleActive or len(self.queue) <= 0:
@@ -147,23 +223,26 @@ class SlingerChromeCastQueue:
             # if not recently submitted queued item in the last 1 second (try and prevent race conditions), then allow it to continue
             if( (not self.submittedQueueItem) or ((datetime.datetime.now() - self.submittedQueueItem).total_seconds() >= 1.0)):
                 # if no current playing file, then start one up....
-                if (not self.chromeCastStatus['status']) and (self.playMode in ('auto')) and (len(self.queue) > 0):
-                    self._prepNextQueueItem()
-                    self._playQueueItem (self.queue[0])
-                    self.delQueuedMediaItem(0)
-                    logging.info (f"SlingerChromeCastQueue:: starting queued item {SGF.toASCII(str(self.thisQueueItem.metadata))}")
-                    self.submittedQueueItem = datetime.datetime.now()
+                if (not self.chromeCastStatus['status']) and (self.playMode in ('auto')):
+                    self._prepNextMetadataShuffleItem()
+                    if (len(self.queue) > 0):
+                        self._prepNextQueueItem()
+                        self._playQueueItem (self.queue[0])
+                        self.delQueuedMediaItem(0)
+                        logging.info (f"SlingerChromeCastQueue:: starting queued item {SGF.toASCII(str(self.thisQueueItem.metadata))}")
+                        self.submittedQueueItem = datetime.datetime.now()
                 # if there are more than one queued item in the list, then add the next one to the queue
                 elif ((self.chromeCastStatus['status']) and
                       (self.chromeCastStatus['status'][0]['playerState'] in ('IDLE')) and
-                      (self.playMode in ('auto')) and
-                      (len(self.queue) > 0) and
-                      self.queue[0].metadata['slinger_uuid'] != self.cast.media_controller.status.media_metadata['slinger_uuid']):
-                    self._prepNextQueueItem()
-                    self._playQueueItem (self.queue[0])
-                    self.delQueuedMediaItem(0)
-                    self.submittedQueueItem = datetime.datetime.now()
-                    logging.info(f"SlingerChromeCastQueue:: playing first queued item {SGF.toASCII(str(self.thisQueueItem.metadata))}")
+                      (self.playMode in ('auto')) and self.queue[0].metadata['slinger_uuid'] != self.cast.media_controller.status.media_metadata['slinger_uuid']):
+
+                    self._prepNextMetadataShuffleItem()
+                    if (len(self.queue) > 0):
+                        self._prepNextQueueItem()
+                        self._playQueueItem (self.queue[0])
+                        self.delQueuedMediaItem(0)
+                        self.submittedQueueItem = datetime.datetime.now()
+                        logging.info(f"SlingerChromeCastQueue:: playing first queued item {SGF.toASCII(str(self.thisQueueItem.metadata))}")
             else:
                 logging.warning(f"SlingerChromeCastQueue:: queue playing code bypassed due to race conditions!")
 
@@ -197,7 +276,12 @@ class SlingerChromeCastQueue:
                 'images': self.cast.media_controller.status.images,
 
                 'slinger_queue_changeno': self.queueChangeNo,
-                'slinger_shuffle':        self.shuffleActive,
+
+                'slinger_shuffle'                  : self.shuffleActive,
+                'slinger_metadata_shuffle'         : self.metadataShuffleActive,
+                'slinger_metadata_shuffle_type'    : self.metadataShuffleType,
+                'slinger_metadata_shuffle_location': self.metadataShuffleLocation,
+
                 'slinger_current_media': { 'location' : '', 'type' : '', 'transcoding': ''}
             }
 
@@ -283,6 +367,9 @@ class SlingerChromeCastQueue:
         self.processStatusEvent(wakeNow=True)
 
     def next(self):
+        if (len(self.queue) >= 0):
+            self._prepNextMetadataShuffleItem()
+
         if (len(self.queue) > 0):
             self.stop()
             self.playMode = 'auto'
@@ -340,6 +427,28 @@ class SlingerChromeCastQueue:
 
     def shuffle (self, active):
         self.shuffleActive = active
+        self.processStatusEvent(wakeNow=True)
+
+    def metadataShuffle (self, httpObj, active, matchType, location):
+        # create new shuffling list if it has changed!
+        newShuffleList = False
+        if not self.metadataShufflerObj:
+            newShuffleList = True
+        elif self.metadataShufflerObj and (self.metadataShufflerObj.location != location or self.metadataShufflerObj.matchType != matchType):
+            newShuffleList = True
+
+        if active and newShuffleList:
+            self.metadataShufflerObj = SlingerMetadataShuffler (location      = location,
+                                                                matchType     = matchType,
+                                                                httpObj       = httpObj,
+                                                                chromeCastObj = self)
+        else:
+            self.metadataShufflerObj = None
+
+        self.metadataShuffleActive   = active
+        self.metadataShuffleType     = matchType
+        self.metadataShuffleLocation = location
+        self.shuffleActive           = active
         self.processStatusEvent(wakeNow=True)
 
     def playQueueItemAt (self, idx):
@@ -446,12 +555,15 @@ class SlingerLocalPlayer:
                 # if not recently submitted queued item in the last 1 second (try and prevent race conditions), then allow it to continue
                 if ((not self.qparent.submittedQueueItem) or ((datetime.datetime.now() - self.qparent.submittedQueueItem).total_seconds() >= 1.0)):
                     # if no current playing file, then start one up....
-                    if (self.playback_state in ('IDLE') and (self.qparent.playMode in ('auto')) and (len(self.qparent.queue) > 0)):
-                        self.qparent._prepNextQueueItem()
-                        self.qparent._playQueueItem(self.qparent.queue[0])
-                        self.qparent.delQueuedMediaItem(0)
-                        logging.info(f"SlingerChromeCastQueue:: starting queued item {SGF.toASCII(str(self.qparent.thisQueueItem.metadata))}")
-                        self.qparent.submittedQueueItem = datetime.datetime.now()
+                    if (self.playback_state in ('IDLE') and self.qparent.playMode in ('auto')):
+
+                        self.qparent._prepNextMetadataShuffleItem()
+                        if len(self.qparent.queue) > 0:
+                            self.qparent._prepNextQueueItem()
+                            self.qparent._playQueueItem(self.qparent.queue[0])
+                            self.qparent.delQueuedMediaItem(0)
+                            logging.info(f"SlingerChromeCastQueue:: starting queued item {SGF.toASCII(str(self.qparent.thisQueueItem.metadata))}")
+                            self.qparent.submittedQueueItem = datetime.datetime.now()
                 else:
                     logging.warning(f"SlingerChromeCastQueue:: queue playing code bypassed due to race conditions!")
 
@@ -482,7 +594,12 @@ class SlingerLocalPlayer:
                     'images': None,
 
                     'slinger_queue_changeno': self.qparent.queueChangeNo,
-                    'slinger_shuffle': self.qparent.shuffleActive,
+
+                    'slinger_shuffle':                   self.qparent.shuffleActive,
+                    'slinger_metadata_shuffle':          self.qparent.metadataShuffleActive,
+                    'slinger_metadata_shuffle_type':     self.qparent.metadataShuffleType,
+                    'slinger_metadata_shuffle_location': self.qparent.metadataShuffleLocation,
+
                     'slinger_current_media': {'location': '', 'type': '', 'transcoding': ''},
                     'slinger_sleeping_sec':0,
                 }
@@ -526,6 +643,7 @@ class SlingerLocalPlayer:
         def ignoreCallback (p):
             pass
         self.media_controller.update_status(ignoreCallback)
+
     def queueParent (self, qp):
         self.qparent = qp
         self.media_controller.qparent = qp
@@ -624,12 +742,14 @@ class SlingerDLNAPlayer:
                 # if not recently submitted queued item in the last 1 second (try and prevent race conditions), then allow it to continue
                 if ((not self.qparent.submittedQueueItem) or ((datetime.datetime.now() - self.qparent.submittedQueueItem).total_seconds() >= 1.0)):
                     # if no current playing file, then start one up....
-                    if (self.playback_state in ('IDLE') and (self.qparent.playMode in ('auto')) and (len(self.qparent.queue) > 0)):
-                        self.qparent._prepNextQueueItem()
-                        self.qparent._playQueueItem(self.qparent.queue[0])
-                        self.qparent.delQueuedMediaItem(0)
-                        logging.info(f"SlingerChromeCastQueue:: starting queued item {SGF.toASCII(str(self.qparent.thisQueueItem.metadata))}")
-                        self.qparent.submittedQueueItem = datetime.datetime.now()
+                    if (self.playback_state in ('IDLE') and self.qparent.playMode in ('auto')):
+                        self.qparent._prepNextMetadataShuffleItem()
+                        if len(self.qparent.queue) > 0:
+                            self.qparent._prepNextQueueItem()
+                            self.qparent._playQueueItem(self.qparent.queue[0])
+                            self.qparent.delQueuedMediaItem(0)
+                            logging.info(f"SlingerChromeCastQueue:: starting queued item {SGF.toASCII(str(self.qparent.thisQueueItem.metadata))}")
+                            self.qparent.submittedQueueItem = datetime.datetime.now()
                 else:
                     logging.warning(f"SlingerChromeCastQueue:: queue playing code bypassed due to race conditions!")
 
@@ -660,7 +780,11 @@ class SlingerDLNAPlayer:
                     'images': None,
 
                     'slinger_queue_changeno': self.qparent.queueChangeNo,
-                    'slinger_shuffle': self.qparent.shuffleActive,
+                    'slinger_shuffle':                   self.qparent.shuffleActive,
+                    'slinger_metadata_shuffle':          self.qparent.metadataShuffleActive,
+                    'slinger_metadata_shuffle_type':     self.qparent.metadataShuffleType,
+                    'slinger_metadata_shuffle_location': self.qparent.metadataShuffleLocation,
+
                     'slinger_current_media': {'location': '', 'type': '', 'transcoding': ''},
                     'slinger_sleeping_sec':0,
                 }

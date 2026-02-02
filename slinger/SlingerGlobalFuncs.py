@@ -455,22 +455,28 @@ def getFolderArtSMB (location, trimLeaf = False, smbConn=None):
             pass
     return albumArtFilename
 
-def makeDownloadURL (httpObj, type, location, chromecastHTTPDownland=False,ccast_uuid=''):
-    httpProto    = httpObj.protocol
-    hostnamePort = httpObj.headers['HOST']
-
+def makeDownloadURLNoHTTPObj (httpProto='', hostnamePort='', queryBasePath='',
+                              type='', location='',
+                              chromecastHTTPDownland=False, ccast_uuid=''):
     if chromecastHTTPDownland:
         httpPort     = GF.Config.getSetting('HTTP_PORT', '')
         httpProto    = 'http'
         hostnamePort = f"{LocalHostIP}:{httpPort}"
 
+    downloadURL = f'{httpProto}://{hostnamePort}{queryBasePath}accessfile.py'
+    downloadURL += f'?type={type}&location={urllib.parse.quote(location)}&ccast_uuid={urllib.parse.quote(ccast_uuid)}'
+    return downloadURL
+
+def makeDownloadURL (httpObj, type, location, chromecastHTTPDownland=False,ccast_uuid=''):
+    httpProto    = httpObj.protocol
+    hostnamePort = httpObj.headers['HOST']
+
     if not hostnamePort:
         hostnamePort = f"{LocalHostIP}:{httpObj.port_number}"
 
-    # use host ipv4 address as chromecast may/will not be able to decode local host DNS names.
-    downloadURL = f'{httpProto}://{hostnamePort}{httpObj.queryBasePath}accessfile.py'
-    downloadURL += f'?type={type}&location={urllib.parse.quote(location)}&ccast_uuid={urllib.parse.quote(ccast_uuid)}'
-    return downloadURL
+    return makeDownloadURLNoHTTPObj(httpProto=httpProto, hostnamePort=hostnamePort, queryBasePath=httpObj.queryBasePath,
+                                    type=type, location=location,
+                                    chromecastHTTPDownland = chromecastHTTPDownland, ccast_uuid=ccast_uuid)
 
 def getMediaMetaDataSMB (location, httpObj=None, smbConn=None):
     metadata = {}

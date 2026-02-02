@@ -258,12 +258,27 @@ output (f"""
             <div>
                 <table style="width:100%" border=0>
                 <tr>
-                    <td style="width:100%">       
-                        <label for="shareLocs">File Locations</label>
+                    <td style="width:100%;text-align:left;vertical-align: top;">       
+                        <label for="shareLocs">File Locations<br></label>
                         <select name="shareLocs" id="share_locs"  onchange="OnChange_FileLocation(this)">
                         { shareLocs }
                         </select>
-                    </td>
+                    </td>     
+                    <td style="white-space:nowrap;text-align:right;vertical-align:top">
+                        <i id="metaDataShuffle" class="inlinePlayListControls fa-solid fa-shuffle" style="font-size: xx-large;" title="MetaData Shuffle On/Off" onclick="chromeCastMetaDataShuffle($('#ccast_uuid').val())"><br><font style="display:none" class="showHelpText controlsIconFont">MetaData Shuffle On/Off</font></i>                       
+                        <select id="shuffleMetaFileType"  onchange="" value="audio" class="inlinePlayMode">
+                            <option value="audio">Audio</option>
+                            <option value="video">Video</option>
+                            <option value="any">Any</option>
+                        </select>
+                          
+                        <div id="metaDataShuffleActiveDot" class="inlinePlayListControls" style="font-size: larger;color: #0a0;display:none" onclick="chromeCastMetaDataShuffle($('#ccast_uuid').val(), false)" title="">
+                            &#9679;
+                            <span id="metaDataShuffleActivePath" class="" style="color: initial;font-size: small;"></span>
+                        </div>
+                        
+                        <div id="metaDataShuffleActivePath" style="font-size:x-small"></div>                                                                       
+                    </td>               
                     <td>
                         <table class="tabsLeftShrinkGrowHideShow tabsLeftShrinkGrow"><tr>
                             <td>

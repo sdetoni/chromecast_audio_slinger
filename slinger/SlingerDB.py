@@ -3,6 +3,7 @@ import datetime
 import hashlib
 import logging
 import daemon.GlobalFuncs as GF
+import slinger.SlingerGlobalFuncs as SGF
 import sys
 import json
 import re
@@ -165,6 +166,14 @@ class SlingerDB (DBIO.DBIO):
         except Exception as ex:
             logging.error('DBIO.CountMetadataCache failure ' + str(ex))
         return -1
+
+    # matchType : audio, video, any
+    def GetListFromLoc (self, location, matchType):
+        rtnList = []
+        for row in self.sqlRtnResults ('select * from metadata_cache where location like ?',(location + '%',)):
+            if matchType == 'any' or SGF.getCastMimeType(row['location']).split('/')[0].lower() == matchType:
+                rtnList.append(row)
+        return rtnList
 
     def DeletePlayList (self, playListName):
         self.sqlNoResults('delete from playlists       where name = ? ',(playListName,))

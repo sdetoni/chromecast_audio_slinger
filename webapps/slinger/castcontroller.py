@@ -10,6 +10,8 @@ postData = self.getCGIParametersFormData ()
 if not "ccast_uuid" in postData: postData["ccast_uuid"] = ''
 if not "action"     in postData: postData["action"]     = ''
 if not "val1"       in postData: postData["val1"]       = ''
+if not "val2"       in postData: postData["val3"]       = ''
+if not "val3"       in postData: postData["val3"]       = ''
 
 castQueueObj = SGF.getChromecastQueueObj(ccast_uuid=postData["ccast_uuid"])
 if not castQueueObj:
@@ -42,6 +44,14 @@ elif postData["action"] == "shuffle":
     logging.info (f'shuffle { postData["val1"] }')
     castQueueObj.shuffle(postData["val1"].strip().lower() == 'true')
     output (f"shuffle {postData['val1']}")
+
+elif postData["action"] == "metadata_shuffle":
+    logging.info (f'metadata shuffle { postData["val1"] } { postData["val2"] } { postData["val3"] }')
+    castQueueObj.metadataShuffle(httpObj   = self,
+                                 active    = (postData["val1"].strip().lower() == 'true'),
+                                 matchType = postData["val2"].strip().lower(),
+                                 location  = postData["val3"].strip().lower())
+
 elif postData["action"] == "queue_clear":
     castQueueObj.clear()
     output(f"queue_clear")
