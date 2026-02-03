@@ -265,7 +265,7 @@ output (f"""
                         </select>
                     </td>     
                     <td style="white-space:nowrap;text-align:right;vertical-align:top">
-                        <i id="metaDataShuffle" class="inlinePlayListControls fa-solid fa-shuffle" style="font-size: xx-large;" title="MetaData Shuffle On/Off" onclick="chromeCastMetaDataShuffle($('#ccast_uuid').val())"><br><font style="display:none" class="showHelpText controlsIconFont">MetaData Shuffle On/Off</font></i>                       
+                        <i id="metaDataShuffle" class="inlinePlayListControls cntrlInactive fa-solid fa-shuffle" style="font-size: xx-large;" title="MetaData Shuffle On/Off" onclick="chromeCastMetaDataShuffle($('#ccast_uuid').val())"><br><font style="display:none" class="showHelpText controlsIconFont">MetaData Shuffle On/Off</font></i>                       
                         <select id="shuffleMetaFileType"  onchange="" value="audio" class="inlinePlayMode">
                             <option value="audio">Audio</option>
                             <option value="video">Video</option>

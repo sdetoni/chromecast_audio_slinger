@@ -261,9 +261,14 @@ function resizeFilePanels ()
 var TabPos  = 3;
 function tabShrinkGrow (action)
 {
-    let leftChar = "&#9500;";
+    function smoothSize (destID, newWidth)
+    {
+        $(destID).animate({ width: newWidth }, { duration: 800, easing: 'easeInCubic'  }  );
+    }
+
+    let leftChar  = "&#9500;";
     let indexChar = "&#9579;";
-    let dashChar = "&#9472";
+    let dashChar  = "&#9472";
     let rightChar = "&#9508;";
 
     if (action == 'grow')
@@ -332,6 +337,7 @@ function tabShrinkGrow (action)
             break;
     }
 }
+
 $( document ).ready(function()
 {
     tabShrinkGrow ('init');
@@ -451,8 +457,19 @@ function VideoEventHandler(e)
 
 $('#LocalVideoPlayerDevice').on ("pause", VideoEventHandler);
 $('#LocalVideoPlayerDevice').on ("play", VideoEventHandler);
+$('#LocalVideoPlayerDevice').on ("error", localPlayerResetSongToNext);
+$('#LocalAudioPlayerDevice').on ("error", localPlayerResetSongToNext);
 
-setTimeout(metadataScraperInfo, 1000);
+function localPlayerResetSongToNext()
+{
+    // Failed some load action, reset and move to the next song.
+    chromeCastBasicAction($('#ccast_uuid').val(), 'stop');
+    setTimeout( function() { chromeCastBasicAction($('#ccast_uuid').val(), 'queue_next') }, 400 );
+    setTimeout( function() { chromeCastBasicAction($('#ccast_uuid').val(), 'play')       }, 800 );
+}
+
+chromeCastBasicAction($('#ccast_uuid').val(), 'queue_next')
+
 
 var cciIntvalID = setInterval(chromeCastInfo, 1000);
 var ccReqNum    = 0
