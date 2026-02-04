@@ -52,6 +52,9 @@ elif postData["action"] == "metadata_shuffle":
                                  matchType = postData["val2"].strip().lower(),
                                  location  = postData["val3"].strip().lower())
 
+elif postData["action"] == "metadata_shuffle_repeater":
+    logging.info (f'metadata_shuffle_repeater { postData["val1"] }')
+    castQueueObj.metadataShuffleRepeat (active = (postData["val1"].strip().lower() == 'true'))
 elif postData["action"] == "queue_clear":
     castQueueObj.clear()
     output(f"queue_clear")

@@ -265,13 +265,14 @@ output (f"""
                         </select>
                     </td>     
                     <td style="white-space:nowrap;text-align:right;vertical-align:top">
-                        <i id="metaDataShuffle" class="inlinePlayListControls cntrlInactive fa-solid fa-shuffle" style="font-size: xx-large;" title="MetaData Shuffle On/Off" onclick="chromeCastMetaDataShuffle($('#ccast_uuid').val())"><br><font style="display:none" class="showHelpText controlsIconFont">MetaData Shuffle On/Off</font></i>                       
+                        <i id="metaDataShuffle" class="inlinePlayListControls cntrlInactive fa-solid fa-shuffle" style="font-size: xx-large; text-align: center;" title="MetaData Shuffle On/Off" onclick="chromeCastMetaDataShuffle($('#ccast_uuid').val())"><br><font style="display:none" class="showHelpText controlsIconFont">MetaData Shuffle<br>On/Off</font></i>                       
                         <select id="shuffleMetaFileType"  onchange="" value="audio" class="inlinePlayMode">
                             <option value="audio">Audio</option>
                             <option value="video">Video</option>
                             <option value="any">Any</option>
                         </select>
-                          
+                        <i id="metaDataShuffleRepeater" class="inlinePlayListControls cntrlInactive fa-solid fa-repeat" style="font-size: large; text-align: center;" title="MetaData Shuffle Repeat On/Off" onclick="chromeCastMetaDataShuffleRepeater($('#ccast_uuid').val())"><br><font style="display:none" class="showHelpText controlsIconFont">MetaData Shuffle Repeater<br>On/Off</font></i>
+                        
                         <div id="metaDataShuffleActiveDot" class="inlinePlayListControls" style="font-size: larger;color: #0a0;display:none" onclick="chromeCastMetaDataShuffle($('#ccast_uuid').val(), false)" title="">
                             &#9679;
                             <span id="metaDataShuffleActivePath" class="" style="color: initial;font-size: small;"></span>

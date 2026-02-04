@@ -33,15 +33,23 @@ class SlingerMetadataShuffler:
         self.http_queryBasePath = httpObj.queryBasePath
         self.http_protocol      = httpObj.protocol
         self.http_hostnamePort  = httpObj.headers['HOST']
+        self.loadCount          = 0
         self.loadList()
 
     def loadList (self):
         self.loadedList = SGF.DB.GetListFromLoc(location=self.location, matchType=self.matchType)
         logging.info(f"SlingerMetadataShuffler:: loaded items {len(self.loadedList) if self.loadedList else 0} from {self.location.encode('utf-8')} of type '{self.matchType}'")
+        self.loadCount += 1
 
     def getNext (self):
         logging.info(f"SlingerMetadataShuffler:: getNext() current size before rnd selection {len(self.loadedList)}")
         if len(self.loadedList) <= 0:
+
+            # if already completed a loop of the shuffle list item, and repeater is not action, then end.
+            if self.loadCount > 0 and (not self.chromeCastObj.metadataShuffleRepeater):
+                return False, None
+
+            # re-attempt to load the list again ...
             self.loadList()
             if len(self.loadedList) <= 0:
                 return False, None
@@ -93,6 +101,7 @@ class SlingerChromeCastQueue:
 
         self.shuffleActive           = False
         self.metadataShuffleActive   = False
+        self.metadataShuffleRepeater = False
         self.metadataShuffleType     = 'audio'
         self.metadataShuffleLocation = ''
         self.metadataShufflerObj     = None
@@ -279,6 +288,7 @@ class SlingerChromeCastQueue:
 
                 'slinger_shuffle'                  : self.shuffleActive,
                 'slinger_metadata_shuffle'         : self.metadataShuffleActive,
+                'slinger_metadata_shuffle_repeater': self.metadataShuffleRepeater,
                 'slinger_metadata_shuffle_type'    : self.metadataShuffleType,
                 'slinger_metadata_shuffle_location': self.metadataShuffleLocation,
 
@@ -427,6 +437,10 @@ class SlingerChromeCastQueue:
 
     def shuffle (self, active):
         self.shuffleActive = active
+        self.processStatusEvent(wakeNow=True)
+
+    def metadataShuffleRepeat (self, active):
+        self.metadataShuffleRepeater = active
         self.processStatusEvent(wakeNow=True)
 
     def metadataShuffle (self, httpObj, active, matchType, location):
@@ -597,6 +611,7 @@ class SlingerLocalPlayer:
 
                     'slinger_shuffle':                   self.qparent.shuffleActive,
                     'slinger_metadata_shuffle':          self.qparent.metadataShuffleActive,
+                    'slinger_metadata_shuffle_repeater': self.qparent.metadataShuffleRepeater,
                     'slinger_metadata_shuffle_type':     self.qparent.metadataShuffleType,
                     'slinger_metadata_shuffle_location': self.qparent.metadataShuffleLocation,
 
@@ -782,6 +797,7 @@ class SlingerDLNAPlayer:
                     'slinger_queue_changeno': self.qparent.queueChangeNo,
                     'slinger_shuffle':                   self.qparent.shuffleActive,
                     'slinger_metadata_shuffle':          self.qparent.metadataShuffleActive,
+                    'slinger_metadata_shuffle_repeater': self.qparent.metadataShuffleRepeater,
                     'slinger_metadata_shuffle_type':     self.qparent.metadataShuffleType,
                     'slinger_metadata_shuffle_location': self.qparent.metadataShuffleLocation,
 

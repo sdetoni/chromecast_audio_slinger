@@ -620,6 +620,15 @@ function chromeCastInfo ()
 
                          if ((! G_LastChromeCastInfo) || data)
                          {
+                             if (data.slinger_metadata_shuffle_repeater && (! $('#metaDataShuffleRepeater').hasClass('cntrlActive')) )
+                             {
+                                  $('#metaDataShuffleRepeater').removeClass('cntrlInactive').addClass('cntrlActive');
+                             }
+                             else if ((! data.slinger_metadata_shuffle_repeater) && (! $('#metaDataShuffleRepeater').hasClass('cntrlInactive')) )
+                             {
+                                 $('#metaDataShuffleRepeater').removeClass('cntrlActive').addClass('cntrlInactive');
+                             }
+
                              let currentFileListPath = decodeURIComponent($('#fileListCurrentLocation').attr('filelocationparent')).toLocaleLowerCase();
 
                              if (data.slinger_metadata_shuffle_location != '' && data.slinger_metadata_shuffle_location.toLocaleLowerCase() != currentFileListPath)
@@ -1503,6 +1512,14 @@ function chromeCastShuffle (ccast_uuid)
     if (G_LastChromeCastInfo && G_LastChromeCastInfo.slinger_shuffle)
         val1 = 'false';
     chromeCastBasicAction (ccast_uuid, 'shuffle', val1);
+}
+
+function chromeCastMetaDataShuffleRepeater (ccast_uuid)
+{
+    let val1   = 'true';
+    if (G_LastChromeCastInfo && G_LastChromeCastInfo.slinger_metadata_shuffle_repeater)
+        val1 = 'false';
+    chromeCastBasicAction (ccast_uuid, 'metadata_shuffle_repeater', val1);
 }
 
 function chromeCastMetaDataShuffle (ccast_uuid, active=null)
