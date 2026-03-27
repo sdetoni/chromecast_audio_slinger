@@ -159,10 +159,26 @@ function ModalWindowLargeArt (picHTML)
     });
 }
 
+function MakeRelativeArtURL (artURL, mediaType=null)
+{
+    if (! artURL)
+    {
+        return getDefaultCoverArt (mediaType);
+    }
+
+    try
+    {
+         let aurl = new URL(artURL);
+         return aurl.pathname + aurl.search;
+    }
+    catch { }
+    return getDefaultCoverArt (mediaType);
+}
+
 function FolderLoadLargeArt (location, type)
 {
-  if (location != "" && type != "")
-  {
+    if (location != "" && type != "")
+    {
         $.ajax ({url: `artwork.py`,
                  type: "POST",
                  data: {
@@ -502,7 +518,7 @@ function chromeCastInfo ()
              },
              dataType: "json",
              success: function(data)
-                     {
+                    {
                          const zeroPad = (num, places) => String(num).padStart(places, '0');
 
                          if ((! data) || (data.playback_state.toLowerCase() == 'unknown'))
@@ -858,6 +874,8 @@ function chromeCastInfo ()
                          if (G_LastChromeCastQueueChangeNo != data.slinger_queue_changeno)
                          {
                              G_LastChromeCastQueueChangeNo = data.slinger_queue_changeno;
+
+                             // Queue Browser render list change
                              $.ajax ({url: `castinfo.py`,
                                       type: "POST",
                                       data : {
@@ -879,7 +897,7 @@ function chromeCastInfo ()
                                               {
                                                   qbTable += `
 <tr class="dataRow selectItemHand" rowid="${idx}">
-    <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml" content_type="${queue[idx].metadata["content_type"]}" src="${queue[idx].metadata["album_art_url"] ? queue[idx].metadata["album_art_url"] : getDefaultCoverArt (queue[idx].metadata["content_type"]) }" style="height: 32px;"></td>
+    <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml" content_type="${queue[idx].metadata["content_type"]}" src="${ MakeRelativeArtURL(queue[idx].metadata["album_art_url"], queue[idx].metadata["content_type"]) }" style="height: 32px;"></td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["title"]}</td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["albumName"]}</td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["artist"]}</td>
@@ -897,6 +915,48 @@ function chromeCastInfo ()
                                           console.error(`Error: ${textStatus}, ${errorThrown}`);
                                       }
                                     });
+
+                            // Previous Queue Browser render list change
+                            $.ajax ({url: `castinfo.py`,
+                                      type: "POST",
+                                      data : {
+                                          "ccast_uuid" : ccast_uuid,
+                                          "type"       : "previous_queue_list"
+                                      },
+                                      dataType: "json",
+                                      success: function(queue)
+                                      {
+                                          let qbTable  = `
+<table id="previousQueueBrowserTable" border=0 class='TableSelection SongListFormat' style="width:100%">
+<thead>
+<tr><th></th><th>Song Title(s) : ${queue.length}</th><th>Album Name</th><th>Artist</th></tr>
+</thead>
+`;
+                                          if (queue)
+                                          {
+                                              for (idx = 0; idx < queue.length; idx++)
+                                              {
+                                                  qbTable += `
+<tr class="dataRow selectItemHand" rowid="${idx}">
+    <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml" content_type="${queue[idx].metadata["content_type"]}" src="${ MakeRelativeArtURL(queue[idx].metadata["album_art_url"], queue[idx].metadata["content_type"]) }" style="height: 32px;"></td>
+    <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_previous_queued_item_at_index', ${idx});">${queue[idx].metadata["title"]}</td>
+    <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_previous_queued_item_at_index', ${idx});">${queue[idx].metadata["albumName"]}</td>
+    <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_previous_queued_item_at_index', ${idx});">${queue[idx].metadata["artist"]}</td>
+    <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'del_previous_queued_item_at_index',  ${idx});"><i class="inlinePlayListControls fa-solid fa-square-minus" style="text-align:center;" title="Remove Item" onclick=""></td>
+</tr>`;
+                                              }
+                                          }
+                                          qbTable += "</table>";
+
+                                          $('#previousQueueBrowser').html(qbTable);
+                                          let l = new TableSelection("#previousQueueBrowser", 2);
+                                      },
+                                      error: function(jqXHR, textStatus, errorThrown)
+                                      {
+                                          console.error(`Error: ${textStatus}, ${errorThrown}`);
+                                      }
+                                    });
+
                          }
                          G_LastChromeCastInfo = data;
                      },
@@ -986,7 +1046,7 @@ function loadPlayList (thisObj, name)
                      {
                         qbTable += `
 <tr class="dataRow selectItemHand" rowid="${queue[idx].seq}">
-    <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml"  content_type="${queue[idx].metadata["content_type"]}" src="${queue[idx].metadata["album_art_url"] ? queue[idx].metadata["album_art_url"] : getDefaultCoverArt(queue[idx].metadata["content_type"]) }" style="height: 32px;"></td>
+    <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml"  content_type="${queue[idx].metadata["content_type"]}" src="${ MakeRelativeArtURL(queue[idx].metadata["album_art_url"], queue[idx].metadata["content_type"]) }" style="height: 32px;"></td>
     <td>${queue[idx].metadata["title"]}</td>
     <td>${queue[idx].metadata["albumName"]}</td>
     <td>${queue[idx].metadata["artist"]}</td>
@@ -1036,8 +1096,6 @@ function queuePlayPlaylist (ccast_uuid, playlistAction, playlistName)
     else
         chromeCastBasicAction(ccast_uuid, playlistAction, playlistName); // If no items selected, then play/queue the whole play list
 }
-
-
 
 function showConfigEditor ()
 {
@@ -1458,16 +1516,15 @@ function CreateSearchListPlayList(name, thisObj=null)
            });
 }
 
-function QueueListToPlaylist (newPlayListName)
+function QueueListToPlaylist (newPlayListName, queueTypeAction='save_queue_to_playlist')
 {
     newPlayListName = newPlayListName.trim();
     ccast_uuid = $('#ccast_uuid').val();
-    action = 'save_queue_to_playlist';
     $.ajax ({url: `castcontroller.py` ,
              type: "POST",
              data : {
                  "ccast_uuid": ccast_uuid,
-                 "action":     action,
+                 "action":     queueTypeAction,
                  "val1":       newPlayListName
              },
              success: function(result)
@@ -1613,7 +1670,7 @@ function LoadFolderArtAsImage (filelocation, type, htmlID, custClass="", custSty
               success: function(data)
               {
                   // console.log('art = ' + data["art_url"]);
-                  $(htmlID).html(`<img class="selectItemHand ${custClass}" style="${custStyle}" onclick="ViewLargeArt(this);event.stopPropagation();" src="${data['art_url'] ? data['art_url'] : getDefaultCoverArt() }">`)
+                  $(htmlID).html(`<img class="selectItemHand ${custClass}" style="${custStyle}" onclick="ViewLargeArt(this);event.stopPropagation();" src="${ MakeRelativeArtURL(data['art_url']) }">`)
               },
               error: function(jqXHR, textStatus, errorThrown)
               {
@@ -1723,8 +1780,7 @@ function LoadFileListFolderArtAsImage (filelocation, type, idx, htmlID)
                   // Validate if this is a full url, if not, go with the default folder image/icon
                   try
                   {
-                      let u = new URL (data['art_url']);
-                      $(htmlID).html(`<img class="selectItemHand albumArtURLSml" style="height: 24px;" onclick="ViewLargeArt(this);event.stopPropagation();" src="${data['art_url'] ? data['art_url'] : getDefaultCoverArt() }">`)
+                      $(htmlID).html(`<img class="selectItemHand albumArtURLSml" style="height: 24px;" onclick="ViewLargeArt(this);event.stopPropagation();" src="${ MakeRelativeArtURL(data['art_url']) }">`)
                   } catch {}
               },
               error: function(jqXHR, textStatus, errorThrown)
@@ -2317,19 +2373,19 @@ function SearchNowActive ()
 {
      // console.log(results);
      $('#searchQuery').removeClass('ui-state-disabled');
-     $('#searchBut').removeClass ('fa-circle-stop');
-     $('#searchBut').addClass ('fa-angles-right');
-     $('#searchBut').css('color', '');
+     $('#searchButIcon').removeClass ('fa-circle-stop');
+     $('#searchButIcon').addClass ('fa-angles-right');
+     $('#searchButIcon').css('color', '');
      $('.search-running').css('display', 'none');
 }
 
 function SearchNowInActive ()
 {
-     $('#searchBut').removeClass ('fa-angles-right');
-     $('#searchBut').addClass ('fa-circle-stop');
-     $('#searchBut').addClass ('pulse');
+     $('#searchButIcon').removeClass ('fa-angles-right');
+     $('#searchButIcon').addClass ('fa-circle-stop');
+     $('#searchButIcon').addClass ('pulse');
 
-     $('#searchBut').css('color', 'red');
+     $('#searchButIcon').css('color', 'red');
      $('.search-running').css('display', '')
 }
 
@@ -2358,14 +2414,14 @@ function SearchQueryInfo ()
 
                     $('#searchResultsInfo').html(d);
 
-                    if ($('#searchBut').hasClass('fa-angles-right'))
+                    if ($('#searchButIcon').hasClass('fa-angles-right'))
                         SearchNowInActive ();
                     G_SearchTimeoutID = setTimeout(SearchQueryInfo, 1000);
                  }
                  else
                  {
                      $('#searchResultsInfo').html("")
-                     if ($('#searchBut').hasClass('fa-circle-stop'))
+                     if ($('#searchButIcon').hasClass('fa-circle-stop'))
                         SearchNowActive ();
                      G_SearchTimeoutID = setTimeout(SearchQueryInfo, 10000);
                  }
@@ -2385,26 +2441,33 @@ $( document ).ready(function()
     setTimeout(SearchQueryInfo, 1000);
 });
 
-function runSearchQuery ()
+function runSearchQuery (noToast=false)
 {
-     $('#searchQuery').addClass('ui-state-disabled');
-     if ($('#searchBut').hasClass('fa-circle-stop'))
-     {
-         // abort the search ....
-         $.ajax ({url: `executequery.py?action=stop`, type: "GET" });
-         return;
-     }
+    if (! noToast)
+    {
+        $('#searchQuery').addClass('ui-state-disabled');
+        if ($('#searchButIcon').hasClass('fa-circle-stop'))
+        {
+            // abort the search ....
+            $.ajax ({url: `executequery.py?action=stop`, type: "GET" });
+            return;
+        }
 
-     SearchNowInActive ()
-     if (G_SearchTimeoutID)
+        SearchNowInActive ()
+    }
+
+    if (G_SearchTimeoutID)
         clearTimeout (G_SearchTimeoutID);
-     G_SearchTimeoutID = setTimeout(SearchQueryInfo, 1000);
+    G_SearchTimeoutID = setTimeout(SearchQueryInfo, 1000);
 
-     $.toast({
-         heading: 'info',
-         text: `Running search query now '${$('#searchQuery').val()}'`,
-         icon: 'info'
-     });
+    if (! noToast)
+    {
+         $.toast({
+             heading: 'info',
+             text: `Running search query now '${$('#searchQuery').val()}'`,
+             icon: 'info'
+         });
+    }
     scope = $('input[name="searchScope"]:checked').val();
     $.ajax ({url: `executequery.py`,
              type: "POST",
@@ -2420,11 +2483,14 @@ function runSearchQuery ()
                  // console.log(results);
                  SearchNowActive ();
 
-                 $.toast({
-                     heading: 'success',
-                     text: `Search Results Returned<br>${results.length} rows matched`,
-                     icon: 'success'
-                 });
+                 if (! noToast)
+                 {
+                     $.toast({
+                         heading: 'success',
+                         text: `Search Results Returned<br>${results.length} rows matched`,
+                         icon: 'success'
+                     });
+                 }
 
                  let srTable = `
 <table id="searchList_tab" border=0 class="TableSelection SongListFormat" style="width:100%">
@@ -2472,7 +2538,7 @@ function runSearchQuery ()
                      srTable += `
 <tr class="dataRow songListRow selectItemHand" idx="${idx}">
     <td style="width:100%;display:flex">
-                <img onclick="ViewLargeArt(this);" class="albumArtURLSml" src="${art_url}" style="height: 32px">
+                <img onclick="ViewLargeArt(this);" class="albumArtURLSml" src="${ MakeRelativeArtURL (art_url) }" style="height: 32px">
                 <span style="padding-left:5px" onclick="OnClick_SearchList(${idx}, true)" class="songData">${metadata["title"]}</span>
     </td>
     <td onclick="OnClick_SearchList(${idx}, true)" class="songData">${metadata["albumName"]}</td>
@@ -2565,6 +2631,7 @@ $( document ).ready(function()
         $(this).hide();
         $('.close').show();
     });
+
     $('.close').click(function () {
         $('.ui-accordion-header').removeClass('ui-accordion-header-active ui-state-active ui-corner-top').addClass('ui-corner-all').attr({'aria-selected':'false','tabindex':'-1'});
         $('.ui-accordion-header .ui-icon').removeClass('ui-icon-triangle-1-s').addClass('ui-icon-triangle-1-e');
@@ -2572,6 +2639,7 @@ $( document ).ready(function()
         $(this).hide();
         $('.open').show();
     });
+
     $('.ui-accordion-header').click(function () {
         $('.open').show();
         $('.close').show();
@@ -2599,11 +2667,29 @@ $( document ).ready(function()
         }
     });
 
+    var searchQuery = "";
     $('#searchQuery').on("keyup",function (e)
+    {
+        if ($('input[name="searchScope"]:checked').val() == 'db_metadata')
+        {
+            if ((searchQuery != $('#searchQuery').val()) && ($('#searchQuery').val().length >= 3))
+            {
+                searchQuery = $('#searchQuery').val();
+                runSearchQuery(true);
+            }
+        }
+        else if (e.key === 'Enter' || e.keyCode === 13)
+        {
+            runSearchQuery();
+            $('#searchBut').focus();
+        }
+    });
+
+    $('#searchBut').on("keyup",function (e)
     {
         if (e.key === 'Enter' || e.keyCode === 13)
         {
-            runSearchQuery();
+             runSearchQuery();
         }
     });
 

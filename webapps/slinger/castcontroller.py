@@ -20,6 +20,9 @@ if not castQueueObj:
 if postData["action"] == "stop":
     castQueueObj.stop()
     output("stop")
+elif postData["action"] == "queue_previous":
+    castQueueObj.previous()
+    output ("queue_previous")
 elif postData["action"] == "queue_next":
     castQueueObj.next()
     output ("queue_next")
@@ -58,8 +61,14 @@ elif postData["action"] == "metadata_shuffle_repeater":
 elif postData["action"] == "queue_clear":
     castQueueObj.clear()
     output(f"queue_clear")
+elif postData["action"] == "previous_queue_clear":
+    castQueueObj.clearPrevious()
+    output(f"previous_queue_clear")
 elif postData["action"] == "save_queue_to_playlist" and postData['val1'] != '':
-    castQueueObj.saveToPlayList(postData['val1'])
+    castQueueObj.saveToPlayList(postData['val1'], castQueueObj.queue)
+    output(f"save_queue_to_playlist {postData['val1']}")
+elif postData["action"] == "save_previous_queue_to_playlist" and postData['val1'] != '':
+    castQueueObj.saveToPlayList(postData['val1'], castQueueObj.previousQueue)
     output(f"save_queue_to_playlist {postData['val1']}")
 elif postData["action"] in ("play_playlist_replace", "play_playlist_append"):
     mode = 'replace'
@@ -75,8 +84,14 @@ elif (postData["action"] == 'clear_metadata_cache'):
 elif (postData["action"] == 'play_queued_item_at_index'):
     castQueueObj.playQueueItemAt(int(postData['val1']))
     output("ok")
+elif (postData["action"] == 'play_previous_queued_item_at_index'):
+    castQueueObj.playPreviousQueueItemAt(int(postData['val1']))
+    output("ok")
 elif (postData["action"] == 'del_queued_item_at_index'):
     castQueueObj.delQueuedMediaItem(int(postData['val1']))
+    output("ok")
+elif (postData["action"] == 'del_previous_queued_item_at_index'):
+    castQueueObj.delPreviousQueuedMediaItem(int(postData['val1']))
     output("ok")
 elif (postData["action"] == 'stop_metadata_scraper'):
     if SGF.scrapeProcesState['active']:

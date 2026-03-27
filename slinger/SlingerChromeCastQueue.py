@@ -95,6 +95,7 @@ class SlingerChromeCastQueue:
         self.cast              = cast
         self.queueChangeNo     = 0
         self.queue             = []
+        self.previousQueue     = []
         self.lastUpated        = datetime.datetime.now()
         self.playMode          = 'auto'
         self.comms_state       = 'OK'
@@ -121,8 +122,8 @@ class SlingerChromeCastQueue:
         self.processStatusEventInt           = 0
         self.processStatusEventIntKeepActive = 0
 
-        self.activeBeforeSeleep = GF.Config.getSettingValue('slinger/QUEUE_PROCESS_ACTIVE_BEFORE_SLEEP')
-        self.sleepBeforeWake    = GF.Config.getSettingValue('slinger/QUEUE_PROCESS_SLEEP_BEFORE_WAKE')
+        self.activeBeforeSleep = GF.Config.getSettingValue('slinger/QUEUE_PROCESS_ACTIVE_BEFORE_SLEEP')
+        self.sleepBeforeWake   = GF.Config.getSettingValue('slinger/QUEUE_PROCESS_SLEEP_BEFORE_WAKE')
 
         self.haltProcEvents = False
 
@@ -172,9 +173,13 @@ class SlingerChromeCastQueue:
             self.playerStatus['slinger_current_media']['location'] = self.thisQueueItem.location
             self.playerStatus['slinger_current_media']['type']     = self.thisQueueItem.type
 
-
         self.cast.wait()
         self.cast.media_controller.play_media(self.thisQueueItem.downloadURL, self.thisQueueItem.mimeType, metadata=self.thisQueueItem.metadata, enqueue=False)
+
+        # add the new PLAYING item onto the previous Queue List
+        self.previousQueue.insert(0, self.thisQueueItem)
+        self.previousQueue = self.previousQueue[:GF.Config.getSettingValue('slinger/MAX_PREVIOUS_PLAYED_QUEUE_LENGTH', 50)]
+        logging.debug(f"Previous Queue loaded : {self.thisQueueItem.location}")
 
     def setTranscodingStatus (self, status):
         self.transcodingStatus = status
@@ -199,7 +204,7 @@ class SlingerChromeCastQueue:
 
     def wakeNow (self):
         self.processStatusEventInt           = 0
-        self.processStatusEventIntKeepActive = self.activeBeforeSeleep
+        self.processStatusEventIntKeepActive = self.activeBeforeSleep
         if isinstance(self.cast, SlingerLocalPlayer):
             self.cast.wakeNow()
 
@@ -329,7 +334,7 @@ class SlingerChromeCastQueue:
 
         if self.isDeviceActive():
             self.processStatusEventInt = 1
-            self.processStatusEventIntKeepActive = self.activeBeforeSeleep
+            self.processStatusEventIntKeepActive = self.activeBeforeSleep
         elif self.processStatusEventIntKeepActive < 0: # go into select mode ...
             self.processStatusEventInt = self.sleepBeforeWake
             logging.warning(f"*** processStatusEvent : hibernate mode activated for {self.processStatusEventInt} secs ***")
@@ -338,6 +343,13 @@ class SlingerChromeCastQueue:
         if index >= len(self.queue):
             return
         del self.queue[index]
+        self.queueChangeNo += 1
+        self.wakeNow()
+
+    def delPreviousQueuedMediaItem(self, index = 0):
+        if index >= len(self.previousQueue):
+            return
+        del self.previousQueue[index]
         self.queueChangeNo += 1
         self.wakeNow()
 
@@ -375,6 +387,33 @@ class SlingerChromeCastQueue:
         self.cast.media_controller.stop()
         self.cast.wait()
         self.processStatusEvent(wakeNow=True)
+
+    def previous(self):
+        if (len(self.previousQueue) <= 0):
+            return
+
+        testFirstItem = self.previousQueue[0]
+
+        # ignore this current item, and place it back onto the play queue
+        if (testFirstItem == self.thisQueueItem):
+            # if the first item is the current playing item in the prev, then push that onto the queue
+            if (len(self.previousQueue) > 1):
+                self.queue.insert (0, self.thisQueueItem)
+                del self.previousQueue[0]
+                self.queueChangeNo += 1
+                return self.previous()
+            else:
+                return
+
+        # load the next prev item onto the queue...
+        self.thisQueueItem = self.previousQueue[0]
+        self.queue.insert(0, self.thisQueueItem)
+        del self.previousQueue[0]
+        self.queueChangeNo += 1
+
+        # and force schedule the playing of the item
+        self.stop()
+        self.playMode = 'auto'
 
     def next(self):
         if (len(self.queue) >= 0):
@@ -435,6 +474,11 @@ class SlingerChromeCastQueue:
         self.queueChangeNo += 1
         self.processStatusEvent(wakeNow=True)
 
+    def clearPrevious (self):
+        self.previousQueue = []
+        self.queueChangeNo += 1
+        self.processStatusEvent(wakeNow=True)
+
     def shuffle (self, active):
         self.shuffleActive = active
         self.processStatusEvent(wakeNow=True)
@@ -475,11 +519,21 @@ class SlingerChromeCastQueue:
         self.haltProcEvents = False
         self.processStatusEvent(wakeNow=True)
 
-    def saveToPlayList (self, playListName):
+    def playPreviousQueueItemAt (self, idx):
+        self.haltProcEvents = True
+        self.playMode = 'auto'
+        qi = self.previousQueue[idx]
+        del self.previousQueue[idx]
+        self.queueChangeNo += 1
+        self._playQueueItem(qi)
+        self.haltProcEvents = False
+        self.processStatusEvent(wakeNow=True)
+
+    def saveToPlayList (self, playListName, queue):
         playListName = playListName.strip()
         SGF.DB.DeletePlayList(playListName)
         SGF.DB.CreatePlayList(playListName)
-        for q in self.queue:
+        for q in queue:
             SGF.DB.AddPlayListSong(playListName, q.location, q.type)
 
     def loadLocation (self, httpObj, location, type, forcePlay):
@@ -826,7 +880,7 @@ class SlingerDLNAPlayer:
 
             if self.playback_state not in ('IDLE', 'UNKNOWN'):
                 self.qparent.processStatusEventInt = 1
-                self.qparent.processStatusEventIntKeepActive = self.qparent.activeBeforeSeleep
+                self.qparent.processStatusEventIntKeepActive = self.qparent.activeBeforeSleep
             elif self.qparent.processStatusEventIntKeepActive < 0: # go into select mode ...
                 self.qparent.processStatusEventInt = self.qparent.sleepBeforeWake
                 logging.warning(f"*** processStatusEvent : hibernate mode activated for {self.qparent.processStatusEventInt} secs ***")
@@ -857,7 +911,7 @@ class SlingerDLNAPlayer:
         def ignoreCallback (p):
             pass
         self.qparent.processStatusEventInt           = 0
-        self.qparent.processStatusEventIntKeepActive = self.qparent.activeBeforeSeleep
+        self.qparent.processStatusEventIntKeepActive = self.qparent.activeBeforeSleep
         self.media_controller.update_status(ignoreCallback)
 
     def queueParent (self, qp):

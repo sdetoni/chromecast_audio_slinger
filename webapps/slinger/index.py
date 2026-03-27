@@ -158,7 +158,10 @@ var G_Generated_Local_Player_UniqueID = "";
                 <table border=0><tr>  
                 <td style="width:50%"></td>                
                 <td style="min-width:300px;">
-                    <table border=0 style="max-width:300px;min-width:100px;width:100%;text-align:center"><tr>                
+                    <table border=0 style="max-width:300px;min-width:100px;width:100%;text-align:center"><tr>
+                    <td>
+                        <i class="playerControls fa-solid fa-backward-step" title="Previous Song" style="font-size: xx-large;" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'queue_previous')"><br><font style="display:none" class="showHelpText controlsIconFont">Previous Song</font></i>
+                    </td>                                    
                     <td>
                         <i id="plyrCntrlShuffle" class="playerControls fa-solid fa-shuffle" style="font-size: xx-large;" title="Shuffle On/Off" onclick="chromeCastShuffle($('#ccast_uuid').val())"><br><font style="display:none" class="showHelpText controlsIconFont">Shuffle On/Off</font></i>
                     </td>
@@ -312,7 +315,7 @@ output (f"""
                                       <input class="" type="input" id="searchQuery"  placeholder="Enter regex queries" style="width:100%" >                                                                            
                                   </td>                                                            
                                   <td style="padding-left: 5px;text-align: center;">                                       
-                                      <i id="searchBut" class="fa-solid fa-angles-right inlinePlayListControls" onclick="runSearchQuery();"></i>
+                                      <button id="searchBut"><i id="searchButIcon" class="fa-solid fa-angles-right inlinePlayListControls" onclick="runSearchQuery();"></i></button>
                                       <br><font style="display:none; white-space:nowrap" class="showHelpText controlsIconFont">Run Query</font>
                                   </td>
                               </tr>
@@ -422,9 +425,13 @@ output (f"""
 <td id="tabsRightSize" style="width:50%;vertical-align:top">
     <div id="tabsRight">
         <ul>
-            <li><a id="tabQueueBrowserSelect"    href="#tabQueueBrowser">Queue Browser</a></li>
-            <li><a id="tabPlaylistBrowserSelect" href="#tabPlaylistBrowser">Play List Browser</a></li>
+            <li><a id="tabQueueBrowserSelect"          href="#tabQueueBrowser">Queue Browser</a></li>
+            <li><a id="tabPlaylistBrowserSelect"       href="#tabPlaylistBrowser">Play List Browser</a></li>
+            <li><a id="tabPreviousQueueBrowserSelect"  href="#tabPreviousQueueBrowser">History Browser</a></li>
         </ul>
+        
+        <!- ==== Queue Browser Tab Content ==== -->
+        
         <div id="tabQueueBrowser">        
             <div id="queueBrowserControls" class="rcorners1">
                 <table border=0 style="width:100%">        
@@ -456,7 +463,10 @@ output (f"""
                 </tr></table>                          
             </div>
             <div id="queueBrowser"></div>
-        </div>              
+        </div>
+        
+        <!- ==== Playlist Browser Tab Content ==== -->
+                      
         <div id="tabPlaylistBrowser">            
             <div id="playlistBrowserControls" class="rcorners1">
                 <table style="width:100%;text-align:right"><tr>
@@ -479,6 +489,42 @@ output (f"""
             </div>                            
             <div id="playlistBrowser"></div>      
         </div>
+        
+        <!- ==== History Browser Tab Content ==== -->
+        
+        <div id="tabPreviousQueueBrowser">        
+            <div id="previousQueueBrowserControls" class="rcorners1">
+                <table border=0 style="width:100%">        
+                    <tr>                    
+                        <td style="width:100%">        
+                            <table border=0 style="text-align:left"><tr>
+                            <td>
+                                <i class="inlinePlayListControls fa-solid fa-broom" style="text-align:center;" title="Clear History" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'previous_queue_clear')"><br><font style="display:none" class="showHelpText controlsIconFont">Clear History</font></i>
+                            </td>                            
+                            <td style="width:100%;text-align:right">      
+                                &nbsp;                     
+                                <input type="text" placeholder="Enter new playlist name" id="prev_playlist_name_field" style="color:black;vertical-align:middle">
+                                <i class="inlinePlayListControls fa-solid fa-square-plus" style="text-align:center;" title="Save Queue as Playlist" onclick="QueueListToPlaylist($('#prev_playlist_name_field').val(), 'save_previous_queue_to_playlist')"><br><font style="display:none" class="showHelpText controlsIconFont">Save History as Playlist</font></i>                                
+                            </td>                  
+                            <tr></table>
+                        </td>                                                                  
+                    </tr>
+                </table>
+            </div>         
+            <div>
+                <table class="tabsRightShrinkGrowHideShow tabsRightShrinkGrow"><tr>
+                    <td>
+                        <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
+                    </td>
+                    <td class="shrinkgrow_pos"></td>                             
+                    <td>
+                        <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
+                    </td>   
+                </tr></table>                          
+            </div>
+            <div id="previousQueueBrowser"></div>
+        </div>         
+
 </td>    
 </tr></table>
 

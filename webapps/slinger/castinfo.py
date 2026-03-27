@@ -27,6 +27,10 @@ if postData["type"] == "queue_list":
     output(json.dumps(castQueueObj.queue, default=lambda o: o.__dict__, indent=4))
     exit (0)
 
+if postData["type"] == "previous_queue_list":
+    output(json.dumps(castQueueObj.previousQueue, default=lambda o: o.__dict__, indent=4))
+    exit (0)
+
 info = {}
 if postData["type"] == "complete_status":
     info = castQueueObj.completeStatus
