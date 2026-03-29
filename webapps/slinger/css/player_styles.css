@@ -399,7 +399,7 @@ a:hover, a:focus {
 }
 /* ------------------------------------------------------- */
 
-.tabsLeftShrinkGrow {
+.tabsShrinkGrow {
     position: absolute;
     top: 5px;
     right: 5px;
@@ -408,29 +408,18 @@ a:hover, a:focus {
     display:inline-block;
     white-space:nowrap;
 }
-.tabsLeftShrinkGrow i {
+.tabsShrinkGrow i {
     border-radius:2px;
 }
 
 .shrinkgrow_pos {
     font-size: x-small;
+    color:grey;
 }
 
 .shrinkgrow_posidx {
     font-weight: 1000;
     color: #007FFF;
-}
-
-.tabsRightShrinkGrow  {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    font-size: x-large;
-    display:inline-block;
-    white-space:nowrap;
-}
-.tabsRightShrinkGrow i {
-    border-radius:2px;
 }
 
 /* menu header */
@@ -470,6 +459,15 @@ a:hover, a:focus {
     width: 100%;
 	min-height: 265px;
 }
+
+#previousQueueBrowser {
+    display: inline-block;
+    /* height: 400px; */
+    overflow-y: auto;
+    width: 100%;
+	min-height: 265px;
+}
+
 /* --------------------------------------------- */
 
 #playlistBrowserControls {

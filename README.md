@@ -6,6 +6,12 @@ I has the ability to cast from remote CIFS/Windows file shares as well as local 
 This service will run as a Daemon, monitoring Chrome Cast devices, and sling/cast audio, video files 
 to devices from its pending queue.
 
+## Version 0.08 Work in progress:
+ * Added history played music viewer, and the ability to play the previous tracks.
+ * Added live searching of metadata
+ * Fixed displaying of album art issues between http(s) protocols.
+ * Cosmetic GUI Changes
+
 ## Version 0.075 Work in progress:
  * Debugged HTTP Range requests further and hopefully fix it finally.
  * Identified my DLNA issue with Metadata and Samsung T.Vs. Basically the dislike the source URL with ?query=1234 type 
@@ -156,6 +162,12 @@ update to ip address of 0.0.0.0
 
     SEARCH_RESULT_LIMIT=1000
 
+    # Set the max concurrent downloads for accessfile.py
+    MAX_CONCURRENT_DOWNLOADS=20
+
+    # Max queue history
+    MAX_PREVIOUS_PLAYED_QUEUE_LENGTH=50   
+    
     # Scraper Schedular
     # Time to scrape in cron format
     # * * * * *

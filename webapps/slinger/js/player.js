@@ -271,15 +271,16 @@ function resizeFilePanels ()
 
     try{ $('#playlistBrowser').css('height', `${$(window).innerHeight() - $('#playlistBrowser').offset().top - 10}px`) } catch {}
     try{ $('#queueBrowser').css('height',    `${$(window).innerHeight() - $('#queueBrowser').offset().top    - 10}px`) } catch {}
+    try{ $('#previousQueueBrowser').css('height',    `${$(window).innerHeight() - $('#previousQueueBrowser').offset().top    - 10}px`) } catch {}
     // console.log (`{$(window).innerHeight()}  playlistBrowser:${$('#playlistBrowser').offset().top}`)
 }
 
-var TabPos  = 3;
+var TabPos  = 2;
 function tabShrinkGrow (action)
 {
     function smoothSize (destID, newWidth)
     {
-        $(destID).animate({ width: newWidth }, { duration: 800, easing: 'easeInCubic'  }  );
+        $(destID).animate({ width: newWidth }, { duration: 1800, easing: 'easeInCubic'  }  );
     }
 
     let leftChar  = "&#9500;";
@@ -290,8 +291,8 @@ function tabShrinkGrow (action)
     if (action == 'grow')
     {
         TabPos++;
-        if (TabPos >= 5)
-            TabPos = 5;
+        if (TabPos >= 3)
+            TabPos = 3;
     }
     else if (action == 'shrink')
     {
@@ -302,54 +303,28 @@ function tabShrinkGrow (action)
 
     switch (TabPos)
     {
-        case 3: // [--|--]
-            $('#tabsLeftSize').css('display', '');
-            $('#tabsLeftSize').css('width', '50%');
-            $('#tabsRightSize').css('display', '');
-            $('#tabsRightSize').css('width', '50%');
-            $('.tabsLeftShrinkGrowHideShow').css('display', '');
-            $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html(`${leftChar}${dashChar}${dashChar}<b class="shrinkgrow_posidx">${indexChar}</b>${dashChar}${dashChar}${rightChar}`);
-            break;
-
-        case 2: // [-|---]
-            $('#tabsLeftSize').css('display', '');
-            $('#tabsLeftSize').css('width', '25%');
-            $('#tabsRightSize').css('display', '');
-            $('#tabsRightSize').css('width', '75%');
-            $('.tabsLeftShrinkGrowHideShow').css('display', '');
-            $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html(`${leftChar}${dashChar}<b class="shrinkgrow_posidx">${indexChar}</b>${dashChar}${dashChar}${dashChar}${rightChar}`);
-            break;
-
         case 1: // [|----]
             $('#tabsLeftSize').css('display', 'None');
             $('#tabsLeftSize').css('width', '0%');
             $('#tabsRightSize').css('display', '');
             $('#tabsRightSize').css('width', '100%');
-            $('.tabsLeftShrinkGrowHideShow').css('display', 'none');
-            $('.tabsRightShrinkGrowHideShow').css('display', '');
-            $('.shrinkgrow_pos').html(`${leftChar}<b class="shrinkgrow_posidx">${indexChar}</b>${dashChar}${dashChar}${dashChar}${dashChar}${rightChar}`);
+            $('.shrinkgrow_pos').html(`${leftChar}<b class="shrinkgrow_posidx">${indexChar}</b>${dashChar}${dashChar}${rightChar}`);
             break;
 
-        case 4: // [---|-]
+        case 2: // [--|--]
             $('#tabsLeftSize').css('display', '');
-            $('#tabsLeftSize').css('width', '75%');
+            $('#tabsLeftSize').css('width', '50%');
             $('#tabsRightSize').css('display', '');
-            $('#tabsRightSize').css('width', '25%');
-            $('.tabsLeftShrinkGrowHideShow').css('display', '');
-            $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html(`${leftChar}${dashChar}${dashChar}${dashChar}<b class="shrinkgrow_posidx">${indexChar}</b>${dashChar}${rightChar}`);
+            $('#tabsRightSize').css('width', '50%');
+            $('.shrinkgrow_pos').html(`${leftChar}${dashChar}<b class="shrinkgrow_posidx">${indexChar}</b>${dashChar}${rightChar}`);
             break;
 
-        case 5: // [----|]
+        case 3: // [----|]
             $('#tabsLeftSize').css('display', '');
             $('#tabsLeftSize').css('width', '100%');
             $('#tabsRightSize').css('display', 'None');
             $('#tabsRightSize').css('width', '0%');
-            $('.tabsLeftShrinkGrowHideShow').css('display', '');
-            $('.tabsRightShrinkGrowHideShow').css('display', 'none');
-            $('.shrinkgrow_pos').html(`${leftChar}${dashChar}${dashChar}${dashChar}${dashChar}<b class="shrinkgrow_posidx">${indexChar}</b>${rightChar}`);
+            $('.shrinkgrow_pos').html(`${leftChar}${dashChar}${dashChar}<b class="shrinkgrow_posidx">${indexChar}</b>${rightChar}`);
             break;
     }
 }
@@ -2914,5 +2889,8 @@ $( document ).ready(function()
     changeViewSmallBig((localStorage.getItem('G_PlayerViewMode') == 'true'));
     LoadUniqueLocalPlayerID ();
     GetChromeCastDevices ();
+
+    // Set default toast position
+    $.toast({ position: 'top-left' }).reset();
 });
 

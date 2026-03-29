@@ -103,7 +103,7 @@ var G_Generated_Local_Player_UniqueID = "";
     <div id="playerControls" class="rcorners1">
     <table border=0 style="width:100%">        
         <tr>
-            <td style="">
+            <td style="width:fit-content">
                 <table>
                 <tr>
                     <td class="playerTxt">
@@ -182,7 +182,7 @@ var G_Generated_Local_Player_UniqueID = "";
                 <td style="width:50%"></td>
                 </tr></table>                
             </td>                        
-            <td style="">
+            <td style="width:fit-content">
                 <table style="min-width:50px;max-width:40px;float:right;" border=0>
                 <tr>
                     <td style="padding-right:10px;white-space:nowrap;text-align:center">
@@ -195,8 +195,24 @@ var G_Generated_Local_Player_UniqueID = "";
                     <td class="playerTxt" style="width:100%;min-width:100px"><input type="range" min="1" max="100" value="50" id="volLevel" oninput="chromeCastBasicAction($('#ccast_uuid').val(), 'volume', ($(this).val()/100.0))"></td>
                 </tr>
                 <tr><td style="height:5px"></td></tr>
-                <tr>                    
-                    <td colspan="100%" style="text-align:right">
+                <tr>     
+                    <td>
+                        <table class="tabsShrinkGrowHideShow" title="Expand/Contract Navigation">
+                        <tr>
+                            <td>
+                                <i class="playerControls fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
+                            </td>     
+                            <td class="shrinkgrow_pos"></td>                       
+                            <td>
+                                <i class="playerControls fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
+                            </td>   
+                        </tr>
+                        <tr>
+                            <td colspan="100%"><font style="display: none; white-space: nowrap;" class="showHelpText controlsIconFont">Expand/Contract Navigation</font></td>
+                        </tr>
+                        </table>                     
+                    </td>               
+                    <td colspan="100%" style="text-align:right; white-space:nowrap;">
                         <i id="showHelpTextInfo" onclick="showHideIconInfo(! G_ShowHideIconInfo)" class="playerControls fa-solid fa-circle-info" style="text-align:center" title="Icon Info On/Off">
                             <font style="display: none;" class="showHelpText controlsIconFont">This text info</font>
                         </i>                                                   
@@ -253,7 +269,7 @@ output (f"""
     <div id="tabsLeft">
         <ul>
             <li><a id="tabFileBrowserSelect" href="#tabFileBrowser">File Browser</a></li>
-            <li><a href="#tabSearchBrowser">Search Browser</a></li>
+            <li><a href="#tabSearchBrowser">Search</a></li>
             <li><a href="#tabMetaData">Meta Data</a></li>
         </ul>
         
@@ -262,12 +278,13 @@ output (f"""
                 <table style="width:100%" border=0>
                 <tr>
                     <td style="width:100%;text-align:left;vertical-align: top;">       
-                        <label for="shareLocs">File Locations<br></label>
+                        <label for="shareLocs">Media Locations:<br></label>
                         <select name="shareLocs" id="share_locs"  onchange="OnChange_FileLocation(this)">
                         { shareLocs }
                         </select>
                     </td>     
                     <td style="white-space:nowrap;text-align:right;vertical-align:top">
+                        <label>&nbsp;<br></label>
                         <i id="metaDataShuffle" class="inlinePlayListControls cntrlInactive fa-solid fa-shuffle" style="font-size: xx-large; text-align: center;" title="MetaData Shuffle On/Off" onclick="chromeCastMetaDataShuffle($('#ccast_uuid').val())"><br><font style="display:none" class="showHelpText controlsIconFont">MetaData Shuffle<br>On/Off</font></i>                       
                         <select id="shuffleMetaFileType"  onchange="" value="audio" class="inlinePlayMode">
                             <option value="audio">Audio</option>
@@ -283,17 +300,6 @@ output (f"""
                         
                         <div id="metaDataShuffleActivePath" style="font-size:x-small"></div>                                                                       
                     </td>               
-                    <td>
-                        <table class="tabsLeftShrinkGrowHideShow tabsLeftShrinkGrow"><tr>
-                            <td>
-                                <i class="fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
-                            </td>     
-                            <td class="shrinkgrow_pos"></td>                       
-                            <td>
-                                <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
-                            </td>   
-                        </tr></table>                          
-                    </td>
                     <td>
                         <span id="browserArt"><img src="img/folder.png"></span>
                     </td>                    
@@ -336,17 +342,6 @@ output (f"""
                           </fieldset>                    
                     </div>                    
                 </td>
-                <td>
-                    <table class="tabsLeftShrinkGrowHideShow tabsLeftShrinkGrow"><tr>
-                        <td>
-                            <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
-                        </td>                    
-                        <td class="shrinkgrow_pos"></td>         
-                        <td>
-                            <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
-                        </td>   
-                    </tr></table>                          
-                </td>
             </tr></table> 
             <div id="searchList" style="width:100%"></div>                         
         </div>
@@ -385,20 +380,7 @@ output (f"""
                 <tr><td>&nbsp;</td></tr>
                                
                 <tr><th colspan="100%">Meta Data Scraping Status</th></tr>
-                <tr><td id="metadataScrapeStatus" colspan="100%"></td></tr>
-                <tr>
-                    <td>
-                        <table class="tabsLeftShrinkGrowHideShow tabsLeftShrinkGrow" border=0><tr>
-                            <td>
-                                <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
-                            </td>
-                            <td class="shrinkgrow_pos"></td>                             
-                            <td>
-                                <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
-                            </td>   
-                        </tr></table>                          
-                    </td>
-                </tr>               
+                <tr><td id="metadataScrapeStatus" colspan="100%"></td></tr>           
                 
                 <tr><td>&nbsp;</td></tr>
                 
@@ -425,9 +407,9 @@ output (f"""
 <td id="tabsRightSize" style="width:50%;vertical-align:top">
     <div id="tabsRight">
         <ul>
-            <li><a id="tabQueueBrowserSelect"          href="#tabQueueBrowser">Queue Browser</a></li>
-            <li><a id="tabPlaylistBrowserSelect"       href="#tabPlaylistBrowser">Play List Browser</a></li>
-            <li><a id="tabPreviousQueueBrowserSelect"  href="#tabPreviousQueueBrowser">History Browser</a></li>
+            <li><a id="tabQueueBrowserSelect"          href="#tabQueueBrowser">Queued</a></li>
+            <li><a id="tabPlaylistBrowserSelect"       href="#tabPlaylistBrowser">Play Lists</a></li>
+            <li><a id="tabPreviousQueueBrowserSelect"  href="#tabPreviousQueueBrowser">History</a></li>
         </ul>
         
         <!- ==== Queue Browser Tab Content ==== -->
@@ -451,17 +433,6 @@ output (f"""
                     </tr>
                 </table>
             </div>         
-            <div>
-                <table class="tabsRightShrinkGrowHideShow tabsRightShrinkGrow"><tr>
-                    <td>
-                        <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
-                    </td>
-                    <td class="shrinkgrow_pos"></td>                             
-                    <td>
-                        <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
-                    </td>   
-                </tr></table>                          
-            </div>
             <div id="queueBrowser"></div>
         </div>
         
@@ -475,18 +446,7 @@ output (f"""
                             <i class="inlinePlayListControls  fa-solid fa-square-plus" style="text-align:center;" title="Create Playlist" onclick="CreatePlayList($('#newPlayListName').val())"><br><font class=" showHelpText  controlsIconFont">Create Playlist</font></i>
                     </td>                                            
                 </tr></table>
-            </div>           
-            <div>
-                <table class="tabsRightShrinkGrowHideShow tabsRightShrinkGrow"><tr>
-                    <td>
-                        <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
-                    </td>
-                    <td class="shrinkgrow_pos"></td>                             
-                    <td>
-                        <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
-                    </td>   
-                </tr></table>                          
-            </div>                            
+            </div>                                     
             <div id="playlistBrowser"></div>      
         </div>
         
@@ -511,17 +471,6 @@ output (f"""
                     </tr>
                 </table>
             </div>         
-            <div>
-                <table class="tabsRightShrinkGrowHideShow tabsRightShrinkGrow"><tr>
-                    <td>
-                        <i class=" fa-solid fa-angles-left selectItemHand" onclick="tabShrinkGrow('shrink');"></i>
-                    </td>
-                    <td class="shrinkgrow_pos"></td>                             
-                    <td>
-                        <i class=" fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
-                    </td>   
-                </tr></table>                          
-            </div>
             <div id="previousQueueBrowser"></div>
         </div>         
 
