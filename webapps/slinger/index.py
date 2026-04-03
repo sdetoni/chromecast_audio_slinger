@@ -34,7 +34,7 @@ output ("""
 	<link rel="stylesheet" href="fontawesome/css/all.css" />
 	<link rel="stylesheet" href="css/player_styles.css" />
 	<link rel="stylesheet" href="css/gear.css" />	
-    <link rel="stylesheet" href="css/vfd-spinner.css">				
+    <link rel="stylesheet" href="css/vfd-spinner.css"> 				
 </head>
 """)
 
@@ -185,16 +185,16 @@ var G_Generated_Local_Player_UniqueID = "";
             <td style="width:fit-content">
                 <table style="min-width:50px;max-width:40px;float:right;" border=0>
                 <tr>
-                    <td style="padding-right:10px;white-space:nowrap;text-align:center">
-                        <i id="plyrCntrlAddToFavs" onclick="FavouriteAddRemove()" class="playerControls fa-solid fa-star" style="font-size:x-large;" title="Add/Remove Favourite"><font style="display:none;" class="showHelpText controlsIconFont">Add/Remove Favourite</font></i>
+                    <td style="white-space:nowrap;text-align:right">
+                        <i id="plyrCntrlAddToFavs" onclick="FavouriteAddRemove()" class="playerControls fa-solid fa-star" style="font-size:x-large;" title="Add/Remove Favourite"><font style="display:none;" class="showHelpText controlsIconFont">Add/Remove<br>Favourite</font></i>
                     </td>                    
-                    <td style="padding-right:10px;white-space:nowrap;text-align:center">
+                    <td style="padding-left:10px;padding-right:10px;white-space:nowrap;text-align:center">
                         <i id="plyrCntrlAddToPlayList" class="playerControls fa-solid fa-table-list hasContextMenu" style="font-size:x-large;" title="Add to Play List"><font style="display:none;" class="showHelpText controlsIconFont">Add to Play List</font></i>
                     </td>                
                     <td class="playerControls"><i id="volOnMute" class="fa-solid fa-volume-high" onclick="chromeCastMute($('#ccast_uuid').val())" title="Mute"></i></td>
                     <td class="playerTxt" style="width:100%;min-width:100px"><input type="range" min="1" max="100" value="50" id="volLevel" oninput="chromeCastBasicAction($('#ccast_uuid').val(), 'volume', ($(this).val()/100.0))"></td>
                 </tr>
-                <tr><td style="height:5px"></td></tr>
+                <tr><td style="height:5px"></td></tr>           
                 <tr>     
                     <td>
                         <table class="tabsShrinkGrowHideShow" title="Expand/Contract Navigation">
@@ -205,11 +205,16 @@ var G_Generated_Local_Player_UniqueID = "";
                             <td class="shrinkgrow_pos"></td>                       
                             <td>
                                 <i class="playerControls fa-solid fa-angles-right selectItemHand" onclick="tabShrinkGrow('grow');"></i>
-                            </td>   
+                            </td>
+                            <td>
+                                <span style="padding-left: 15px;">
+                                    <i id="playerControlsFileNavShowHide" class="playerControls fa-solid fa-angles-up" onclick="changeFileNavShowHide(! G_FileNavShowHide)"></i>
+                                </span>
+                            </td>                               
                         </tr>
                         <tr>
-                            <td colspan="100%"><font style="display: none; white-space: nowrap;" class="showHelpText controlsIconFont">Expand/Contract Navigation</font></td>
-                        </tr>
+                            <td colspan="100%"><font style="display: none; white-space: nowrap;" class="cntrlInactive controlsIconFont showHelpText">Expand/Contract Navigation</font></td>
+                        </tr>                                                   
                         </table>                     
                     </td>               
                     <td colspan="100%" style="text-align:right; white-space:nowrap;">
@@ -264,7 +269,7 @@ for shareInfo in GF.Config.getSettingList ('slinger/SMB_MUSIC_UNCPATH'):
     shareLocs += f"<option type='smb' value='{ val }'>{val}</option>\n"
 
 output (f"""
-<table style="width:100%"><tr>               
+<table id="FileNavTable" style="width:100%;display:none"><tr>               
 <td id="tabsLeftSize" style="width:50%;vertical-align:top">
     <div id="tabsLeft">
         <ul>
@@ -352,32 +357,41 @@ output (f"""
                 <tr style="white-space:nowrap">
                     <td>
                         <a href="#" onclick="confirm ('Clear all loaded DB Meta Data?') ? chromeCastBasicAction($('#ccast_uuid').val(), 'clear_metadata_cache') || setTimeout (metadataScraperInfo, 2000) : false;">
-                            <button style="cursor:pointer">Clear Metadata Cache</button>
+                            <button style="width:100%; cursor:pointer">Clear Metadata Cache</button>
                         </a>
                     </td>
-                    
-                    <td>
-                        <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'start_metadata_scraper'); setTimeout (metadataScraperInfo, 2000);">
-                            <button style="cursor:pointer">Start Metadata Scraper</button>
-                        </a>
+                    <td style="width:100%">
                     </td>
-                    
+                   
                     <td>
                         <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'validate_metadata');  setTimeout (metadataScraperInfo, 2000); ">
-                        <button style="cursor:pointer">Validate Metadata</button>
-                        </a>
-                    </td>                    
-                    <td>
-                        <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'stop_metadata_scraper');  setTimeout (metadataScraperInfo, 2000); ">
-                        <button style="cursor:pointer">Stop Metadata Scraper</button>
+                            <button style="width:100%; cursor:pointer">Validate Metadata</button>
                         </a>
                     </td>
-                        
-                    <td style="width:100%">
-                    </td>                                                                
+                                        
                 </tr>
-
-                <tr><td>&nbsp;</td></tr>
+                <tr style="white-space:nowrap">
+                    <td>
+                        <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'start_metadata_scraper'); setTimeout (metadataScraperInfo, 2000);">
+                            <button style="width:100%; cursor:pointer">Start Metadata Scraper</button>
+                        </a>
+                    </td>
+                    <td style="width:100%">
+                    </td>                                    
+                    <td>
+                        <a href="#" onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'stop_metadata_scraper');  setTimeout (metadataScraperInfo, 2000); ">
+                            <button style="width:100%; cursor:pointer">Stop Metadata Scraper</button>
+                        </a>
+                    </td>               
+                </tr>                
+                <tr style="white-space:nowrap">                    
+                    
+                </tr>
+                <tr>       
+                    <td>&nbsp;</td>         
+                    <td style="width:100%">
+                    </td>                                                                                
+                </tr>
                                
                 <tr><th colspan="100%">Meta Data Scraping Status</th></tr>
                 <tr><td id="metadataScrapeStatus" colspan="100%"></td></tr>           

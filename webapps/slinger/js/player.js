@@ -2758,6 +2758,42 @@ function changeViewSmallBig (mode=G_SmallBigViewMode)
     localStorage.setItem('G_PlayerViewMode', G_SmallBigViewMode);
 }
 
+var G_FileNavShowHide = true;
+function changeFileNavShowHide (mode=G_FileNavShowHide)
+{
+    G_FileNavShowHide = mode;
+    if (G_FileNavShowHide && $('#playerControlsFileNavShowHide').hasClass('fa-angles-up'))
+    {
+        $("#FileNavTable").fadeOut("slow", function()
+        {
+            resizeFilePanels();
+            $('#playerControlsFileNavShowHide').removeClass('fa-angles-up');
+            $('#playerControlsFileNavShowHide').addClass('fa-angles-down');
+            $('#playerControlsFileNavShowHide').addClass('controlEnabled');
+        });
+    }
+    else if (! G_FileNavShowHide && $('#playerControlsFileNavShowHide').hasClass('fa-angles-down'))
+    {
+        $("#FileNavTable").fadeIn("slow", function ()
+        {
+            resizeFilePanels();
+            $('#playerControlsFileNavShowHide').removeClass('fa-angles-down');
+            $('#playerControlsFileNavShowHide').addClass('fa-angles-up');
+            $('#playerControlsFileNavShowHide').removeClass('controlEnabled');
+        })
+    }
+    else if ($("#FileNavTable").is(':hidden') && ! G_FileNavShowHide)
+    {
+        $("#FileNavTable").fadeIn("slow", function ()
+        {
+            resizeFilePanels();
+        });
+    }
+
+    // Save settings in browser
+    localStorage.setItem('G_FileNavViewMode', G_FileNavShowHide);
+}
+
 function GetChromeCastDevices (forcedScan=false)
 {
     $("#ccast_uuid").selectmenu();
@@ -2887,6 +2923,8 @@ $( document ).ready(function()
 {
     showHideIconInfo((localStorage.getItem('G_ShowHideIconInfo') == 'true'));
     changeViewSmallBig((localStorage.getItem('G_PlayerViewMode') == 'true'));
+    changeFileNavShowHide((localStorage.getItem('G_FileNavViewMode') == 'true'));
+
     LoadUniqueLocalPlayerID ();
     GetChromeCastDevices ();
 
