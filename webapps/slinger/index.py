@@ -34,7 +34,9 @@ output ("""
 	<link rel="stylesheet" href="fontawesome/css/all.css" />
 	<link rel="stylesheet" href="css/player_styles.css" />
 	<link rel="stylesheet" href="css/gear.css" />	
-    <link rel="stylesheet" href="css/vfd-spinner.css"> 				
+    <link rel="stylesheet" href="css/vfd-spinner.css">
+ 
+     				
 </head>
 """)
 

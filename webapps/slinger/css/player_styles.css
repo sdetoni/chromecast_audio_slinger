@@ -1,3 +1,33 @@
+:root {
+--GLOBAL-BGCOL:              black;
+--GLOBAL-COL:                 white;
+
+--ANCHOR-COL:                   #0095dd;
+--ANCHOR-HOVER-COL:             #2255aa;
+
+--INLINE-PLAYLIST-CONTROLS-COL: black;
+
+--CONTROLS-ENABLED-COL:         #72a1dd;
+
+--ROUND-CORNERS1-COL:           #7c7d7d;
+
+--PLAYER-CONTROL-ACTIVE-COL:    #0a0;
+--PLAYER-CONTROL-PAUSED-COL:    #eb9a43;
+--PLAYER-CONTROL-INACTIVE-COL:  #aaa;
+
+--SELECT-ITEM-HAND-BGCOL:       #0001;
+--SELECT-ITEM-HAND-HOVER-BGCOL: #0004;
+
+--NETWORK-SHARED-PLAYER-INST-COL: #aaa;
+--NETWORK-SHARED-PLAYER-INST-ICONBLANK-BGCOL: #9d9d9d;
+--NETWORK-SHARED-PLAYER-INST-ICONCHKED-BGCOL: #ffffff;
+--NETWORK-SHARED-PLAYER-INST-HOVER-COL: #fff;
+
+--TOAST-BGCOL:       rgba(32, 32, 32, 0.7);
+--TOAST-DELAY-BGCOL: rgba(255, 255, 255, 0.7);
+}
+
+/******** GLobal Applied Styles *********/
 
 /* latin-ext */
 @font-face {
@@ -23,6 +53,7 @@ html, body {
 	margin:0;
 	padding:0;
 	height:100%;
+	background: var(--GLOBAL-BGCOL);
 	width: fit-content;
 }
 
@@ -31,19 +62,30 @@ table {
 }
 
 a {
-	color:#0095dd;
+	color: var(--ANCHOR-COL);
 	text-decoration:none;
 }
 a:hover, a:focus {
-	color:#2255aa;
+	color:var(--ANCHOR-HOVER-COL);
 	text-decoration:none;
 }
+
+/******** Info Toast Styles  *********/
+
+.jq-toast-single {
+    background-color: var(--TOAST-BGCOL)  !important;
+}
+.jq-toast-loaded {
+    background:  var(--TOAST-DELAY-BGCOL) !important;
+}
+
+/* General */
 
 .showHelpText {
 }
 
 .controlEnabled {
-    color:#72a1dd !important;
+    color:var(--CONTROLS-ENABLED-COL) !important;
 }
 
 #showHelpTextInfo  {
@@ -64,26 +106,27 @@ a:hover, a:focus {
 
 .rcorners1 {
   border-radius: 3px;
-  border: 2px solid #7c7d7d;
+  border: 2px solid var(--ROUND-CORNERS1-COL);
   padding: 5px;
-}
-
-.cntrlActive {
-    color: #0a0 !important;
-}
-
-.cntrlPaused {
-    color: #eb9a43 !important;
-}
-
-.cntrlInactive {
-    color: #aaa !important;
 }
 
 .rcorners3 {
     border-radius: 3px;
     padding: 5px;
 }
+
+.cntrlActive {
+    color: var(--PLAYER-CONTROL-ACTIVE-COL) !important;
+}
+
+.cntrlPaused {
+    color: var(--PLAYER-CONTROL-PAUSED-COL) !important;
+}
+
+.cntrlInactive {
+    color: var(--PLAYER-CONTROL-INACTIVE-COL) !important;
+}
+
 
 /* ----- JQUERY UI Interface changes ------- */
 
@@ -128,13 +171,14 @@ a:hover, a:focus {
     font-size:large;
     width:100%;
 }
+
 .selectItemHand {
     cursor: pointer;
-    background-color: #0001;
+    background-color: var(--SELECT-ITEM-HAND-BGCOL);
 }
 
 .selectItemHand:hover {
-    background-color: #0004;
+    background-color: var(--SELECT-ITEM-HAND-HOVER-BGCOL);
 }
 
 .fileNavigatorMain {
@@ -144,12 +188,12 @@ a:hover, a:focus {
 /* --------------------------------------------- */
 
 #playerView {
-    background:#000;
-    color:white;
+    background: var(--GLOBAL-BGCOL);
+    color: var(--GLOBAL-COL);
 }
 
 .playerTxt {
-    color: white;
+    color: var(--GLOBAL-COL);
     text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
 }
 
@@ -377,26 +421,28 @@ a:hover, a:focus {
 }
 /* ------------------------------------------------------- */
 
+
 .NetWrkSharedPlayerInstance {
     white-space: nowrap;
     background: transparent;
     font-size:x-small;
-    color: #aaa;
+    color: var(--NETWORK-SHARED-PLAYER-INST-COL);
     padding:4px;
 }
 
 .NetWrkSharedPlayerInstance  .ui-icon-blank {
-    background-color: #9d9d9d;
+    background-color: var(--NETWORK-SHARED-PLAYER-INST-ICONBLANK-BGCOL);
 }
 
 .NetWrkSharedPlayerInstance .ui-icon-check {
-    background-color: #ffffff;
+    background-color: var(--NETWORK-SHARED-PLAYER-INST-ICONCHKED-BGCOL);
 }
 
 .NetWrkSharedPlayerInstance:hover {
     background:transparent;
-    color:#fff;
+    color: var(--NETWORK-SHARED-PLAYER-INST-HOVER-COL);
 }
+
 /* ------------------------------------------------------- */
 
 .tabsShrinkGrow {
@@ -496,7 +542,7 @@ a:hover, a:focus {
 /* --------------------------------------------- */
 
 .inlinePlaylistBrowserControls {
-    color:black;
+    color:var(--INLINE-PLAYLIST-CONTROLS-COL);
     border-radius: 5px;
     border: 1px solid #7c7d7d;
     padding: 0px;
