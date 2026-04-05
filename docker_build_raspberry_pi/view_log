@@ -1,0 +1,2 @@
+docker logs -f chromecast_audio_slinger
+

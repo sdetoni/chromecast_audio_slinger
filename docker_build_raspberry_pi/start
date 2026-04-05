@@ -1,0 +1,37 @@
+docker rm -f chromecast_audio_slinger >/dev/null  2>&1 
+
+
+RUN_AS_USER=pi
+CONFIG_DIR=$(pwd)/config
+MEDIA_DIR=/mnt/MediaServer
+TC_CACHE_LOCATION=/mnt/ffmpeg_cache
+TEMP_FILE_LOCATION=/mnt/tmpfs
+LOG_FILES=/dev/null
+
+./logs/
+
+echo Edit this script to change these.
+echo
+echo "Running with the current Custom Mount points:"
+echo "   log files:                 ${LOG_FILES}"
+echo "   config directory:          ${CONFIG_DIR}"
+echo "   media directory:           ${MEDIA_DIR}"  
+echo "   tmp directory:             ${TEMP_FILE_LOCATION}"
+echo "   transcode cache directory: ${TC_CACHE_LOCATION}"
+echo
+
+docker run -d \
+  --name chromecast_audio_slinger \
+  --network host \
+  -v ${CONFIG_DIR}:/config \
+  -v $LOG_FILES:/app/logs  \
+  -v ${MEDIA_DIR}:${MEDIA_DIR} \
+  -v ${TEMP_FILE_LOCATION}:${TEMP_FILE_LOCATION} \
+  -v ${TC_CACHE_LOCATION}:${TC_CACHE_LOCATION} \
+  --restart unless-stopped \
+  chromecast-audio-slinger
+
+echo 
+
+docker ps 
+docker logs -f chromecast_audio_slinger

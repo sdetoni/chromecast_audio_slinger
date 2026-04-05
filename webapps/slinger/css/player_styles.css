@@ -642,10 +642,44 @@ a:hover, a:focus {
     display:none;
 }
 
+/* =========================================================================================================== */
 
 
+/***********
+.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active, a.ui-button:active, .ui-button:active, .ui-button.ui-state-active:hover {
+    border: 1px solid var(--CONTROLS-ENABLED-COL);
+    background: var(--ANCHOR-COL);
+    font-weight: normal;
+    color: var(--ANCHOR-HOVER-COL);
+}
 
+.ui-widget-header {
+    border: 1px solid #222222;
+    background: #444444;
+    color: white;
+    font-weight: bold;
+}
 
+.ui-widget-content {
+    border: 1px solid #dddddd;
+    background: #252525;
+    color: white;
+}
 
+.ui-selectmenu-text {
+    color:white;
+    background:black;
+}
 
+.ui-state-default, .ui-widget-content .ui-state-default, .ui-widget-header .ui-state-default, .ui-button, html .ui-button.ui-state-disabled:hover, html .ui-button.ui-state-disabled:active {
+    border: 1px solid #c5c5c5;
+    background: black;
+    font-weight: normal;
+    color: black;
+}
 
+table {
+    color:white;
+}
+
+************/

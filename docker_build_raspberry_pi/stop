@@ -1,0 +1,1 @@
+docker rm -f chromecast_audio_slinger >/dev/null  2>&1 

@@ -1,0 +1,8 @@
+export DOCKER_BUILDKIT=1
+if [ ! -z "config" ]; then
+    echo "Copying in default config directory from base source..."
+    cp -rp ../config . 
+fi
+ 
+docker build -t chromecast-audio-slinger .
+
