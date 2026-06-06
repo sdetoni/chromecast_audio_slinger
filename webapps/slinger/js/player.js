@@ -433,6 +433,8 @@ function isLocalPlayer (ccast_uuid)
     return (ccast_uuid.split('::')[0] == BaseLocalPlayerID());
 }
 
+// #######################################################################################################
+
 // gather chromecast current status on selected device
 $( document ).ready(function()
 {
@@ -461,416 +463,408 @@ function localPlayerResetSongToNext()
 
 chromeCastBasicAction($('#ccast_uuid').val(), 'queue_next')
 
-
-var cciIntvalID = setInterval(chromeCastInfo, 1000);
-var ccReqNum    = 0
-function chromeCastInfo ()
+function clearSongTitleInfo ()
 {
-    ccast_uuid = $('#ccast_uuid').val();
+     $('#songAlbumName').html('');
+     $('#songArtist').html('');
+     $('#songTitle').html('');
+     $('#songTitleSml').html('');
+     $('#songFilename').html('');
+     $('#songFileType').html('');
+     $('#albumArtURL').prop('src', getDefaultCoverArt());
+     $('#albumArtURLSml').prop('src', getDefaultCoverArt());
+     $('.playingInfo').css('display', 'none');
 
-    function clearSongTitleInfo ()
-    {
-         $('#songAlbumName').html('');
-         $('#songArtist').html('');
-         $('#songTitle').html('');
-         $('#songTitleSml').html('');
-         $('#songFilename').html('');
-         $('#songFileType').html('');
-         $('#albumArtURL').prop('src', getDefaultCoverArt());
-         $('#albumArtURLSml').prop('src', getDefaultCoverArt());
-         $('.playingInfo').css('display', 'none');
+     $('#plyrCntrlPlay').css('color', '');
+     $('#plyrCntrlAddToFavs').removeClass ('SongIsFavourite');
+}
 
-         $('#plyrCntrlPlay').css('color', '');
-         $('#plyrCntrlAddToFavs').removeClass ('SongIsFavourite');
+function processChromeCastInfo (data)
+{
+     const ccast_uuid = $('#ccast_uuid').val();
+     const zeroPad    = (num, places) => String(num).padStart(places, '0');
+
+     if ((! data) || (data.playback_state.toLowerCase() == 'unknown'))
+     {
+         clearSongTitleInfo ();
+     }
+
+     if (! data)
+     {
+        return;
+     }
+
+     // -------- Local Player Driver/Actions --------
+     if (data && isLocalPlayer(ccast_uuid) && (data.playback_state != 'IDLE'))
+     {
+         let audio = $("#LocalAudioPlayerDevice");
+         let video = $("#LocalVideoPlayerDevice");
+         let thisAVID  = ""
+         let thisAVDev = null;
+
+         if (isVideo (data.content_type))
+         {
+             thisAVDev = video
+             thisAVID  = "#LocalVideoPlayerDevice";
+             $("#video-player-container").show(500, function() {
+                 resizeFilePanels();
+             });
+         }
+         else
+         {
+             thisAVDev = audio
+             thisAVID  = "#LocalAudioPlayerDevice";
+             $("#video-player-container").css("display","None");
+         }
+
+         if (data.slinger_current_media.location && (data.playback_state.toLowerCase() == 'playing') )
+         {
+             if ($(thisAVDev).attr('playing_now') != data.slinger_current_media.location)
+             {
+                 thisAVDev.attr('src', `accessfile.py?type=${data.slinger_current_media.type}&location=${encodeURI(data.slinger_current_media.location)}&ccast_uuid=${encodeURI(ccast_uuid)}`)
+                 thisAVDev.attr('playing_now', data.slinger_current_media.location)
+                 thisAVDev[0].pause();
+                 thisAVDev[0].load();
+                 thisAVDev[0].play();
+                 thisAVDev[0].loop = false;
+                 thisAVDev[0].volume = data.volume_level;
+                 thisAVDev[0].muted  = data.volume_muted;
+
+                 if (thisAVID == "#LocalVideoPlayerDevice")
+                     audio[0].pause();
+                 else
+                     video[0].pause();
+             }
+             else if (thisAVDev[0].paused)
+             {
+                 // song completed, next song ...
+                 if (thisAVDev[0].ended)
+                 {
+                     chromeCastBasicAction(ccast_uuid, 'queue_next')
+                 }
+                 else
+                 {
+                     // if not already playing, then load track then play/unpause
+                     if (thisAVDev[0].currentTime <= 0)
+                     {
+                         thisAVDev[0].pause();
+                         thisAVDev[0].load();
+                         thisAVDev[0].loop = false;
+                     }
+
+                     thisAVDev[0].play();
+                     thisAVDev[0].volume = data.volume_level;
+                     thisAVDev[0].muted  = data.volume_muted;
+                 }
+             }
+         }
+         else if ((data.playback_state.toLowerCase() == 'paused') && (! thisAVDev[0].paused && thisAVDev[0].duration > 0))
+         {
+            thisAVDev[0].pause()
+         }
+         else if ((data.playback_state.toLowerCase() == 'idle') && (! thisAVDev[0].paused &&  thisAVDev[0].duration > 0))
+         {
+             thisAVDev[0].pause()
+             thisAVDev[0].currentTime = 0;
+             $(thisAVID).attr('src', '');
+             $(thisAVID).attr('playing_now', '');
+         }
+
+         data.duration     = thisAVDev[0].duration;
+         data.current_time = thisAVDev[0].currentTime;
+
+         if (G_LastChromeCastInfo && G_LastChromeCastInfo.volume_level != data.volume_level)
+         {
+            thisAVDev[0].volume = data.volume_level;
+         }
+
+         if (G_LastChromeCastInfo && G_LastChromeCastInfo.volume_muted != data.volume_muted)
+         {
+            thisAVDev[0].muted  = data.volume_muted;
+         }
+     }
+     // --------------------------------------------
+
+     if ((! G_LastChromeCastInfo) || (data && G_LastChromeCastInfo.slinger_shuffle != data.slinger_shuffle))
+     {
+         if (data.slinger_shuffle)
+         {
+             $('#plyrCntrlShuffle').removeClass('cntrlInactive').addClass('cntrlActive');
+         }
+         else if (! data.slinger_shuffle)
+         {
+             $('#plyrCntrlShuffle').removeClass('cntrlActive').addClass('cntrlInactive');
+         }
+     }
+
+     if ((! G_LastChromeCastInfo) || data)
+     {
+         if (data.slinger_metadata_shuffle_repeater && (! $('#metaDataShuffleRepeater').hasClass('cntrlActive')) )
+         {
+              $('#metaDataShuffleRepeater').removeClass('cntrlInactive').addClass('cntrlActive');
+         }
+         else if ((! data.slinger_metadata_shuffle_repeater) && (! $('#metaDataShuffleRepeater').hasClass('cntrlInactive')) )
+         {
+             $('#metaDataShuffleRepeater').removeClass('cntrlActive').addClass('cntrlInactive');
+         }
+
+         let currentFileListPath = decodeURIComponent($('#fileListCurrentLocation').attr('filelocationparent')).toLocaleLowerCase();
+
+         if (data.slinger_metadata_shuffle_location != '' && data.slinger_metadata_shuffle_location.toLocaleLowerCase() != currentFileListPath)
+         {
+             if ($('#metaDataShuffle').hasClass('cntrlActive'))
+             {
+                 $('#metaDataShuffle').removeClass('cntrlActive').addClass('cntrlInactive');
+                 $('#shuffleMetaFileType').selectmenu( "enable");
+                 $('#shuffleMetaFileType').prop("selectedIndex", 0).change();
+                 $('#shuffleMetaFileType').selectmenu('refresh');
+             }
+         }
+         else
+         {
+             if (data.slinger_metadata_shuffle && (! $('#metaDataShuffle').hasClass('cntrlActive')) )
+             {
+                  $('#metaDataShuffle').removeClass('cntrlInactive').addClass('cntrlActive');
+                  $('#shuffleMetaFileType').val(data.slinger_metadata_shuffle_type).change();
+                  $('#shuffleMetaFileType').selectmenu( "disable");
+                  $('#shuffleMetaFileType').selectmenu('refresh');
+             }
+             else if ((! data.slinger_metadata_shuffle) && (! $('#metaDataShuffle').hasClass('cntrlInactive')) )
+             {
+                 $('#metaDataShuffle').removeClass('cntrlActive').addClass('cntrlInactive');
+                 $('#shuffleMetaFileType').selectmenu( "enable");
+             }
+         }
+
+         // show/update the current metadata shuffle info/path
+         if ((data.slinger_metadata_shuffle+"" != $('#metaDataShuffleActiveDot').attr('shuffle_active')) ||
+             ($('#metaDataShuffleActivePath').attr('shuffle_fullpath') != data.slinger_metadata_shuffle_location))
+         {
+             let d = data.slinger_metadata_shuffle_location.substring(0, 28);
+             if (data.slinger_metadata_shuffle_location.length > 28)
+             {
+                d += '...';
+             }
+
+             $('#metaDataShuffleActivePath').html(d);
+             $('#metaDataShuffleActivePath').attr('shuffle_fullpath', data.slinger_metadata_shuffle_location);
+
+             if (data.slinger_metadata_shuffle)
+             {
+                 $('#metaDataShuffleActiveDot').css ('display', '');
+                 $('#metaDataShuffleActiveDot').attr('title', `${data.slinger_metadata_shuffle_location}\nClick to stop metadata shuffle!`);
+             }
+             else
+             {
+                 $('#metaDataShuffleActiveDot').css ('display', 'none');
+             }
+             $('#metaDataShuffleActiveDot').attr('shuffle_active', data.slinger_metadata_shuffle)
+         }
+     }
+
+     // --------------------------------------------
+     if (data.volume_muted && $('#volOnMute').hasClass('fa-volume-high'))
+     {
+         $('#volOnMute').removeClass('fa-volume-high')
+         $('#volOnMute').addClass('fa-volume-xmark')
+         $('#volOnMute').prop('title', 'Unmute')
+     }
+     else if ((! data.volume_muted) && $('#volOnMute').hasClass('fa-volume-xmark'))
+     {
+         $('#volOnMute').removeClass('fa-volume-xmark')
+         $('#volOnMute').addClass('fa-volume-high')
+         $('#volOnMute').prop('title', 'Mute')
+     }
+
+     if (Math.floor(data.volume_level * 100) != $('#volLevel').val())
+     {
+         $('#volLevel').val(Math.floor(data.volume_level * 100))
+     }
+
+     // --------------------------------------------
+
+     // console.log("JSON Data:", data);
+     if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.album_name != data.album_name))
+         $('#songAlbumName').html(data.album_name);
+
+     if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.artist != data.artist))
+         $('#songArtist').html(data.artist);
+
+     if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.title != data.title))
+     {
+         $('#songTitle').html(data.title);
+         $('#songTitleSml').html(data.title);
+
+         // determine if this in Favourites
+         ShowIsFavourite(data);
+     }
+
+     if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.filename != data.filename))
+         $('#songFilename').html(data.filename);
+
+     if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.content_type != data.content_type))
+         $('#songFileType').html(`${data.content_type} ${ data.media_metadata.bitrate ? ':: ' + data.media_metadata.bitrate : ''}`);
+
+     if (($('.playingInfo').css('display') == 'none') && (data.playback_state.toLowerCase() != 'unknown'))
+         $('.playingInfo').css('display', '');
+
+     if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.playback_state != data.playback_state))
+     {
+         if (data.playback_state.toLowerCase() == 'playing')
+         {
+             $('#plyrCntrlPlay').removeClass('cntrlActive').removeClass('cntrlInactive').addClass('cntrlPaused');
+             $('#plyrCntrlPlay').removeClass('fa-circle-play');
+             $('#plyrCntrlPlay').addClass('fa-circle-pause');
+         }
+         else if ((data.playback_state.toLowerCase() == 'idle') || (data.playback_state.toLowerCase() == 'paused'))
+         {
+             $('#plyrCntrlPlay').removeClass('cntrlPaused').removeClass('cntrlInactive').addClass('cntrlActive');
+             $('#plyrCntrlPlay').addClass('cntrlActivated');
+             $('#plyrCntrlPlay').removeClass('fa-circle-pause');
+             $('#plyrCntrlPlay').addClass('fa-circle-play');
+         }
+         else if (data.playback_state.toLowerCase() == 'unknown')
+         {
+             $('#plyrCntrlPlay').removeClass('cntrlActive').removeClass('cntrlPaused').addClass('cntrlInactive');
+             $('#plyrCntrlPlay').removeClass('fa-circle-pause');
+             $('#plyrCntrlPlay').addClass('fa-circle-play');
+         }
+     }
+
+     // --------------------------------------------
+     if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.slinger_current_media.transcoding != data.slinger_current_media.transcoding ||
+                                      G_LastChromeCastInfo.slinger_current_media.location    != data.slinger_current_media.location) )
+     {
+          if (data.slinger_current_media.transcoding)
+          {
+              $('#playingSongInfo').css('display', 'none');
+              $('#busy-transcoding').css('display', 'flex');
+              $('#vfd-transcode-location').html(data.slinger_current_media.location);
+          }
+          else
+          {
+              $('#playingSongInfo').css('display', 'block');
+              $('#busy-transcoding').css('display', 'none');
+          }
+     }
+     if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.current_time != data.current_time) )
+     {
+         // some tracks do not have the full duration encoded in the mp3 files, in these cases, only show current time.
+         if ((data.current_time > 0) && (! data.duration))
+         {
+             let ctval = parseInt(data.current_time) % 60;
+             let ct  = zeroPad(parseInt(data.current_time / 60), 2) + ':' + zeroPad (ctval < 0 ? 0 : ctval, 2);
+
+             $('#songRangePosition').prop('min', 0);
+             $('#songRangePosition').prop('max', data.current_time);
+             $('#songRangePosition').val(data.current_time);
+
+             $('#songRangeHeader').html(ct);
+             $('#songRangeFooter').html('&infin;');
+         }
+         else if (data.duration)
+         {
+             let ctval = parseInt(data.current_time) % 60;
+             let ct  = zeroPad(parseInt(data.current_time / 60), 2) + ':' + zeroPad (ctval < 0 ? 0 : ctval, 2);
+
+             let ttval = parseInt(data.duration) % 60;
+             let tt  = zeroPad(parseInt(data.duration / 60), 2) + ':' + zeroPad (ttval < 0 ? 0 : ttval, 2);
+             let pct = ((100.0 / data.duration) * data.current_time).toFixed(0);
+
+             $('#songRangePosition').prop('min', 0);
+             $('#songRangePosition').prop('max', data.duration);
+             $('#songRangePosition').val(data.current_time);
+             $('#songRangeHeader').html(ct);
+             $('#songRangeFooter').html(tt);
+         }
+         else
+         {
+             $('#songPosition').html('');
+             $('#songRangePosition').prop('min', 0);
+             $('#songRangePosition').prop('max', 0);
+             $('#songRangePosition').val(0);
+             $('#songRangeHeader').html('00:00');
+             $('#songRangeFooter').html('00:00');
+         }
+
+         // update song position
+         $('#songPosition').attr("min", 0);
+         $('#songPosition').attr("max", data.duration);
+         $('#songPosition').val(data.current_time);
+     }
+
+     // --------------------------------------------
+
+     if ((! G_LastChromeCastInfo) ||
+         (G_LastChromeCastInfo.media_metadata.album_art_url != data.media_metadata.album_art_url) ||
+         (isVideo (data.content_type) != isVideo(G_LastChromeCastInfo.content_type))
+         )
+     {
+         if (data.media_metadata.album_art_url)
+         {
+             let safeURLPath = new URL (data.media_metadata.album_art_url);
+             artURLPath = safeURLPath.pathname + safeURLPath.search;
+             $('#albumArtURL').prop('src', artURLPath);
+             $('#albumArtURLSml').prop('src', artURLPath);
+         }
+         else
+         {
+             $('#albumArtURL').prop('src', getDefaultCoverArt (data.content_type));
+             $('#albumArtURLSml').prop('src', getDefaultCoverArt (data.content_type));
+         }
+     }
+
+     // --------------------------------------------
+
+     // Display if queue/player monitoring is in sleep mode...
+     if ((data.slinger_sleeping_sec > 4) && ($('#ChromeCastAwakeMonitorTab').css('display') == 'none'))
+     {
+         $('#ChromeCastAwakeMonitorTab').css('display', 'block');
+     }
+     else if ((data.slinger_sleeping_sec < 4) && ($('#ChromeCastAwakeMonitorTab').css('display') != 'None'))
+     {
+        $('#ChromeCastAwakeMonitorTab').css('display', 'none');
+     }
+
+     if (isLocalPlayer(ccast_uuid))
+     {
+         $('#ChromeCastNetWrkSharedLocalPlayerTab').css('display', 'block');
+     }
+     else
+     {
+        $('#ChromeCastNetWrkSharedLocalPlayerTab').css('display', 'none');
+     }
+
+     // console.log (data.slinger_sleeping_sec + ' ' + $('#ChromeCastAwakeMonitorTab').css('display'));
+     // console.log ("data.slinger_queue_changeno :: " + data.slinger_queue_changeno);
+     // --------------------------------------------
+     if (G_LastChromeCastQueueChangeNo != data.slinger_queue_changeno)
+     {
+         G_LastChromeCastQueueChangeNo = data.slinger_queue_changeno;
+
+         // Queue Browser render list change
+         sendWebSocketChromeCastInfoReq ("queue_list", $('#ccast_uuid').val());
+
+        // Previous Queue Browser render list change
+        sendWebSocketChromeCastInfoReq ("previous_queue_list", $('#ccast_uuid').val());
     }
 
-    ccReqNum++;
-    $.ajax ({url: `castinfo.py`,
-             type: "POST",
-             data: {
-                "ccast_uuid" : ccast_uuid,
-                "type"       : "player_status"
-             },
-             dataType: "json",
-             success: function(data)
-                    {
-                         const zeroPad = (num, places) => String(num).padStart(places, '0');
+    G_LastChromeCastInfo = data;
+}
 
-                         if ((! data) || (data.playback_state.toLowerCase() == 'unknown'))
-                         {
-                             clearSongTitleInfo ();
-                         }
-
-                         if (! data)
-                         {
-                            return;
-                         }
-
-                         // -------- Local Player Driver/Actions --------
-                         if (data && isLocalPlayer(ccast_uuid) && (data.playback_state != 'IDLE'))
-                         {
-                             let audio = $("#LocalAudioPlayerDevice");
-                             let video = $("#LocalVideoPlayerDevice");
-                             let thisAVID  = ""
-                             let thisAVDev = null;
-
-                             if (isVideo (data.content_type))
-                             {
-                                 thisAVDev = video
-                                 thisAVID  = "#LocalVideoPlayerDevice";
-                                 $("#video-player-container").show(500, function() {
-                                     resizeFilePanels();
-                                 });
-                             }
-                             else
-                             {
-                                 thisAVDev = audio
-                                 thisAVID  = "#LocalAudioPlayerDevice";
-                                 $("#video-player-container").css("display","None");
-                             }
-
-                             if (data.slinger_current_media.location && (data.playback_state.toLowerCase() == 'playing') )
-                             {
-                                 if ($(thisAVDev).attr('playing_now') != data.slinger_current_media.location)
-                                 {
-                                     thisAVDev.attr('src', `accessfile.py?type=${data.slinger_current_media.type}&location=${encodeURI(data.slinger_current_media.location)}&ccast_uuid=${encodeURI(ccast_uuid)}`)
-                                     thisAVDev.attr('playing_now', data.slinger_current_media.location)
-                                     thisAVDev[0].pause();
-                                     thisAVDev[0].load();
-                                     thisAVDev[0].play();
-                                     thisAVDev[0].loop = false;
-                                     thisAVDev[0].volume = data.volume_level;
-                                     thisAVDev[0].muted  = data.volume_muted;
-
-                                     if (thisAVID == "#LocalVideoPlayerDevice")
-                                         audio[0].pause();
-                                     else
-                                         video[0].pause();
-                                 }
-                                 else if (thisAVDev[0].paused)
-                                 {
-                                     // song completed, next song ...
-                                     if (thisAVDev[0].ended)
-                                     {
-                                         chromeCastBasicAction(ccast_uuid, 'queue_next')
-                                     }
-                                     else
-                                     {
-                                         // if not already playing, then load track then play/unpause
-                                         if (thisAVDev[0].currentTime <= 0)
-                                         {
-                                             thisAVDev[0].pause();
-                                             thisAVDev[0].load();
-                                             thisAVDev[0].loop = false;
-                                         }
-
-                                         thisAVDev[0].play();
-                                         thisAVDev[0].volume = data.volume_level;
-                                         thisAVDev[0].muted  = data.volume_muted;
-                                     }
-                                 }
-                             }
-                             else if ((data.playback_state.toLowerCase() == 'paused') && (! thisAVDev[0].paused && thisAVDev[0].duration > 0))
-                             {
-                                thisAVDev[0].pause()
-                             }
-                             else if ((data.playback_state.toLowerCase() == 'idle') && (! thisAVDev[0].paused &&  thisAVDev[0].duration > 0))
-                             {
-                                 thisAVDev[0].pause()
-                                 thisAVDev[0].currentTime = 0;
-                                 $(thisAVID).attr('src', '');
-                                 $(thisAVID).attr('playing_now', '');
-                             }
-
-                             data.duration     = thisAVDev[0].duration;
-                             data.current_time = thisAVDev[0].currentTime;
-
-                             if (G_LastChromeCastInfo && G_LastChromeCastInfo.volume_level != data.volume_level)
-                             {
-                                thisAVDev[0].volume = data.volume_level;
-                             }
-
-                             if (G_LastChromeCastInfo && G_LastChromeCastInfo.volume_muted != data.volume_muted)
-                             {
-                                thisAVDev[0].muted  = data.volume_muted;
-                             }
-                         }
-                         // --------------------------------------------
-
-                         if ((! G_LastChromeCastInfo) || (data && G_LastChromeCastInfo.slinger_shuffle != data.slinger_shuffle))
-                         {
-                             if (data.slinger_shuffle)
-                             {
-                                 $('#plyrCntrlShuffle').removeClass('cntrlInactive').addClass('cntrlActive');
-                             }
-                             else if (! data.slinger_shuffle)
-                             {
-                                 $('#plyrCntrlShuffle').removeClass('cntrlActive').addClass('cntrlInactive');
-                             }
-                         }
-
-                         if ((! G_LastChromeCastInfo) || data)
-                         {
-                             if (data.slinger_metadata_shuffle_repeater && (! $('#metaDataShuffleRepeater').hasClass('cntrlActive')) )
-                             {
-                                  $('#metaDataShuffleRepeater').removeClass('cntrlInactive').addClass('cntrlActive');
-                             }
-                             else if ((! data.slinger_metadata_shuffle_repeater) && (! $('#metaDataShuffleRepeater').hasClass('cntrlInactive')) )
-                             {
-                                 $('#metaDataShuffleRepeater').removeClass('cntrlActive').addClass('cntrlInactive');
-                             }
-
-                             let currentFileListPath = decodeURIComponent($('#fileListCurrentLocation').attr('filelocationparent')).toLocaleLowerCase();
-
-                             if (data.slinger_metadata_shuffle_location != '' && data.slinger_metadata_shuffle_location.toLocaleLowerCase() != currentFileListPath)
-                             {
-                                 if ($('#metaDataShuffle').hasClass('cntrlActive'))
-                                 {
-                                     $('#metaDataShuffle').removeClass('cntrlActive').addClass('cntrlInactive');
-                                     $('#shuffleMetaFileType').selectmenu( "enable");
-                                     $('#shuffleMetaFileType').prop("selectedIndex", 0).change();
-                                     $('#shuffleMetaFileType').selectmenu('refresh');
-                                 }
-                             }
-                             else
-                             {
-                                 if (data.slinger_metadata_shuffle && (! $('#metaDataShuffle').hasClass('cntrlActive')) )
-                                 {
-                                      $('#metaDataShuffle').removeClass('cntrlInactive').addClass('cntrlActive');
-                                      $('#shuffleMetaFileType').val(data.slinger_metadata_shuffle_type).change();
-                                      $('#shuffleMetaFileType').selectmenu( "disable");
-                                      $('#shuffleMetaFileType').selectmenu('refresh');
-                                 }
-                                 else if ((! data.slinger_metadata_shuffle) && (! $('#metaDataShuffle').hasClass('cntrlInactive')) )
-                                 {
-                                     $('#metaDataShuffle').removeClass('cntrlActive').addClass('cntrlInactive');
-                                     $('#shuffleMetaFileType').selectmenu( "enable");
-                                 }
-                             }
-
-                             // show/update the current metadata shuffle info/path
-                             if ((data.slinger_metadata_shuffle+"" != $('#metaDataShuffleActiveDot').attr('shuffle_active')) ||
-                                 ($('#metaDataShuffleActivePath').attr('shuffle_fullpath') != data.slinger_metadata_shuffle_location))
-                             {
-                                 let d = data.slinger_metadata_shuffle_location.substring(0, 28);
-                                 if (data.slinger_metadata_shuffle_location.length > 28)
-                                 {
-                                    d += '...';
-                                 }
-
-                                 $('#metaDataShuffleActivePath').html(d);
-                                 $('#metaDataShuffleActivePath').attr('shuffle_fullpath', data.slinger_metadata_shuffle_location);
-
-                                 if (data.slinger_metadata_shuffle)
-                                 {
-                                     $('#metaDataShuffleActiveDot').css ('display', '');
-                                     $('#metaDataShuffleActiveDot').attr('title', `${data.slinger_metadata_shuffle_location}\nClick to stop metadata shuffle!`);
-                                 }
-                                 else
-                                 {
-                                     $('#metaDataShuffleActiveDot').css ('display', 'none');
-                                 }
-                                 $('#metaDataShuffleActiveDot').attr('shuffle_active', data.slinger_metadata_shuffle)
-                             }
-                         }
-
-                         // --------------------------------------------
-                         if (data.volume_muted && $('#volOnMute').hasClass('fa-volume-high'))
-                         {
-                             $('#volOnMute').removeClass('fa-volume-high')
-                             $('#volOnMute').addClass('fa-volume-xmark')
-                             $('#volOnMute').prop('title', 'Unmute')
-                         }
-                         else if ((! data.volume_muted) && $('#volOnMute').hasClass('fa-volume-xmark'))
-                         {
-                             $('#volOnMute').removeClass('fa-volume-xmark')
-                             $('#volOnMute').addClass('fa-volume-high')
-                             $('#volOnMute').prop('title', 'Mute')
-                         }
-
-                         if (Math.floor(data.volume_level * 100) != $('#volLevel').val())
-                         {
-                             $('#volLevel').val(Math.floor(data.volume_level * 100))
-                         }
-
-                         // --------------------------------------------
-
-                         // console.log("JSON Data:", data);
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.album_name != data.album_name))
-                             $('#songAlbumName').html(data.album_name);
-
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.artist != data.artist))
-                             $('#songArtist').html(data.artist);
-
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.title != data.title))
-                         {
-                             $('#songTitle').html(data.title);
-                             $('#songTitleSml').html(data.title);
-
-                             // determine if this in Favourites
-                             ShowIsFavourite(data);
-                         }
-
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.filename != data.filename))
-                             $('#songFilename').html(data.filename);
-
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.content_type != data.content_type))
-                             $('#songFileType').html(`${data.content_type} ${ data.media_metadata.bitrate ? ':: ' + data.media_metadata.bitrate : ''}`);
-
-                         if (($('.playingInfo').css('display') == 'none') && (data.playback_state.toLowerCase() != 'unknown'))
-                             $('.playingInfo').css('display', '');
-
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.playback_state != data.playback_state))
-                         {
-                             if (data.playback_state.toLowerCase() == 'playing')
-                             {
-                                 $('#plyrCntrlPlay').removeClass('cntrlActive').removeClass('cntrlInactive').addClass('cntrlPaused');
-                                 $('#plyrCntrlPlay').removeClass('fa-circle-play');
-                                 $('#plyrCntrlPlay').addClass('fa-circle-pause');
-                             }
-                             else if ((data.playback_state.toLowerCase() == 'idle') || (data.playback_state.toLowerCase() == 'paused'))
-                             {
-                                 $('#plyrCntrlPlay').removeClass('cntrlPaused').removeClass('cntrlInactive').addClass('cntrlActive');
-                                 $('#plyrCntrlPlay').addClass('cntrlActivated');
-                                 $('#plyrCntrlPlay').removeClass('fa-circle-pause');
-                                 $('#plyrCntrlPlay').addClass('fa-circle-play');
-                             }
-                             else if (data.playback_state.toLowerCase() == 'unknown')
-                             {
-                                 $('#plyrCntrlPlay').removeClass('cntrlActive').removeClass('cntrlPaused').addClass('cntrlInactive');
-                                 $('#plyrCntrlPlay').removeClass('fa-circle-pause');
-                                 $('#plyrCntrlPlay').addClass('fa-circle-play');
-                             }
-                         }
-
-                         // --------------------------------------------
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.slinger_current_media.transcoding != data.slinger_current_media.transcoding ||
-                                                          G_LastChromeCastInfo.slinger_current_media.location    != data.slinger_current_media.location) )
-                         {
-                              if (data.slinger_current_media.transcoding)
-                              {
-                                  $('#playingSongInfo').css('display', 'none');
-                                  $('#busy-transcoding').css('display', 'flex');
-                                  $('#vfd-transcode-location').html(data.slinger_current_media.location);
-                              }
-                              else
-                              {
-                                  $('#playingSongInfo').css('display', 'block');
-                                  $('#busy-transcoding').css('display', 'none');
-                              }
-                         }
-                         if ((! G_LastChromeCastInfo) || (G_LastChromeCastInfo.current_time != data.current_time) )
-                         {
-                             // some tracks do not have the full duration encoded in the mp3 files, in these cases, only show current time.
-                             if ((data.current_time > 0) && (! data.duration))
-                             {
-                                 let ct  = zeroPad(parseInt(data.current_time/60), 2) + ':' + zeroPad ((parseInt(data.current_time)%60), 2);
-
-                                 $('#songRangePosition').prop('min', 0);
-                                 $('#songRangePosition').prop('max', data.current_time);
-                                 $('#songRangePosition').val(data.current_time);
-
-                                 $('#songRangeHeader').html(ct);
-                                 $('#songRangeFooter').html('&infin;');
-                             }
-                             else if (data.duration)
-                             {
-                                 let ct  = zeroPad(parseInt(data.current_time/60), 2) + ':' + zeroPad ((parseInt(data.current_time)%60), 2);
-                                 let tt  = zeroPad(parseInt(data.duration/60), 2) + ':' + zeroPad ((parseInt(data.duration)%60), 2);
-                                 let pct = ((100.0 / data.duration) * data.current_time).toFixed(0);
-
-                                 $('#songRangePosition').prop('min', 0);
-                                 $('#songRangePosition').prop('max', data.duration);
-                                 $('#songRangePosition').val(data.current_time);
-                                 $('#songRangeHeader').html(ct);
-                                 $('#songRangeFooter').html(tt);
-                             }
-                             else
-                             {
-                                 $('#songPosition').html('');
-                                 $('#songRangePosition').prop('min', 0);
-                                 $('#songRangePosition').prop('max', 0);
-                                 $('#songRangePosition').val(0);
-                                 $('#songRangeHeader').html('00:00');
-                                 $('#songRangeFooter').html('00:00');
-                             }
-
-                             // update song position
-                             $('#songPosition').attr("min", 0);
-                             $('#songPosition').attr("max", data.duration);
-                             $('#songPosition').val(data.current_time);
-                         }
-
-                         // --------------------------------------------
-
-                         if ((! G_LastChromeCastInfo) ||
-                             (G_LastChromeCastInfo.media_metadata.album_art_url != data.media_metadata.album_art_url) ||
-                             (isVideo (data.content_type) != isVideo(G_LastChromeCastInfo.content_type))
-                             )
-                         {
-                             if (data.media_metadata.album_art_url)
-                             {
-                                 let safeURLPath = new URL (data.media_metadata.album_art_url);
-                                 artURLPath = safeURLPath.pathname + safeURLPath.search;
-                                 $('#albumArtURL').prop('src', artURLPath);
-                                 $('#albumArtURLSml').prop('src', artURLPath);
-                             }
-                             else
-                             {
-                                 $('#albumArtURL').prop('src', getDefaultCoverArt (data.content_type));
-                                 $('#albumArtURLSml').prop('src', getDefaultCoverArt (data.content_type));
-                             }
-                         }
-
-                         // --------------------------------------------
-
-                         // Display if queue/player monitoring is in sleep mode...
-                         if ((data.slinger_sleeping_sec > 4) && ($('#ChromeCastAwakeMonitorTab').css('display') == 'none'))
-                         {
-                             $('#ChromeCastAwakeMonitorTab').css('display', 'block');
-                         }
-                         else if ((data.slinger_sleeping_sec < 4) && ($('#ChromeCastAwakeMonitorTab').css('display') != 'None'))
-                         {
-                            $('#ChromeCastAwakeMonitorTab').css('display', 'none');
-                         }
-
-                         if (isLocalPlayer(ccast_uuid))
-                         {
-                             $('#ChromeCastNetWrkSharedLocalPlayerTab').css('display', 'block');
-                         }
-                         else
-                         {
-                            $('#ChromeCastNetWrkSharedLocalPlayerTab').css('display', 'none');
-                         }
-
-                         // console.log (data.slinger_sleeping_sec + ' ' + $('#ChromeCastAwakeMonitorTab').css('display'));
-                         // console.log ("data.slinger_queue_changeno :: " + data.slinger_queue_changeno);
-                         // --------------------------------------------
-                         if (G_LastChromeCastQueueChangeNo != data.slinger_queue_changeno)
-                         {
-                             G_LastChromeCastQueueChangeNo = data.slinger_queue_changeno;
-
-                             // Queue Browser render list change
-                             $.ajax ({url: `castinfo.py`,
-                                      type: "POST",
-                                      data : {
-                                          "ccast_uuid" : ccast_uuid,
-                                          "type"       : "queue_list"
-                                      },
-                                      dataType: "json",
-                                      success: function(queue)
-                                      {
-                                          let qbTable  = `
+function renderCurrentQueuedItems (queue)
+{
+    let qbTable  = `
 <table id="queueBrowserTable" border=0 class='TableSelection SongListFormat' style="width:100%">
 <thead>
 <tr><th></th><th>Song Title(s) : ${queue.length}</th><th>Album Name</th><th>Artist</th></tr>
 </thead>
 `;
-                                          if (queue)
-                                          {
-                                              for (idx = 0; idx < queue.length; idx++)
-                                              {
-                                                  qbTable += `
+    if (queue)
+    {
+        for (idx = 0; idx < queue.length; idx++)
+        {
+            qbTable += `
 <tr class="dataRow selectItemHand" rowid="${idx}">
     <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml" content_type="${queue[idx].metadata["content_type"]}" src="${ MakeRelativeArtURL(queue[idx].metadata["album_art_url"], queue[idx].metadata["content_type"]) }" style="height: 32px;"></td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["title"]}</td>
@@ -878,40 +872,27 @@ function chromeCastInfo ()
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_queued_item_at_index', ${idx});">${queue[idx].metadata["artist"]}</td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'del_queued_item_at_index',  ${idx});"><i class="inlinePlayListControls fa-solid fa-square-minus" style="text-align:center;" title="Remove Item" onclick=""></td>
 </tr>`;
-                                              }
-                                          }
-                                          qbTable += "</table>";
+        }
+    }
+    qbTable += "</table>";
 
-                                          $('#queueBrowser').html(qbTable);
-                                          let l = new TableSelection("#queueBrowser", 2);
-                                      },
-                                      error: function(jqXHR, textStatus, errorThrown)
-                                      {
-                                          console.error(`Error: ${textStatus}, ${errorThrown}`);
-                                      }
-                                    });
+    $('#queueBrowser').html(qbTable);
+    let l = new TableSelection("#queueBrowser", 2);
+}
 
-                            // Previous Queue Browser render list change
-                            $.ajax ({url: `castinfo.py`,
-                                      type: "POST",
-                                      data : {
-                                          "ccast_uuid" : ccast_uuid,
-                                          "type"       : "previous_queue_list"
-                                      },
-                                      dataType: "json",
-                                      success: function(queue)
-                                      {
-                                          let qbTable  = `
+function renderPreviousQueuedItems (queue)
+{
+    let qbTable  = `
 <table id="previousQueueBrowserTable" border=0 class='TableSelection SongListFormat' style="width:100%">
 <thead>
 <tr><th></th><th>Song Title(s) : ${queue.length}</th><th>Album Name</th><th>Artist</th></tr>
 </thead>
 `;
-                                          if (queue)
-                                          {
-                                              for (idx = 0; idx < queue.length; idx++)
-                                              {
-                                                  qbTable += `
+    if (queue)
+    {
+        for (idx = 0; idx < queue.length; idx++)
+        {
+            qbTable += `
 <tr class="dataRow selectItemHand" rowid="${idx}">
     <td><img onclick="ViewLargeArt(this);" class="albumArtURLSml" content_type="${queue[idx].metadata["content_type"]}" src="${ MakeRelativeArtURL(queue[idx].metadata["album_art_url"], queue[idx].metadata["content_type"]) }" style="height: 32px;"></td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_previous_queued_item_at_index', ${idx});">${queue[idx].metadata["title"]}</td>
@@ -919,35 +900,100 @@ function chromeCastInfo ()
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'play_previous_queued_item_at_index', ${idx});">${queue[idx].metadata["artist"]}</td>
     <td onclick="chromeCastBasicAction($('#ccast_uuid').val(), 'del_previous_queued_item_at_index',  ${idx});"><i class="inlinePlayListControls fa-solid fa-square-minus" style="text-align:center;" title="Remove Item" onclick=""></td>
 </tr>`;
-                                              }
-                                          }
-                                          qbTable += "</table>";
+        }
+    }
+    qbTable += "</table>";
 
-                                          $('#previousQueueBrowser').html(qbTable);
-                                          let l = new TableSelection("#previousQueueBrowser", 2);
-                                      },
-                                      error: function(jqXHR, textStatus, errorThrown)
-                                      {
-                                          console.error(`Error: ${textStatus}, ${errorThrown}`);
-                                      }
-                                    });
-
-                         }
-                         G_LastChromeCastInfo = data;
-                     },
-             error: function(jqXHR, textStatus, errorThrown)
-             {
-                 // On error, log the error to console
-                 // console.error(`Error: ${textStatus}, ${errorThrown}`);
-                 if (ccReqNum % 2)
-                    $('#ccast_uuid-button .ui-selectmenu-text').css ("color", "red");
-                 else
-                    $('#ccast_uuid-button .ui-selectmenu-text').css ("color", "");
-
-             }
-           });
-    return false;
+    $('#previousQueueBrowser').html(qbTable);
+    let l = new TableSelection("#previousQueueBrowser", 2);
 }
+
+function sendWebSocketChromeCastInfoReq (type, ccast_uuid)
+{
+    if (! G_ChromeCastInfoSocket)
+        return False
+
+    const req = { "ccast_uuid" : ccast_uuid, "type" : type };
+    G_ChromeCastInfoSocket.send(JSON.stringify(req, null, 2));
+}
+
+// Establish a WebSocket connection to the Python server
+var G_ChromeCastInfoSocketReqNum  = 0
+var G_ChromeCastInfoSocket        = null;
+function setupWebSocketChromeCastInfo (socketPath)
+{
+    let socket = new WebSocket(socketPath);
+
+    // Triggered when the connection successfully opens
+    socket.onopen = function(event)
+    {
+        console.log("[open] Connection established");
+    };
+
+    // Triggered when the server sends a message back
+    socket.onmessage = function(event)
+    {
+        //console.log(`[message] Data received from server: ${event.data}`);
+        respMsg = JSON.parse(event.data);
+        if (respMsg.type == "player_status")
+            processChromeCastInfo (respMsg.data);
+        else if (respMsg.type == "queue_list")
+            renderCurrentQueuedItems (respMsg.data);
+
+        else if (respMsg.type == "previous_queue_list")
+            renderPreviousQueuedItems (respMsg.data);
+    };
+
+    // Triggered when the connection closes
+    socket.onclose = function(event)
+    {
+        if (event.wasClean)
+        {
+            console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+        }
+        else
+        {
+            console.error('[close] Connection died... reconnecting...');
+
+            // On error, log the error to console
+            // console.error(`Error: ${textStatus}, ${errorThrown}`);
+            if (G_ChromeCastInfoSocketReqNum % 2)
+                $('#ccast_uuid-button .ui-selectmenu-text').css ("color", "red");
+            else
+                $('#ccast_uuid-button .ui-selectmenu-text').css ("color", "");
+
+            G_ChromeCastInfoSocket = setupWebSocketChromeCastInfo (socketPath);
+        }
+    };
+
+    // Triggered if a connection error occurs
+    socket.onerror = function(error)
+    {
+        console.error(`[error] ${error.message}`);
+    };
+
+    return socket;
+}
+
+// setup interrupt/timer to query chromecast info using web sockets to reduces HTTPS chatter/comms overhead
+var G_ChromeCastInfoSocketInterval = setInterval (() =>
+{
+    if (G_ChromeCastInfoSocket && G_ChromeCastInfoSocket.readyState === WebSocket.OPEN)
+    {
+        G_ChromeCastInfoSocketReqNum++;
+
+        // reset comms colour
+        if ($('#ccast_uuid-button .ui-selectmenu-text').css ("color"))
+            $('#ccast_uuid-button .ui-selectmenu-text').css ("color", "");
+
+        sendWebSocketChromeCastInfoReq ("player_status", $('#ccast_uuid').val());
+    }
+}, 500);
+
+const currentPath      = window.location.pathname;
+const parentDirectory  = currentPath.substring (0, currentPath.lastIndexOf('/'));
+const absoluteBasePath = window.location.origin + parentDirectory;
+G_ChromeCastInfoSocket = setupWebSocketChromeCastInfo (`${ absoluteBasePath.replace(/^http/gmi, 'ws') }/ws_castinfo.py`);
 
 });
 
@@ -1035,7 +1081,8 @@ function loadPlayList (thisObj, name)
                  $('#' + refID).html(qbTable);
                  showHideIconInfo();
                  $('.inlinePlayMode').selectmenu({ 'width' : '100px', 'vertical-align': 'sub'});
-                 $('.inlinePlayMode').on('selectmenuchange', function() {
+                 $('.inlinePlayMode').on('selectmenuchange', function()
+                 {
                      $(".inlinePlayMode").trigger("change");
                  });
 
@@ -1227,6 +1274,7 @@ function RenamePlayList(thisObj, playlistName)
                    }]
     });
 }
+
 function AddLocationToPlayList (playlistName, location, type, isDirectory)
 {
     $.ajax ({url: 'playlistcontroller.py',
@@ -1259,6 +1307,7 @@ function AddLocationToPlayList (playlistName, location, type, isDirectory)
          }
        });
 }
+
 function FileListAddToPlayList (thisObj, playlistName)
 {
     let idx            = $(thisObj).attr('idx');
@@ -1277,6 +1326,7 @@ function FileListAddToPlayList (thisObj, playlistName)
         });
     }
 }
+
 function SearchListAddToPlayList (thisObj, playlistName)
 {
     let idx            = $(thisObj).attr('idx');
@@ -2063,7 +2113,7 @@ function AccordianRemovePlayList (name)
 {
     $(`#hdr_${G_PlayListRefs[name]}`).remove();
     $(`#${G_PlayListRefs[name]}`).remove();
-    $('#playlistBrowser').accordion("refresh");
+    $("#playlistBrowser").accordion({ collapsible: true, active: false }).show();
     delete G_PlayListRefs[name];
 }
 
@@ -2155,14 +2205,35 @@ function LoadPlaylistNames ()
              success: function(data)
              {
                  $('#playlistBrowser').empty();
-
                  let loadFirst = true;
+
+                 // Always add the "Favourites" playlist as the first item
+
                  for (idx = 0; idx < data.length; idx++)
                  {
+                     if (data[idx]['name'] == G_FavouritesName)
+                     {
+                         AddPlayList(data[idx]['name'])
+                         if (loadFirst)
+                            loadPlayList ($('#playlistBrowser'), data[idx]['name']);
+                         break;
+                     }
+                 }
+
+                 for (idx = 0; idx < data.length; idx++)
+                 {
+                     if (data[idx]['name'] == G_FavouritesName)
+                        continue;
+
+                     // load the other non-favourite paylist
                      AddPlayList(data[idx]['name'])
                      if (loadFirst)
                         loadPlayList ($('#playlistBrowser'), data[idx]['name']);
                  }
+
+                 // show in collapsed state
+                 $("#playlistBrowser").accordion({ collapsible: true, active: false }).show();
+
                  Build_PlaylistContextMenu ();
              }
            });

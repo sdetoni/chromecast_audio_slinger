@@ -12,7 +12,6 @@ if not "ccast_uuid" in postData: postData["ccast_uuid"] = ''
 if not "type"       in postData: postData["type"]       = ''
 if not "name"       in postData: postData["name"]       = ''
 
-
 castQueueObj = SGF.getChromecastQueueObj (ccast_uuid=postData["ccast_uuid"])
 if not castQueueObj:
     logging.error(f"{postData['ccast_uuid']} cast object is not matched!")
@@ -23,16 +22,12 @@ if castQueueObj.isDeviceActive() and (datetime.datetime.now() - castQueueObj.las
 
 self.do_HEAD(mimetype='application/json', turnOffCache=False, statusCode=200, closeHeader=True)
 
-if postData["type"] == "queue_list":
-    output(json.dumps(castQueueObj.queue, default=lambda o: o.__dict__, indent=4))
-    exit (0)
-
-if postData["type"] == "previous_queue_list":
-    output(json.dumps(castQueueObj.previousQueue, default=lambda o: o.__dict__, indent=4))
-    exit (0)
-
 info = {}
-if postData["type"] == "complete_status":
+if postData["type"] == "queue_list":
+    info = castQueueObj.queue
+elif postData["type"] == "previous_queue_list":
+    info = castQueueObj.previousQueue
+elif postData["type"] == "complete_status":
     info = castQueueObj.completeStatus
 elif postData["type"] == "chromecast_status":
     info = castQueueObj.chromeCastStatus

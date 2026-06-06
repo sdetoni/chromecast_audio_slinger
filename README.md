@@ -6,6 +6,11 @@ I has the ability to cast from remote CIFS/Windows file shares as well as local 
 This service will run as a Daemon, monitoring Chrome Cast devices, and sling/cast audio, video files 
 to devices from its pending queue.
 
+## Version 0.09 Work in progress:
+ * Added web socket communications to gather Chrome Cast State. 
+   This occurs a couple of times a seconds so is an aid to reduce socket connection overheads.
+ * Fixed some minor cosmetic bugs.
+
 ## Version 0.085 Work in progress:
  * Added Docker Build process for Raspberry PI. 
  * [docker_build_raspberry_pi](docker_build_raspberry_pi/README.md)

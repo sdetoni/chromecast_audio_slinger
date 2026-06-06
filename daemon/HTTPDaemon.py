@@ -20,6 +20,7 @@ import os
 import datetime
 import tempfile
 import io
+import struct
 
 # HTTPDaemon instances created
 SERVERS = []
@@ -836,9 +837,9 @@ def HTTPWebServerSessionPurge ():
                 expires = s['expires']
                 if expires and expires < tstamp:
                     delKeys.append(key)
-                    logging.info("HTTPWebServerSessionPurge SessionID : " + key + " expired")
+                    logging.debug("HTTPWebServerSessionPurge SessionID : " + key + " expired")
                 elif (not expires) and (s['created'] + SESSION_MAXTIME < tstamp):
-                    logging.info("HTTPWebServerSessionPurge MAXTIME SessionID : " + key + " expired")
+                    logging.debug("HTTPWebServerSessionPurge MAXTIME SessionID : " + key + " expired")
                     delKeys.append(key)
             else:
                 delKeys.append(key)
@@ -1092,6 +1093,7 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
         self.queryBasePath       = ''
         self.queryScript         = ''
         self.queryString         = ''
+        self.isWebSocket         = False
 
         if self.serve_via_ssl:
             self.protocol = 'https'
@@ -1142,7 +1144,8 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                        'timeout'   : timeout}
 
         SessionList[s] = sessionInfo
-        self.log_message("sessionCreate SessionID : " + s + " created")
+        self.log_message("sessionCreate Created")
+        self.dbg_message(f"sessionCreate SessionID : {s}")
         return s
 
     # changes the state of a login session
@@ -1183,7 +1186,7 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                 expires = s['expires']
                 if expires and expires < tstamp:
                     del SessionList[key]
-                    self.log_message("sessionCheckUpdate SessionID : " + key + " expired")
+                    self.dbg_message("sessionCheckUpdate SessionID : " + key + " expired")
                     return False
                 elif expires:
                     SessionList[key]['noUpdated'] += 1
@@ -1192,13 +1195,13 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
 
                 # check login status, if in init mode, not logged in, but don't delete session either
                 if s['loginState'] == SESSION_STATUS_LOGININIT:
-                    self.log_message("sessionCheckUpdate SessionID : " + key + " status " + s['loginState'])
+                    self.dbg_message("sessionCheckUpdate SessionID : " + key + " status " + s['loginState'])
                     return False
 
                 # if logout, then session removed.
                 if s['loginState'] != SESSION_STATUS_LOGIN:
                     del SessionList[key]
-                    self.log_message("sessionCheckUpdate SessionID : " + key + " status " + s['loginState'] + " session removed")
+                    self.dbg_message("sessionCheckUpdate SessionID : " + key + " status " + s['loginState'] + " session removed")
                     return False
 
                 return True
@@ -1417,6 +1420,9 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
         return self.templateRunAbsPath (fp, userVarsDict, checkFileChangedSecs, rtnStr)
 
     def output(self, s):
+        if self.isWebSocket:
+            return self.ws_output(s)
+
         if not self.headerCalled:
             self.do_HEAD(turnOffCache=True)
         elif (not self.headerClosed):
@@ -1431,7 +1437,37 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             self.wfile.write(r)
         except Exception as e:
-            logging.error(f"HTTPWebServer.outputRaw failed outputRaw() at path: '{self.path}' {str(e)}")
+            logging.error(f"HTTPWebServer.outputRaw failed at path: '{self.path}' {str(e)}")
+            raise e
+
+    # web socket output
+    def ws_output (self, s):
+        if type(s) == type(str()):
+            self.ws_outputRaw (bytes(s, "utf-8"))
+        else:
+            self.ws_outputRaw (s)
+
+    def ws_outputRaw(self, payload):
+        try:
+            payload_len = len(payload)
+
+            # Base framing configurations (0x81 sets text frame opcode & FIN bit)
+            header = bytearray([0x81])
+
+            # Frame generation layout for unmasked data sizes
+            if payload_len <= 125:
+                header.append(payload_len)
+            elif payload_len <= 65535:
+                header.append(126)
+                header.extend(struct.pack("!H", payload_len))
+            else:
+                header.append(127)
+                header.extend(struct.pack("!Q", payload_len))
+
+            # Deliver completed data bytes down the socket stream
+            self.request.sendall(header + payload)
+        except Exception as e:
+            logging.error(f"HTTPWebServer.ws_outputRaw failed at path: '{self.path}' {str(e)}")
             raise e
 
     def isMimeType (self, filePath):
@@ -1513,6 +1549,87 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                 return mr
         return None
 
+    def ws_WaitMessage (self):
+        try:
+            if not self.isWebSocket:
+                raise Exception("Not a webSocket!")
+
+            # Read the first two bytes of the WebSocket data frame
+            header = self.request.recv(2)
+            if not header or len(header) < 2:
+                raise ConnectionError("WebSocket Failed header parsing")
+
+            # Parse the layout properties of the WebSocket frame
+            byte1, byte2 = struct.unpack("!BB", header)
+
+            # Check for a connection close opcode (0x8)
+            opcode = byte1 & 0x0F
+            if opcode == 0x8:
+                self.log_message("ws_WaitMessage: Client requested connection close.")
+                raise ConnectionAbortedError ("ws_WaitMessage: WebSocket connection close")
+
+            # Ensure data is masked (browsers always mask sent payloads)
+            has_mask = byte2 & 0x80
+            payload_len = byte2 & 0x7F
+
+            # Parse extended payload lengths
+            if payload_len == 126:
+                extended_len = self.request.recv(2)
+                payload_len = struct.unpack("!H", extended_len)[0]
+            elif payload_len == 127:
+                extended_len = self.request.recv(8)
+                payload_len = struct.unpack("!Q", extended_len)[0]
+
+            # Extract the 4-byte masking key
+            mask_key = self.request.recv(4) if has_mask else b""
+
+            # Retrieve the raw payload data
+            raw_payload = self.request.recv(payload_len)
+
+            # Unmask the data using XOR logic
+            if has_mask:
+                unmasked_bytes = bytearray((raw_payload[i] ^ mask_key[i % 4] for i in range(payload_len)))
+                received_message = unmasked_bytes.decode("utf-8")
+            else:
+                received_message = raw_payload.decode("utf-8")
+
+            self.dbg_message(f"ws_WaitMessage: [Received]: {received_message}")
+            return received_message
+        except Exception as e:
+            self.log_error(f"ws_WaitMessage: [Exception]: {e}")
+            raise e
+
+    def isWebSocketRequest (self):
+        # Verify if the client is requesting a WebSocket upgrade
+        if self.headers.get("Upgrade", "").lower() != "websocket":
+            return False
+        return True
+
+    def _setRequestToWebSocket (self):
+        # WebSocket magic GUID required by the specification for the handshake
+        MAGIC_GUID = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
+        # Extract the client's WebSocket key
+        client_key = self.headers.get("Sec-WebSocket-Key").encode('utf-8')
+
+        # Compute the handshake response
+        combined_key = client_key + MAGIC_GUID
+        hashed_key   = hashlib.sha1(combined_key).digest()
+        accept_key   = base64.b64encode(hashed_key).decode('utf-8')
+
+        # Perform the WebSocket Handshake (HTTP 101)
+        self.send_response(101, "Switching Protocols")
+        self.send_header("Upgrade", "websocket")
+        self.send_header("Connection", "Upgrade")
+        self.send_header("Sec-WebSocket-Accept", accept_key)
+        self.end_headers()
+
+        self.log_message("_setRequestToWebSocket: connection established!")
+        self.isWebSocket = True
+
+        # Set TCP socket connection to blocking mode...
+        self.request.setblocking(True)
+
     def makeQueryBasePath (self, mprDir):
         # subtract home path from webpage filesystem path, and convert it to url path current path
         self.queryBasePath = strSubtract(mprDir, os.path.abspath(self.homeDir)).replace(os.path.sep, '/').strip('/')
@@ -1563,6 +1680,13 @@ class HTTPWebServer (BaseHTTPServer.BaseHTTPRequestHandler):
                 return
 
             # ----------------- End Mapping files processor -------------------
+
+            # ----------------- Install Web Socket Request if needed ---------
+
+            if self.isWebSocketRequest():
+                self._setRequestToWebSocket()
+
+            # ----------------- Standard HTTP(S) Request ----------------------
 
             # setup default processing based upon empty directory paths e.g. https://blah.com/blah or https://blah.com/blah/
             defaultsAccessPath = fullAccessPath
