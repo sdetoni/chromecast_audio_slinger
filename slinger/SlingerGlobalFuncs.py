@@ -31,7 +31,8 @@ from slinger.nanodlna import devices as dlna_dev
 
 AUDIO_TRANSCODE = 'audio/transcode'
 DB = slinger.SlingerDB.DB
-SearchArtSem = threading.Semaphore()
+SearchArtSem    = threading.Semaphore()
+ConfigEditPWSem = threading.Semaphore()
 
 # limit the filo onto server for accessfile.py to prevent DDOS
 MAX_CONCURRENT_ACCESSFILE_NO = GF.Config.getSettingValue('slinger/MAX_CONCURRENT_DOWNLOADS', 50)

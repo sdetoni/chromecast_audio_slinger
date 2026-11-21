@@ -1185,6 +1185,8 @@ function showConfigEditor ()
                             let editor_password = $('#config_password').val();
                             let this_dialog     = this;
 
+                            $(this_dialog).dialog("close");
+
                             // Check and set the password into the Global Variable
                             $.ajax ({url: `configeditor.py`,
                                      type: "POST",
@@ -1197,13 +1199,12 @@ function showConfigEditor ()
                                           if (data && data.toLowerCase( ) == "o.k")
                                           {
                                               ONLINE_CONFIG_EDITOR_PASSWORD = editor_password;
-                                              $(this_dialog).dialog("close");
-                                              showConfigEditor ()
                                           }
                                           else
                                           {
                                               alert (data)
                                           }
+                                          showConfigEditor ();
                                      },
                                      error: function(jqXHR, textStatus, errorThrown)
                                      {
