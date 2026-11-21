@@ -134,6 +134,11 @@ update to ip address of 0.0.0.0
     # Max queue history
     MAX_PREVIOUS_PLAYED_QUEUE_LENGTH=50   
     
+    # Set Online Config Editor Password
+    ONLINE_CONFIG_EDITOR_REQ_PASSWORD=true
+    #ONLINE_CONFIG_EDITOR_PASSWORD=set your own password here
+    ONLINE_CONFIG_EDITOR_PASSWORD=    
+    
     # Scraper Schedular
     # Time to scrape in cron format
     # * * * * *

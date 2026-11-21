@@ -498,6 +498,7 @@ output (f"""
 
 <!-- configuration Editor container -->
 <div id="configEditorDialog" title="Configuration Editor" style="display:none;"></div>
+<div id="configEditorPasswordDialog" title="Enter Config Password" style="display:none;"></div>
 
 """)
 output ("""

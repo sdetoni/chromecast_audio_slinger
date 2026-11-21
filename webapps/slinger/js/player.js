@@ -1119,29 +1119,133 @@ function queuePlayPlaylist (ccast_uuid, playlistAction, playlistName)
         chromeCastBasicAction(ccast_uuid, playlistAction, playlistName); // If no items selected, then play/queue the whole play list
 }
 
+var ONLINE_CONFIG_EDITOR_REQ_PASSWORD=null;
+var ONLINE_CONFIG_EDITOR_PASSWORD=null;
 function showConfigEditor ()
 {
-    // Create and open the dialog with an iframe
-    $("#configEditorDialog").html('<iframe src="configeditor.py" width="100%" height="100%" frameborder="0"></iframe>').dialog({
-        modal: true,
-        width: "80%",
-        height: $(window).height() * 0.8,
-        position: {
-            my: "center top",
-            at: "center top+10%",
-            of: window
-        },
-        open: function ()
-        {
-            // Make sure the iframe fills the dialog
-            $(this).css("overflow", "hidden");
-            $(this).find("iframe").css({
-            width: "100%",
-            height: "100%",
-            border: "0"
+    if (ONLINE_CONFIG_EDITOR_REQ_PASSWORD === null)
+    {
+        $.ajax ({url: `configeditor.py`,
+             type: "POST",
+             data: {
+                 "action" : "require_password"
+             },
+             success: function(data)
+             {
+                  ONLINE_CONFIG_EDITOR_REQ_PASSWORD = (data && data.toLowerCase( ) == "true")
+                  showConfigEditor ()
+             },
+             error: function(jqXHR, textStatus, errorThrown)
+             {
+                  console.error(`Error: ${textStatus}, ${errorThrown}`);
+             }
+           });
+        return;
+    }
+
+    if (ONLINE_CONFIG_EDITOR_REQ_PASSWORD === true && (ONLINE_CONFIG_EDITOR_PASSWORD == "" || ONLINE_CONFIG_EDITOR_PASSWORD == null))
+    {
+        let pwDialog = $('#configEditorPasswordDialog').html(`
+        <form>
+            <fieldset class="ui-helper-reset" style="padding-left:20px; padding-right:20px">
+                <br>
+                <input type="password" style="width:100%" name="config_password" id="config_password" value="" class="ui-widget-content ui-corner-all">
+            </fieldset>
+        </form>`);
+
+        let $dialog = pwDialog.dialog(
+            {
+                autoOpen: false,
+                modal: true,
+                resizable: false,
+                width: "auto",
+                draggable: false,
+                open: function()
+                {
+                    // Prevent Enter key from submitting forms or clicking buttons on inputs
+                    $(this).find("input").on("keydown", function(e) {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            $("#dialog-ok-btn").click();
+                            return false;
+                        }
+                    });
+                },
+                close: function(event,ui)
+                {
+                    $(this).find('form')[0].reset();
+                },
+                buttons:
+                [
+                    {
+                        text: "OK",
+                        id: "dialog-ok-btn",
+                        click: function()
+                        {
+                            let editor_password = $('#config_password').val();
+                            let this_dialog     = this;
+
+                            // Check and set the password into the Global Variable
+                            $.ajax ({url: `configeditor.py`,
+                                     type: "POST",
+                                     data: {
+                                         "action" : "check_password",
+                                         "editor_password": editor_password
+                                     },
+                                     success: function(data)
+                                     {
+                                          if (data && data.toLowerCase( ) == "o.k")
+                                          {
+                                              ONLINE_CONFIG_EDITOR_PASSWORD = editor_password;
+                                              $(this_dialog).dialog("close");
+                                              showConfigEditor ()
+                                          }
+                                          else
+                                          {
+                                              alert (data)
+                                          }
+                                     },
+                                     error: function(jqXHR, textStatus, errorThrown)
+                                     {
+                                          console.error(`Error: ${textStatus}, ${errorThrown}`);
+                                     }
+                                   });
+                        }
+                    },
+                    {
+                        text: "Cancel",
+                        click: function() {
+                            $(this).dialog("close");
+                        }
+                    }
+                ]
+             });
+            $dialog.dialog('open');
+    }
+    else
+    {
+        // Create and open the dialog with an iframe
+        $("#configEditorDialog").html(`<iframe src="configeditor.py?editor_password=${escape(ONLINE_CONFIG_EDITOR_PASSWORD)}" width="100%" height="100%" frameborder="0"></iframe>`).dialog({
+            modal: true,
+            width: "80%",
+            height: $(window).height() * 0.8,
+            position: {
+                my: "center top",
+                at: "center top+10%",
+                of: window
+            },
+            open: function ()
+            {
+                // Make sure the iframe fills the dialog
+                $(this).css("overflow", "hidden");
+                $(this).find("iframe").css({
+                width: "100%",
+                height: "100%",
+                border: "0"
+            });
+          }
         });
-      }
-    });
+    }
 }
 
 function chromeCastPlay (file, ccast_uuid, type, queueDirectory=false, forcePlay=false)
